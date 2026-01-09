@@ -1,0 +1,25 @@
+{
+    "mcpServers": {
+        "google-drive": {
+            "command": "/Users/seba/Downloads/econexo---ai-environmental-management/venv/bin/python",
+            "args": [
+                "mcp_servers/gdrive.py"
+            ],
+            "env": {
+                "GOOGLE_APPLICATION_CREDENTIALS": "./credentials.json"
+            }
+        },
+        "postgres": {
+            "command": "/Users/seba/Downloads/econexo---ai-environmental-management/venv/bin/python",
+            "args": [
+                "mcp_servers/postgres.py"
+            ],
+            "env": {
+                "POSTGRES_HOST": "localhost",
+                "POSTGRES_USER": "postgres",
+                "POSTGRES_PASSWORD": "password",
+                "POSTGRES_DB": "econexo_db"
+            }
+        }
+    }
+}

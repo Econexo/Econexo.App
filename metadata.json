@@ -1,0 +1,8 @@
+
+{
+  "name": "Econexo - AI Environmental Management",
+  "description": "A sophisticated environmental management platform featuring AI-powered waste analysis, document tracking, and real-time sustainability impact reporting.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
