@@ -92,13 +92,18 @@ const News: React.FC = () => {
   }, [search]);
 
   return (
-    <div className="font-public bg-background-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-white max-w-md mx-auto pb-28">
-      <div className="sticky top-0 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-white/5 p-4 flex flex-col gap-4">
+    <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md mx-auto pb-28 overflow-hidden">
+      {/* Decorative Background Blobs */}
+      <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+      <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+
+      <div className="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-white/40 shadow-sm p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center">
-            <span className="material-symbols-outlined">arrow_back</span>
+          <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all">
+            <span className="material-symbols-outlined text-gray-700">arrow_back</span>
           </button>
-          <h1 className="text-lg font-bold">Noticias</h1>
+          <h1 className="text-lg font-display font-black text-gray-900">Noticias</h1>
           <div className="size-10"></div>
         </div>
 
@@ -108,27 +113,27 @@ const News: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-12 bg-white dark:bg-surface-input rounded-xl pl-12 pr-4 text-sm border border-transparent focus:border-primary/50 transition-all outline-none"
+            className="w-full h-12 bg-white/60 backdrop-blur-sm rounded-xl pl-12 pr-4 text-sm border border-white/60 focus:border-primary/50 transition-all outline-none font-bold text-gray-700 placeholder:text-gray-400 focus:bg-white/80"
             placeholder="Buscar noticias, guías o normativas..."
           />
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 relative z-10">
         {!search && (
-          <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x">
+          <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x pb-2">
             {articles.filter(a => a.featured).map(a => (
               <a
                 key={a.id}
                 href={a.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-w-[85%] snap-center relative h-48 rounded-2xl overflow-hidden shadow-xl bg-gray-800 transform active:scale-[0.98] transition-all block"
+                className="min-w-[85%] snap-center relative h-48 rounded-[24px] overflow-hidden shadow-xl bg-gray-800 transform active:scale-[0.98] transition-all block group"
               >
-                <img src={a.image} className="w-full h-full object-cover opacity-60" alt={a.title} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-4 flex flex-col justify-end">
-                  <span className="bg-primary/90 text-[10px] font-bold text-background-dark px-2 py-0.5 rounded w-fit mb-2 uppercase">{a.category}</span>
-                  <h3 className="font-bold leading-tight">{a.title}</h3>
+                <img src={a.image} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" alt={a.title} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent p-5 flex flex-col justify-end text-white">
+                  <span className="bg-primary/90 backdrop-blur-sm text-[10px] font-black text-white px-2 py-1 rounded-md w-fit mb-2 uppercase shadow-sm border border-white/10">{a.category}</span>
+                  <h3 className="font-display font-black leading-tight drop-shadow-md text-lg">{a.title}</h3>
                 </div>
               </a>
             ))}
@@ -136,34 +141,35 @@ const News: React.FC = () => {
         )}
 
         <section>
-          <h2 className="font-bold text-xl mb-4 px-1">
+          <h2 className="font-display font-black text-lg mb-4 px-1 text-gray-900 flex items-center gap-2">
             {search ? `Resultados (${filteredArticles.length})` : 'Lo más reciente'}
           </h2>
           <div className="space-y-4">
             {filteredArticles.length > 0 ? (
-              filteredArticles.filter(a => search ? true : !a.featured).map(a => (
+              filteredArticles.filter(a => search ? true : !a.featured).map((a, idx) => (
                 <a
                   key={a.id}
                   href={a.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white dark:bg-card-dark rounded-xl p-4 border border-gray-100 dark:border-white/5 flex gap-4 hover:border-primary/30 transition-all cursor-pointer block"
+                  className="bg-white/60 backdrop-blur-2xl rounded-[24px] p-4 border border-white/80 flex gap-4 hover:border-primary/30 hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer block shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
+                  style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <img src={a.image} className="size-20 rounded-lg object-cover" alt={a.title} />
-                  <div className="flex-1 flex flex-col justify-between">
+                  <img src={a.image} className="size-20 rounded-xl object-cover shadow-sm" alt={a.title} />
+                  <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
-                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider">{a.category}</span>
-                      <h4 className="font-bold text-sm leading-snug line-clamp-2 mt-1">{a.title}</h4>
+                      <span className="text-[10px] font-black text-primary uppercase tracking-wider">{a.category}</span>
+                      <h4 className="font-display font-bold text-sm text-gray-900 leading-snug line-clamp-2 mt-1">{a.title}</h4>
                     </div>
-                    <span className="text-[10px] text-gray-500">{a.time}</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{a.time}</span>
                   </div>
                 </a>
               ))
             ) : (
-              <div className="py-12 text-center flex flex-col items-center gap-3">
-                <span className="material-symbols-outlined text-5xl text-gray-600">sentiment_dissatisfied</span>
-                <p className="text-gray-500 font-medium">No encontramos resultados para tu búsqueda.</p>
-                <button onClick={() => setSearch('')} className="text-primary font-bold text-sm">Limpiar filtros</button>
+              <div className="py-12 text-center flex flex-col items-center gap-3 bg-white/40 backdrop-blur-sm rounded-[32px] border border-dashed border-gray-300">
+                <span className="material-symbols-outlined text-5xl text-gray-400">sentiment_dissatisfied</span>
+                <p className="text-gray-500 font-bold">No encontramos resultados.</p>
+                <button onClick={() => setSearch('')} className="text-primary font-black text-xs uppercase tracking-widest underline">Limpiar filtros</button>
               </div>
             )}
           </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -14,7 +15,23 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark'));
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark' ||
+        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
   const [profileImage, setProfileImage] = useState<string>("https://picsum.photos/seed/profile99/200/200");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +39,8 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportTicket, setSupportTicket] = useState({ subject: '', description: '' });
   const [submittingTicket, setSubmittingTicket] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
 
   React.useEffect(() => {
     fetchProfile();
@@ -153,10 +172,8 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
   };
 
   const handleToggleLeyRep = async (status: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
-    }
+    // Logic to update Ley Rep status
+    onLeyRepChange(status);
   };
 
   const handleSubmitTicket = async () => {
@@ -213,14 +230,31 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
     }
   };
 
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+  const handleUpdateEmail = async () => {
+    if (!newEmail) return;
+    if (newEmail === userData.email) {
+      alert('El nuevo correo es igual al actual.');
+      return;
     }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) throw error;
+
+      alert('Se ha enviado un correo de confirmación a tu nueva dirección. Por favor verifica para completar el cambio.');
+      setShowEmailModal(false);
+      setNewEmail('');
+    } catch (err: any) {
+      console.error('Error updating email:', err);
+      alert('Error al actualizar correo: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -279,36 +313,41 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
   };
 
   return (
-    <div className="font-sans bg-background-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-white max-w-md mx-auto pb-28">
-      <div className="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-white/5 p-4 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center">
-          <span className="material-symbols-outlined">arrow_back</span>
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-slate-950 min-h-screen text-slate-900 max-w-md mx-auto pb-28 overflow-hidden transition-colors duration-300">
+      {/* Decorative Background Blobs */}
+      <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+      <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+
+      <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/40 dark:border-white/10 p-4 flex items-center justify-between shadow-sm transition-colors">
+        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all">
+          <span className="material-symbols-outlined text-gray-700">arrow_back</span>
         </button>
-        <h2 className="text-lg font-display font-bold">Perfil Corporativo</h2>
-        <button className="size-10 flex items-center justify-center" onClick={() => setShowSettings(true)}>
+        <h2 className="text-lg font-display font-bold text-gray-900 dark:text-white">Perfil Corporativo</h2>
+        <button className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all text-gray-700" onClick={() => setShowSettings(true)}>
           <span className="material-symbols-outlined">settings</span>
         </button>
       </div>
 
       {/* Profile Header with Dynamic Background */}
-      <div className="relative pt-12 pb-8 flex flex-col items-center border-b border-gray-100 dark:border-white/5 overflow-hidden">
+      <div className="relative pt-12 pb-8 flex flex-col items-center border-b border-white/40 dark:border-white/10 overflow-hidden bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm transition-colors">
         {/* Background Image Layer */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 opacity-50">
           <img
             src="/assets/profile_eco_bg.png"
             className="w-full h-full object-cover scale-105"
             alt=""
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background-light/40 via-background-light/80 to-background-light dark:from-background-dark/40 dark:via-background-dark/80 dark:to-background-dark backdrop-blur-[2px]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/80 to-[#f0f4f0] dark:from-slate-900/40 dark:via-slate-900/80 dark:to-slate-950 backdrop-blur-[1px]"></div>
         </div>
 
         <div className="relative z-10 flex flex-col items-center">
           <div className="relative mb-4 group">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:bg-primary/30 transition-all"></div>
-            <img src={profileImage} className="relative size-24 rounded-full border-4 border-white dark:border-surface-dark shadow-2xl object-cover" alt="Avatar" />
+            <img src={profileImage} className="relative size-24 rounded-full border-4 border-white shadow-2xl object-cover" alt="Avatar" />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 p-2 bg-primary rounded-full text-background-dark border-2 border-background-dark shadow-lg transform active:scale-90 transition-transform z-20"
+              className="absolute bottom-0 right-0 p-2 bg-primary rounded-full text-white border-2 border-white shadow-lg transform active:scale-90 transition-transform z-20"
             >
               <span className="material-symbols-outlined text-sm font-bold">photo_camera</span>
             </button>
@@ -320,13 +359,13 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
               className="hidden"
             />
           </div>
-          <h3 className="text-2xl font-display font-black tracking-tight text-slate-900 dark:text-white drop-shadow-sm">{userData.name}</h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-[0.2em] mt-1 drop-shadow-sm bg-background-light/50 dark:bg-background-dark/50 px-3 py-0.5 rounded-full backdrop-blur-sm border border-gray-200 dark:border-white/5">
+          <h3 className="text-2xl font-display font-black tracking-tight text-gray-900 dark:text-white drop-shadow-sm transition-colors">{userData.name}</h3>
+          <p className="text-[11px] text-gray-600 font-black uppercase tracking-[0.2em] mt-1 drop-shadow-sm bg-white/50 px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/40">
             {userData.role}
           </p>
 
           {/* Ley REP Status Tag */}
-          <div className={`mt-5 px-5 py-2 rounded-full border flex items-center gap-2 transition-all shadow-lg backdrop-blur-md ${isLeyRep ? 'bg-primary/20 border-primary/30 text-primary shadow-primary/10' : 'bg-blue-500/20 border-blue-500/30 text-blue-400 shadow-blue-500/10'}`}>
+          <div className={`mt-5 px-5 py-2 rounded-full border flex items-center gap-2 transition-all shadow-lg backdrop-blur-md ${isLeyRep ? 'bg-primary/20 border-primary/30 text-primary shadow-primary/10' : 'bg-blue-500/20 border-blue-500/30 text-blue-500 shadow-blue-500/10'}`}>
             <span className="material-symbols-outlined text-[18px] font-bold">{isLeyRep ? 'verified' : 'eco'}</span>
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">
               {isLeyRep ? 'EMPRESA LEY REP' : 'IMPACTO VOLUNTARIO'}
@@ -335,15 +374,15 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
         </div>
       </div>
 
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 py-6 space-y-6 relative z-10">
         {/* Ley REP Configuration Toggle */}
         <section>
-          <div className="bg-surface-dark rounded-2xl border border-white/5 p-5 shadow-lg relative overflow-hidden">
+          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-2xl border border-white/80 dark:border-white/10 p-5 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] relative overflow-hidden transition-all hover:scale-[1.01]">
             <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10"></div>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <h4 className="text-xs font-black text-white uppercase tracking-widest">Estado Declarativo</h4>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">¿Sujeto a obligaciones Ley REP?</p>
+                <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest transition-colors">Estado Declarativo</h4>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tighter transition-colors">¿Sujeto a obligaciones Ley REP?</p>
               </div>
               <label className="inline-flex items-center cursor-pointer">
                 <input
@@ -352,7 +391,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
                   onChange={(e) => handleToggleLeyRep(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-inner"></div>
+                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-inner"></div>
               </label>
             </div>
           </div>
@@ -364,31 +403,29 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
             <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Datos Personales</h4>
             <button
               onClick={() => isEditingUser ? saveUser() : setIsEditingUser(true)}
-              className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20"
+              className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
             >
               {isEditingUser ? 'Guardar' : 'Editar'}
             </button>
           </div>
 
-          <div className="bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-white/5 p-4 space-y-4 shadow-sm">
+          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-2xl border border-white/80 dark:border-white/10 p-4 space-y-4 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] transition-all">
             {isEditingUser ? (
               <div className="space-y-3">
                 <input
-                  className="w-full bg-background-dark/20 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium"
+                  className="w-full bg-white/50 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                   value={userData.name}
                   onChange={e => setUserData({ ...userData, name: e.target.value })}
+                  placeholder="Nombre completo"
                 />
-                <input
-                  className="w-full bg-background-dark/10 border border-white/5 rounded-lg px-4 py-3 text-sm outline-none font-medium text-gray-500 cursor-not-allowed hidden"
-                  value={userData.email}
-                  disabled
-                />
-                <div className="w-full bg-background-dark/10 border border-white/5 rounded-lg px-4 py-3 text-sm font-medium text-gray-500 flex items-center justify-between">
+                <div className="w-full bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 text-sm font-medium text-gray-500 flex items-center justify-between">
                   <span>{userData.email}</span>
-                  <span className="material-symbols-outlined text-xs">lock</span>
+                  <button onClick={() => setShowEmailModal(true)} className="text-primary text-[10px] font-bold uppercase tracking-widest hover:underline">
+                    Cambiar
+                  </button>
                 </div>
                 <input
-                  className="w-full bg-background-dark/20 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium"
+                  className="w-full bg-white/50 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                   value={userData.role}
                   onChange={e => setUserData({ ...userData, role: e.target.value })}
                   placeholder="Cargo / Rol"
@@ -397,16 +434,16 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
             ) : (
               <>
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/10"><span className="material-symbols-outlined font-bold">person</span></div>
-                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Nombre completo</p><p className="text-sm font-bold tracking-tight">{userData.name}</p></div>
+                  <div className="size-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center border border-blue-100"><span className="material-symbols-outlined font-bold">person</span></div>
+                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Nombre completo</p><p className="text-sm font-bold tracking-tight text-gray-900">{userData.name}</p></div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-green-500/10 text-green-400 flex items-center justify-center border border-green-500/10"><span className="material-symbols-outlined font-bold">alternate_email</span></div>
-                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Email Corporativo</p><p className="text-sm font-bold tracking-tight">{userData.email}</p></div>
+                  <div className="size-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center border border-green-100"><span className="material-symbols-outlined font-bold">alternate_email</span></div>
+                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Email Corporativo</p><p className="text-sm font-bold tracking-tight text-gray-900">{userData.email}</p></div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center border border-orange-500/10"><span className="material-symbols-outlined font-bold">badge</span></div>
-                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Cargo / Rol</p><p className="text-sm font-bold tracking-tight">{userData.role || 'No especificado'}</p></div>
+                  <div className="size-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100"><span className="material-symbols-outlined font-bold">badge</span></div>
+                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Cargo / Rol</p><p className="text-sm font-bold tracking-tight text-gray-900">{userData.role || 'No especificado'}</p></div>
                 </div>
               </>
             )}
@@ -416,32 +453,32 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
         {/* Company Section */}
         <section>
           <div className="flex items-center justify-between mb-2 pl-2">
-            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Información Legal</h4>
+            <h4 className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] transition-colors">Información Legal</h4>
             <button
               onClick={() => isEditingCompany ? saveCompany() : setIsEditingCompany(true)}
-              className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20"
+              className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
             >
               {isEditingCompany ? 'Guardar' : 'Editar'}
             </button>
           </div>
 
-          <div className="bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-white/5 p-4 space-y-4 shadow-sm">
+          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-2xl border border-white/80 dark:border-white/10 p-4 space-y-4 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] transition-all">
             {isEditingCompany ? (
               <div className="space-y-3">
                 <input
-                  className="w-full bg-background-dark/20 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium"
+                  className="w-full bg-white/50 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                   value={companyData.name}
                   onChange={e => setCompanyData({ ...companyData, name: e.target.value })}
                   placeholder="Razón Social"
                 />
                 <input
-                  className="w-full bg-background-dark/20 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium"
+                  className="w-full bg-white/50 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                   value={companyData.rut}
                   onChange={e => setCompanyData({ ...companyData, rut: e.target.value })}
                   placeholder="RUT Empresa"
                 />
                 <input
-                  className="w-full bg-background-dark/20 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium"
+                  className="w-full bg-white/50 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                   value={companyData.address}
                   onChange={e => setCompanyData({ ...companyData, address: e.target.value })}
                   placeholder="Dirección de la Empresa"
@@ -450,16 +487,16 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
             ) : (
               <>
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center border border-yellow-500/10"><span className="material-symbols-outlined font-bold">corporate_fare</span></div>
-                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Razón Social</p><p className="text-sm font-bold tracking-tight">{companyData.name}</p></div>
+                  <div className="size-10 rounded-xl bg-yellow-50 text-yellow-500 flex items-center justify-center border border-yellow-100"><span className="material-symbols-outlined font-bold">corporate_fare</span></div>
+                  <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Razón Social</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors">{companyData.name}</p></div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/10"><span className="material-symbols-outlined font-bold">fingerprint</span></div>
-                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">RUT Empresa</p><p className="text-sm font-bold tracking-tight">{companyData.rut}</p></div>
+                  <div className="size-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center border border-purple-100"><span className="material-symbols-outlined font-bold">fingerprint</span></div>
+                  <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">RUT Empresa</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors">{companyData.rut}</p></div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/10"><span className="material-symbols-outlined font-bold">location_on</span></div>
-                  <div><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Dirección</p><p className="text-sm font-bold tracking-tight">{companyData.address || 'No especificada'}</p></div>
+                  <div className="size-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center border border-red-100"><span className="material-symbols-outlined font-bold">location_on</span></div>
+                  <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Dirección</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors">{companyData.address || 'No especificada'}</p></div>
                 </div>
               </>
             )}
@@ -492,7 +529,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
             await supabase.auth.signOut();
             navigate('/');
           }}
-          className="w-full py-4 rounded-2xl border border-red-900/30 text-red-400 font-display font-black text-xs uppercase tracking-[0.25em] bg-red-900/10 hover:bg-red-900/20 transition-all active:scale-[0.98] mt-4"
+          className="w-full py-4 rounded-2xl border border-red-900/10 text-red-500 font-display font-black text-xs uppercase tracking-[0.25em] bg-red-50 hover:bg-red-100 transition-all active:scale-[0.98] mt-4"
         >
           Cerrar Sesión Segura
         </button>
@@ -502,70 +539,69 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
       <Navbar />
 
       {/* Settings Modal */}
-      {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setShowSettings(false)}></div>
-          <div className="relative w-full max-w-md bg-gradient-to-b from-gray-900 to-black border-t border-x border-white/10 rounded-t-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+          <div className="relative w-full max-w-md bg-white/90 backdrop-blur-2xl border-t border-x border-white/80 rounded-t-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500">
 
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full"></div>
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full"></div>
 
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h3 className="text-2xl font-display font-black text-white">Ajustes</h3>
+                <h3 className="text-2xl font-display font-black text-gray-900">Ajustes</h3>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Configuración General</p>
               </div>
               <button
                 onClick={() => setShowSettings(false)}
-                className="size-10 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors"
+                className="size-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
             <div className="space-y-4">
-              <label className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group">
+              <label className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white/60 cursor-pointer hover:bg-white/80 transition-colors group shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                  <div className="size-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center border border-purple-100">
                     <span className="material-symbols-outlined">dark_mode</span>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">Modo Oscuro</p>
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Modo Oscuro</p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Apariencia Visual</p>
                   </div>
                 </div>
                 <div className="relative">
                   <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 shadow-inner"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 shadow-inner"></div>
                 </div>
               </label>
 
-              <label className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group">
+              <label className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white/60 cursor-pointer hover:bg-white/80 transition-colors group shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                  <div className="size-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center border border-blue-100">
                     <span className="material-symbols-outlined">notifications</span>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Notificaciones</p>
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Notificaciones</p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Alertas y Avisos</p>
                   </div>
                 </div>
                 <div className="relative">
                   <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 shadow-inner"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 shadow-inner"></div>
                 </div>
               </label>
 
               <div
                 onClick={() => { setShowSettings(false); setShowSupportModal(true); }}
-                className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10 cursor-pointer hover:bg-primary/10 active:scale-[0.98] transition-all group"
+                className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10 cursor-pointer hover:bg-primary/10 active:scale-[0.98] transition-all group shadow-sm"
               >
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
+                  <div className="size-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center border border-primary/20">
                     <span className="material-symbols-outlined">support_agent</span>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white group-hover:text-primary transition-colors">Reportar Problema</p>
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">Reportar Problema</p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Soporte Técnico</p>
                   </div>
                 </div>
@@ -574,25 +610,25 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
 
               <div
                 onClick={handleDeleteAccount}
-                className="flex items-center justify-between p-4 bg-red-500/5 rounded-2xl border border-red-500/10 cursor-pointer hover:bg-red-500/10 active:scale-[0.98] transition-all group"
+                className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100 cursor-pointer hover:bg-red-100 active:scale-[0.98] transition-all group shadow-sm"
               >
                 <div className="flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-red-500/20 text-red-500 flex items-center justify-center">
+                  <div className="size-10 rounded-xl bg-red-100 text-red-500 flex items-center justify-center border border-red-200">
                     <span className="material-symbols-outlined">delete_forever</span>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-red-500">Eliminar Cuenta</p>
-                    <p className="text-[10px] text-red-500/60 font-bold uppercase tracking-wider">Acción Irreversible</p>
+                    <p className="text-sm font-bold text-red-600">Eliminar Cuenta</p>
+                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Acción Irreversible</p>
                   </div>
                 </div>
-                <span className="material-symbols-outlined text-red-500/40 group-hover:text-red-500 transition-colors">chevron_right</span>
+                <span className="material-symbols-outlined text-red-300 group-hover:text-red-500 transition-colors">chevron_right</span>
               </div>
             </div>
 
             <div className="mt-8">
               <button
                 onClick={() => setShowSettings(false)}
-                className="w-full py-4 bg-white text-black font-display font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-white/10 hover:shadow-white/20 active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-gray-900 text-white font-display font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-gray-900/20 hover:shadow-gray-900/30 active:scale-[0.98] transition-all"
               >
                 Listo
               </button>
@@ -604,15 +640,15 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
       {/* Support Ticket Modal */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setShowSupportModal(false)}></div>
-          <div className="relative w-full max-w-[340px] bg-gradient-to-b from-gray-900 to-black rounded-[2rem] p-6 shadow-2xl animate-in zoom-in duration-300 border border-white/10">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setShowSupportModal(false)}></div>
+          <div className="relative w-full max-w-[340px] bg-white rounded-[2rem] p-6 shadow-2xl animate-in zoom-in duration-300 border border-white/80">
 
             <div className="text-center space-y-3 mb-8">
-              <div className="size-16 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-inner border border-white/5">
+              <div className="size-16 bg-gradient-to-br from-primary/10 to-blue-500/10 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-inner border border-primary/20">
                 <span className="material-symbols-outlined text-3xl">bug_report</span>
               </div>
               <div>
-                <h3 className="text-xl font-display font-black text-white tracking-tight">Reportar Problema</h3>
+                <h3 className="text-xl font-display font-black text-gray-900 tracking-tight">Reportar Problema</h3>
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-4 leading-relaxed mt-1">
                   Describe el inconveniente para recibir ayuda de nuestro equipo.
                 </p>
@@ -623,7 +659,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Asunto</label>
                 <input
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-700"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-400"
                   placeholder="Ej: Error al cargar documentos"
                   value={supportTicket.subject}
                   onChange={e => setSupportTicket({ ...supportTicket, subject: e.target.value })}
@@ -633,7 +669,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Descripción</label>
                 <textarea
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all min-h-[100px] resize-none placeholder:text-gray-700 custom-scrollbar"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all min-h-[100px] resize-none placeholder:text-gray-400 custom-scrollbar"
                   placeholder="Cuéntanos qué pasó..."
                   value={supportTicket.description}
                   onChange={e => setSupportTicket({ ...supportTicket, description: e.target.value })}
@@ -657,7 +693,59 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
                 </button>
                 <button
                   onClick={() => setShowSupportModal(false)}
-                  className="w-full py-3 text-gray-500 hover:text-white font-display font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                  className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Email Update Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setShowEmailModal(false)}></div>
+          <div className="relative w-full max-w-[340px] bg-white rounded-[2rem] p-6 shadow-2xl animate-in zoom-in duration-300 border border-white/80">
+            <div className="text-center mb-6">
+              <div className="size-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-100">
+                <span className="material-symbols-outlined text-2xl">mark_email_unread</span>
+              </div>
+              <h3 className="text-lg font-display font-black text-gray-900">Actualizar Correo</h3>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-2 mt-1">
+                Recibirás un enlace de confirmación en tu nueva dirección.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-gray-400">Correo Actual</label>
+                <div className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-500">
+                  {userData.email}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Nuevo Correo</label>
+                <input
+                  type="email"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-300"
+                  placeholder="ejemplo@nuevo.com"
+                  value={newEmail}
+                  onChange={e => setNewEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  onClick={handleUpdateEmail}
+                  disabled={loading || !newEmail}
+                  className="w-full py-3 bg-primary text-background-dark font-display font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Enviando...' : 'Confirmar Cambio'}
+                </button>
+                <button
+                  onClick={() => setShowEmailModal(false)}
+                  className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
                 >
                   Cancelar
                 </button>

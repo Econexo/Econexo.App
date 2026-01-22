@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -111,7 +112,6 @@ const Admin: React.FC = () => {
             if (pError) console.error('Profiles fetch error:', pError);
 
             // 2. Fetch Pending Docs (unverified)
-            // Attempt join for better info, fallback if it fails
             const { data: docs, error: dError } = await supabase
                 .from('documents')
                 .select('*, profiles(company_name)')
@@ -274,61 +274,66 @@ const Admin: React.FC = () => {
     };
 
     return (
-        <div className="font-sans bg-background-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-white max-w-md mx-auto pb-28">
-            <div className="p-6 sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-white/5 flex items-center justify-between">
-                <h2 className="text-xl font-display font-black">Panel Administrador</h2>
-                <button onClick={fetchAdminData} className="size-10 flex items-center justify-center bg-primary/10 rounded-full text-primary">
+        <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md mx-auto pb-28 overflow-hidden">
+            {/* Decorative Background Blobs */}
+            <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+            <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+            <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+
+            <div className="p-6 sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-white/40 flex items-center justify-between shadow-sm">
+                <h2 className="text-xl font-display font-black text-gray-900">Panel Administrador</h2>
+                <button onClick={fetchAdminData} className="size-10 flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-full text-primary border border-primary/20 transition-all">
                     <span className="material-symbols-outlined">refresh</span>
                 </button>
             </div>
 
-            <main className="p-4 space-y-8">
+            <main className="p-4 space-y-8 relative z-10">
                 {showDocEditor && (
                     <DocumentEditor users={users} onClose={() => setShowDocEditor(false)} onSuccess={() => { fetchAdminData(); setShowDocEditor(false); }} />
                 )}
 
                 {showCRModal && selectedUser && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-                        <div className="absolute inset-0 bg-background-dark/90 backdrop-blur-md" onClick={() => setShowCRModal(false)}></div>
-                        <div className="relative bg-surface-dark w-full max-w-[380px] rounded-[32px] p-8 border border-white/10 shadow-2xl animate-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
-                            <h3 className="text-xl font-display font-black mb-6">Generar Certificado</h3>
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowCRModal(false)}></div>
+                        <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[380px] rounded-[32px] p-8 border border-white/80 shadow-2xl animate-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
+                            <h3 className="text-xl font-display font-black mb-6 text-gray-900">Generar Certificado</h3>
                             <div className="space-y-6">
                                 <div className="space-y-3">
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Datos de la Empresa</h4>
-                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold" value={selectedUser.company_name} onChange={(e) => setSelectedUser({ ...selectedUser, company_name: e.target.value })} />
+                                    <input className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900" value={selectedUser.company_name} onChange={(e) => setSelectedUser({ ...selectedUser, company_name: e.target.value })} />
                                     <div className="grid grid-cols-2 gap-3">
-                                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold" value={selectedUser.rut} onChange={(e) => setSelectedUser({ ...selectedUser, rut: e.target.value })} />
-                                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold" value={selectedUser.address} onChange={(e) => setSelectedUser({ ...selectedUser, address: e.target.value })} />
+                                        <input className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900" value={selectedUser.rut} onChange={(e) => setSelectedUser({ ...selectedUser, rut: e.target.value })} />
+                                        <input className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900" value={selectedUser.address} onChange={(e) => setSelectedUser({ ...selectedUser, address: e.target.value })} />
                                     </div>
                                 </div>
                                 <div className="space-y-3">
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Fecha del Retiro</h4>
-                                    <input type="date" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-white shadow-inner" value={withdrawalDate} onChange={(e) => setWithdrawalDate(e.target.value)} />
+                                    <input type="date" className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900 shadow-inner" value={withdrawalDate} onChange={(e) => setWithdrawalDate(e.target.value)} />
                                 </div>
-                                <div className="h-px bg-white/10"></div>
+                                <div className="h-px bg-gray-200"></div>
                                 <div className="space-y-3">
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Detalle de Residuos</h4>
                                     {wasteItems.length > 0 && (
-                                        <div className="bg-white/5 rounded-xl overflow-hidden border border-white/10">
+                                        <div className="bg-white/50 rounded-xl overflow-hidden border border-white/60">
                                             {wasteItems.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between items-center p-3 border-b border-white/5 last:border-0 text-xs">
-                                                    <div><p className="font-bold text-white">{item.quantity} {item.unit} - {item.waste_type}</p><p className="text-gray-400 text-[10px]">{item.description}</p></div>
-                                                    <button onClick={() => handleRemoveWasteItem(idx)} className="text-red-400"><span className="material-symbols-outlined text-sm">delete</span></button>
+                                                <div key={idx} className="flex justify-between items-center p-3 border-b border-gray-100 last:border-0 text-xs">
+                                                    <div><p className="font-bold text-gray-900">{item.quantity} {item.unit} - {item.waste_type}</p><p className="text-gray-500 text-[10px]">{item.description}</p></div>
+                                                    <button onClick={() => handleRemoveWasteItem(idx)} className="text-red-500 hover:bg-red-50 rounded-full p-1"><span className="material-symbols-outlined text-sm">delete</span></button>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
-                                    <div className="p-3 bg-white/5 rounded-xl border border-white/10 border-dashed space-y-3 text-xs">
-                                        <select className="w-full bg-surface-dark border border-white/10 rounded-xl px-4 py-3 outline-none font-bold" value={currentWaste.waste_type} onChange={(e) => setCurrentWaste({ ...currentWaste, waste_type: e.target.value })}>
+                                    <div className="p-3 bg-white/50 rounded-xl border border-white/60 border-dashed space-y-3 text-xs">
+                                        <select className="w-full bg-transparent border border-gray-300 rounded-xl px-4 py-3 outline-none font-bold text-gray-900" value={currentWaste.waste_type} onChange={(e) => setCurrentWaste({ ...currentWaste, waste_type: e.target.value })}>
                                             <option value="">Seleccionar...</option>
                                             {categories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
                                         </select>
-                                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none font-bold" placeholder="Descripción" value={currentWaste.description} onChange={(e) => setCurrentWaste({ ...currentWaste, description: e.target.value })} />
+                                        <input className="w-full bg-transparent border border-gray-300 rounded-xl px-4 py-3 outline-none font-bold text-gray-900" placeholder="Descripción" value={currentWaste.description} onChange={(e) => setCurrentWaste({ ...currentWaste, description: e.target.value })} />
                                         <div className="grid grid-cols-2 gap-3">
-                                            <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none font-bold" value={currentWaste.quantity} onChange={(e) => setCurrentWaste({ ...currentWaste, quantity: e.target.value })} />
-                                            <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none font-bold" value={currentWaste.unit} onChange={(e) => setCurrentWaste({ ...currentWaste, unit: e.target.value })} />
+                                            <input type="number" className="w-full bg-transparent border border-gray-300 rounded-xl px-4 py-3 outline-none font-bold text-gray-900" value={currentWaste.quantity} onChange={(e) => setCurrentWaste({ ...currentWaste, quantity: e.target.value })} />
+                                            <input className="w-full bg-transparent border border-gray-300 rounded-xl px-4 py-3 outline-none font-bold text-gray-900" value={currentWaste.unit} onChange={(e) => setCurrentWaste({ ...currentWaste, unit: e.target.value })} />
                                         </div>
-                                        <button onClick={handleAddWasteItem} className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                                        <button onClick={handleAddWasteItem} className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold uppercase tracking-widest flex items-center justify-center gap-2 text-gray-600 transition-colors">
                                             <span className="material-symbols-outlined text-sm">add</span>Agregar
                                         </button>
                                     </div>
@@ -337,7 +342,7 @@ const Admin: React.FC = () => {
                                     <button onClick={handleGenerateCR} className="w-full py-4 bg-primary text-background-dark rounded-2xl font-display font-black uppercase tracking-widest shadow-glow active:scale-95 transition-transform">
                                         Emitir Certificado ({wasteItems.length})
                                     </button>
-                                    <button onClick={() => setShowCRModal(false)} className="w-full py-3 text-gray-500 text-[10px] font-black uppercase tracking-widest mt-2">Cancelar</button>
+                                    <button onClick={() => setShowCRModal(false)} className="w-full py-3 text-gray-500 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest mt-2 transition-colors">Cancelar</button>
                                 </div>
                             </div>
                         </div>
@@ -345,12 +350,12 @@ const Admin: React.FC = () => {
                 )}
 
                 <section className="grid grid-cols-2 gap-4">
-                    <button onClick={() => setShowDocEditor(true)} className="p-4 bg-primary/10 hover:bg-primary/20 rounded-2xl border border-primary/20 flex flex-col items-center gap-2 transition-all">
-                        <div className="size-10 bg-primary rounded-full flex items-center justify-center text-background-dark shadow-primary/30"><span className="material-symbols-outlined">edit_document</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Crear Doc. Especial</span>
+                    <button onClick={() => setShowDocEditor(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
+                        <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">edit_document</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Crear Doc. Especial</span>
                     </button>
-                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed">
-                        <div className="size-10 bg-white/10 rounded-full flex items-center justify-center text-white"><span className="material-symbols-outlined">query_stats</span></div>
+                    <div className="p-4 bg-white/40 rounded-2xl border border-white/40 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed">
+                        <div className="size-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><span className="material-symbols-outlined">query_stats</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Estadísticas</span>
                     </div>
                 </section>
@@ -361,18 +366,18 @@ const Admin: React.FC = () => {
                         <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full">{pendingDocs.length}</span>
                     </div>
                     {pendingDocs.length === 0 ? (
-                        <div className="p-8 text-center bg-white/5 rounded-3xl border border-dashed border-white/10"><p className="text-xs text-gray-500 font-bold uppercase tracking-widest">No hay pendientes</p></div>
+                        <div className="p-8 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300"><p className="text-xs text-gray-500 font-bold uppercase tracking-widest">No hay pendientes</p></div>
                     ) : (
                         <div className="space-y-3">
                             {pendingDocs.map(doc => (
-                                <div key={doc.id} className="bg-surface-dark p-4 rounded-2xl border border-white/5 flex items-center justify-between gap-4">
+                                <div key={doc.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center justify-between gap-4">
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-sm truncate">{doc.title}</p>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">ID: {doc.user_id.slice(0, 8)}...</p>
+                                        <p className="font-bold text-sm truncate text-gray-900">{doc.title}</p>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">ID: {doc.user_id.slice(0, 8)}...</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => validateDoc(doc.id)} className="px-3 py-2 bg-primary text-background-dark rounded-xl text-[10px] font-black uppercase tracking-widest shadow-glow">Validar</button>
-                                        <button onClick={() => handleDeleteDocument(doc)} className="size-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center"><span className="material-symbols-outlined text-lg">delete</span></button>
+                                        <button onClick={() => validateDoc(doc.id)} className="px-3 py-2 bg-primary text-background-dark rounded-xl text-[10px] font-black uppercase tracking-widest shadow-glow hover:brightness-110 transition-all">Validar</button>
+                                        <button onClick={() => handleDeleteDocument(doc)} className="size-9 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl flex items-center justify-center border border-red-100 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>
                                     </div>
                                 </div>
                             ))}
@@ -383,23 +388,23 @@ const Admin: React.FC = () => {
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-2">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Reportes de Soporte</h3>
-                        <span className="bg-orange-500/20 text-orange-400 text-[10px] font-black px-2 py-0.5 rounded-full">{supportTickets.filter(t => t.status === 'pending').length}</span>
+                        <span className="bg-orange-500/20 text-orange-500 text-[10px] font-black px-2 py-0.5 rounded-full">{supportTickets.filter(t => t.status === 'pending').length}</span>
                     </div>
                     {supportTickets.length === 0 ? (
-                        <div className="p-8 text-center bg-white/5 rounded-3xl border border-dashed border-white/10"><p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Sin reportes</p></div>
+                        <div className="p-8 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300"><p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Sin reportes</p></div>
                     ) : (
                         <div className="space-y-3">
                             {supportTickets.map(ticket => (
-                                <div key={ticket.id} className="bg-surface-dark p-5 rounded-3xl border border-white/5">
+                                <div key={ticket.id} className="bg-white/60 backdrop-blur-2xl p-5 rounded-3xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)]">
                                     <div className="flex justify-between items-start mb-3">
-                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${ticket.status === 'pending' ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>{ticket.status}</span>
-                                        <p className="text-[10px] font-bold text-gray-500">{new Date(ticket.created_at).toLocaleDateString()}</p>
+                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${ticket.status === 'pending' ? 'bg-orange-100 text-orange-500' : 'bg-green-100 text-green-500'}`}>{ticket.status}</span>
+                                        <p className="text-[10px] font-bold text-gray-400">{new Date(ticket.created_at).toLocaleDateString()}</p>
                                     </div>
-                                    <h4 className="font-bold text-sm">{ticket.subject}</h4>
-                                    <p className="text-xs text-gray-400 leading-relaxed my-3">{ticket.description}</p>
-                                    <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                                    <h4 className="font-bold text-sm text-gray-900">{ticket.subject}</h4>
+                                    <p className="text-xs text-gray-600 leading-relaxed my-3 font-medium">{ticket.description}</p>
+                                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                                         <p className="text-[10px] font-black text-primary uppercase">{ticket.profiles?.company_name}</p>
-                                        {ticket.status === 'pending' && <button onClick={() => updateTicketStatus(ticket.id, 'resolved')} className="text-[10px] font-black uppercase text-green-400 bg-green-500/10 px-3 py-1.5 rounded-lg border border-green-500/10">Resolver</button>}
+                                        {ticket.status === 'pending' && <button onClick={() => updateTicketStatus(ticket.id, 'resolved')} className="text-[10px] font-black uppercase text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100 hover:bg-green-100 transition-colors">Resolver</button>}
                                     </div>
                                 </div>
                             ))}
@@ -410,14 +415,14 @@ const Admin: React.FC = () => {
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-2">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Usuarios Registrados</h3>
-                        <span className="bg-white/10 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{users.length}</span>
+                        <span className="bg-white/50 text-gray-600 text-[10px] font-black px-2 py-0.5 rounded-full border border-gray-200">{users.length}</span>
                     </div>
                     <div className="space-y-3">
                         {users.map(u => (
-                            <div key={u.id} className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-white/5 flex items-center gap-4">
-                                <div className="size-10 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">{u.company_name?.[0]}</div>
-                                <div className="flex-1 min-w-0"><p className="font-bold text-sm truncate">{u.company_name}</p><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p></div>
-                                <button onClick={() => { setSelectedUser(u); setShowCRModal(true); }} className="p-2 bg-primary/10 text-primary rounded-lg transition-colors"><span className="material-symbols-outlined text-[20px]">description</span></button>
+                            <div key={u.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center gap-4">
+                                <div className="size-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center font-bold border border-blue-100">{u.company_name?.[0]}</div>
+                                <div className="flex-1 min-w-0"><p className="font-bold text-sm truncate text-gray-900">{u.company_name}</p><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p></div>
+                                <button onClick={() => { setSelectedUser(u); setShowCRModal(true); }} className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"><span className="material-symbols-outlined text-[20px]">description</span></button>
                             </div>
                         ))}
                     </div>
@@ -429,20 +434,20 @@ const Admin: React.FC = () => {
                         <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full">{generatedCerts.length}</span>
                     </div>
                     {generatedCerts.length === 0 ? (
-                        <div className="p-8 text-center bg-white/5 rounded-3xl border border-dashed border-white/10"><p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Sin certificados</p></div>
+                        <div className="p-8 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300"><p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Sin certificados</p></div>
                     ) : (
                         <div className="space-y-3">
                             {generatedCerts.map(cert => (
-                                <div key={cert.id} className="bg-surface-dark p-4 rounded-2xl border border-white/5 flex items-center justify-between gap-4 text-xs">
+                                <div key={cert.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center justify-between gap-4 text-xs">
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-white truncate">{cert.title}</p>
+                                        <p className="font-bold text-gray-900 truncate">{cert.title}</p>
                                         <p className="text-[10px] text-primary font-black uppercase mt-1">{cert.profiles?.company_name}</p>
-                                        <p className="text-[8px] text-gray-500 font-bold mt-0.5">{new Date(cert.created_at).toLocaleDateString()}</p>
+                                        <p className="text-[8px] text-gray-400 font-bold mt-0.5">{new Date(cert.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => handleViewCertificate(cert, 'preview')} className="size-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center"><span className="material-symbols-outlined text-lg">visibility</span></button>
-                                        <button onClick={() => handleViewCertificate(cert, 'save')} className="size-9 bg-white/5 text-gray-400 rounded-xl flex items-center justify-center"><span className="material-symbols-outlined text-lg">download</span></button>
-                                        <button onClick={() => handleDeleteDocument(cert)} className="size-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center"><span className="material-symbols-outlined text-lg">delete_forever</span></button>
+                                        <button onClick={() => handleViewCertificate(cert, 'preview')} className="size-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-colors"><span className="material-symbols-outlined text-lg">visibility</span></button>
+                                        <button onClick={() => handleViewCertificate(cert, 'save')} className="size-9 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
+                                        <button onClick={() => handleDeleteDocument(cert)} className="size-9 bg-red-50 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors"><span className="material-symbols-outlined text-lg">delete_forever</span></button>
                                     </div>
                                 </div>
                             ))}

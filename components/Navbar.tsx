@@ -37,23 +37,23 @@ const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-lg border-t border-gray-200 dark:border-white/5 pb-6 pt-3 px-6 z-50 flex justify-between items-center max-w-md mx-auto left-1/2 -translate-x-1/2">
+    <nav className="fixed bottom-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-white/60 dark:border-white/10 pb-6 pt-3 px-6 z-50 flex justify-between items-center max-w-md mx-auto left-1/2 -translate-x-1/2 shadow-[0_-4px_20px_rgba(31,38,135,0.05)] transition-colors duration-300">
       <ul className="flex justify-between items-center w-full">
         {navItems.map((item) => (
           <li key={item.path} className="flex-1">
             <Link
               to={item.path}
-              className={`flex flex-col items-center gap-1 transition-colors ${isActive(item.path)
-                ? 'text-primary'
-                : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
-                } ${item.primary ? 'relative -top-4' : ''}`}
+              className={`flex flex-col items-center gap-1 transition-all ${isActive(item.path)
+                ? 'text-primary font-bold'
+                : 'text-gray-400 hover:text-gray-600'
+                } ${item.primary ? 'relative -top-6' : ''}`}
             >
-              <div className={`${item.primary ? 'size-14 bg-primary text-background-dark rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-background-light dark:border-background-dark transform active:scale-90 transition-transform' : ''}`}>
-                <span className={`material-symbols-outlined ${isActive(item.path) ? 'filled' : ''} ${item.primary ? 'text-[28px]' : 'text-[24px]'}`}>
+              <div className={`${item.primary ? 'size-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-white transform active:scale-95 transition-transform' : ''}`}>
+                <span className={`material-symbols-outlined ${isActive(item.path) ? 'filled' : ''} ${item.primary ? 'text-[28px]' : 'text-[26px]'}`}>
                   {item.icon}
                 </span>
               </div>
-              <span className={`text-[10px] font-medium ${item.primary ? 'mt-0' : ''}`}>
+              <span className={`text-[10px] font-bold uppercase tracking-wide ${item.primary ? 'mt-1' : ''}`}>
                 {item.label}
               </span>
             </Link>
@@ -65,4 +65,3 @@ const Navbar: React.FC = () => {
 };
 
 export default Navbar;
-

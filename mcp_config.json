@@ -1,7 +1,7 @@
 {
     "mcpServers": {
         "google-drive": {
-            "command": "/Users/seba/Downloads/econexo---ai-environmental-management/venv/bin/python",
+            "command": "/Users/macbook/Desktop/Downloads/econexo---ai-environmental-management/venv/bin/python",
             "args": [
                 "mcp_servers/gdrive.py"
             ],
@@ -10,7 +10,7 @@
             }
         },
         "postgres": {
-            "command": "/Users/seba/Downloads/econexo---ai-environmental-management/venv/bin/python",
+            "command": "/Users/macbook/Desktop/Downloads/econexo---ai-environmental-management/venv/bin/python",
             "args": [
                 "mcp_servers/postgres.py"
             ],

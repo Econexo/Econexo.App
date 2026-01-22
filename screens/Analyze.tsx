@@ -43,56 +43,61 @@ const Analyze: React.FC = () => {
   };
 
   return (
-    <div className="font-display bg-background-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-white max-w-md mx-auto pb-28">
-      <div className="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-white/5 p-4 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center">
+    <div className="relative font-display bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md mx-auto pb-28 overflow-hidden">
+      {/* Decorative Background Blobs */}
+      <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+      <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+
+      <div className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/40 p-4 flex items-center justify-between shadow-sm">
+        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all text-gray-700">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        <h2 className="text-lg font-bold">Escáner Inteligente</h2>
+        <h2 className="text-lg font-black text-gray-900">Escáner Inteligente</h2>
         <div className="size-10"></div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 relative z-10">
         {!image ? (
-          <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-3xl bg-white dark:bg-card-dark shadow-sm">
-            <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6">
+          <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-white/80 rounded-[32px] bg-white/60 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+            <div className="size-20 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mb-6 border border-primary/20 shadow-sm">
               <span className="material-symbols-outlined text-4xl">photo_camera</span>
             </div>
-            <h3 className="font-bold text-lg text-center mb-2">Capturar o Subir</h3>
-            <p className="text-sm text-gray-500 text-center mb-8">Toma una foto a tus residuos o documentos para analizarlos con IA.</p>
-            <button 
+            <h3 className="font-black text-lg text-center mb-2 text-gray-900">Capturar o Subir</h3>
+            <p className="text-sm text-gray-500 text-center mb-8 font-bold">Toma una foto a tus residuos o documentos para analizarlos con IA.</p>
+            <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full h-14 bg-primary text-background-dark rounded-xl font-bold flex items-center justify-center gap-2 shadow-glow active:scale-95 transition-transform"
+              className="w-full h-14 bg-primary text-background-dark rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform text-xs"
             >
               <span className="material-symbols-outlined">add_a_photo</span>
               Seleccionar Imagen
             </button>
-            <input 
-              type="file" 
-              accept="image/*" 
+            <input
+              type="file"
+              accept="image/*"
               capture="environment"
-              className="hidden" 
+              className="hidden"
               ref={fileInputRef}
               onChange={handleImageUpload}
             />
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-square bg-black">
+            <div className="relative rounded-[32px] overflow-hidden shadow-2xl aspect-square bg-black group border border-white/20">
               <img src={image} alt="Preview" className="w-full h-full object-contain" />
-              <button 
+              <button
                 onClick={reset}
-                className="absolute top-4 right-4 size-10 bg-black/50 backdrop-blur-md text-white rounded-full flex items-center justify-center"
+                className="absolute top-4 right-4 size-10 bg-black/50 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors border border-white/10"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
             {!result && (
-              <button 
+              <button
                 onClick={handleAnalyze}
                 disabled={loading}
-                className={`w-full h-14 bg-primary text-background-dark rounded-xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all shadow-glow ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full h-14 bg-primary text-background-dark rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transform active:scale-95 transition-all shadow-glow text-xs ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {loading ? (
                   <>
@@ -109,21 +114,21 @@ const Analyze: React.FC = () => {
             )}
 
             {result && (
-              <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-gray-100 dark:border-white/5 shadow-sm space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center gap-2 text-primary">
-                  <span className="material-symbols-outlined">analytics</span>
-                  <h4 className="font-bold uppercase tracking-widest text-xs">Resultado del Análisis</h4>
+                  <span className="material-symbols-outlined filled">analytics</span>
+                  <h4 className="font-black uppercase tracking-[0.2em] text-xs">Resultado del Análisis</h4>
                 </div>
-                <div className="prose prose-sm dark:prose-invert">
-                  <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                <div className="prose prose-sm font-medium">
+                  <p className="text-sm leading-relaxed text-gray-700">
                     {result}
                   </p>
                 </div>
-                <div className="flex gap-2 pt-4 border-t border-gray-100 dark:border-white/5">
-                  <button className="flex-1 h-12 bg-gray-100 dark:bg-white/10 rounded-xl text-xs font-bold flex items-center justify-center gap-2" onClick={reset}>
+                <div className="flex gap-2 pt-4 border-t border-white/40">
+                  <button className="flex-1 h-12 bg-white/50 hover:bg-white/80 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-white/60 text-gray-600 transition-colors" onClick={reset}>
                     Nueva Foto
                   </button>
-                  <button className="flex-1 h-12 bg-primary/10 text-primary rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+                  <button className="flex-1 h-12 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-primary/20 transition-colors">
                     <span className="material-symbols-outlined text-lg">save</span>
                     Guardar Reporte
                   </button>
@@ -133,12 +138,12 @@ const Analyze: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
+        <div className="bg-primary/5 rounded-[24px] p-5 border border-primary/10 backdrop-blur-sm">
           <div className="flex gap-3">
-             <span className="material-symbols-outlined text-primary">tips_and_updates</span>
-             <p className="text-[10px] text-primary-dark dark:text-primary font-medium leading-relaxed">
-               Tip: Para mejores resultados, asegúrate de que el objeto esté bien iluminado y sea el centro de la imagen.
-             </p>
+            <span className="material-symbols-outlined text-primary">tips_and_updates</span>
+            <p className="text-[11px] text-gray-600 font-bold leading-relaxed">
+              Tip: Para mejores resultados, asegúrate de que el objeto esté bien iluminado y sea el centro de la imagen.
+            </p>
           </div>
         </div>
       </div>

@@ -75,3 +75,7 @@ export const materialFactors: { [key: string]: { co2: number; water: number; ene
     'Neumáticos': { co2: 3.0, water: 12.0, energy: 6.0 },
     'Otros': { co2: 2.5, water: 20.0, energy: 4.0 }
 };
+
+// Factor de conversión para árboles
+// Base: 1 árbol maduro absorbe aprox 22kg CO2/año
+export const CO2_PER_TREE = 22;

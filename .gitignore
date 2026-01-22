@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environments
+.env
+.env.*
+! .env.template
+venv/
+venv_new/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+
+# OS files
+.DS_Store
+Thumbs.db

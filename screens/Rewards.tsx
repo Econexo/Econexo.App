@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -94,32 +95,37 @@ const Rewards: React.FC = () => {
     };
 
     return (
-        <div className="font-sans bg-background-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-white max-w-md mx-auto pb-28">
-            <div className="p-6 sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm flex items-center justify-between border-b border-white/5">
-                <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/5 rounded-full">
-                    <span className="material-symbols-outlined">arrow_back</span>
+        <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md mx-auto pb-28 overflow-hidden">
+            {/* Decorative Background Blobs */}
+            <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+            <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+            <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+
+            <div className="p-6 sticky top-0 z-10 bg-white/70 backdrop-blur-md flex items-center justify-between border-b border-white/40 shadow-sm">
+                <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all">
+                    <span className="material-symbols-outlined text-gray-700">arrow_back</span>
                 </button>
-                <h2 className="text-xl font-display font-black">Eco-Puntos</h2>
+                <h2 className="text-xl font-display font-black text-gray-900">Eco-Puntos</h2>
                 <div className="size-10"></div>
             </div>
 
-            <main className="p-4 space-y-8">
+            <main className="p-4 space-y-8 relative z-10">
                 {/* Level and Points Summary Header */}
-                <section className="relative overflow-hidden rounded-[32px] bg-card-dark p-8 shadow-2xl group">
-                    <div className="absolute inset-0 opacity-100 pointer-events-none group-hover:scale-105 transition-transform duration-1000">
+                <section className="relative overflow-hidden rounded-[32px] bg-primary p-8 shadow-2xl group">
+                    <div className="absolute inset-0 opacity-20 pointer-events-none group-hover:scale-105 transition-transform duration-1000 mix-blend-overlay">
                         <img
                             src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800"
                             alt=""
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover grayscale"
                         />
-                        <div className="absolute inset-0 bg-black/40"></div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-card-dark/60 via-transparent to-primary/30 backdrop-blur-[1px]"></div>
+                        <div className="absolute inset-0 bg-primary/40"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary via-transparent to-primary/30 backdrop-blur-[1px]"></div>
                     </div>
 
                     <div className="relative z-10 space-y-6">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em]">Rango Actual</p>
+                                <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em]">Rango Actual</p>
                                 <div className="flex items-center gap-2">
                                     <span className={`material-symbols-outlined font-bold text-2xl ${currentLevel.iconColor} drop-shadow-glow`}>{currentLevel.icon}</span>
                                     <h3 className="text-2xl font-display font-black text-white tracking-tight uppercase italic">{currentLevel.title}</h3>
@@ -147,9 +153,9 @@ const Rewards: React.FC = () => {
                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                                 <span className="text-white/50">{points} pts</span>
                                 {nextLevel ? (
-                                    <span className="text-primary drop-shadow-glow">Próximo nivel: {nextLevel.title} ({nextLevel.min} pts)</span>
+                                    <span className="text-white drop-shadow-md">Próximo nivel: {nextLevel.title} ({nextLevel.min} pts)</span>
                                 ) : (
-                                    <span className="text-primary drop-shadow-glow underline decoration-2">¡Máximo nivel alcanzado!</span>
+                                    <span className="text-white drop-shadow-md underline decoration-2">¡Máximo nivel alcanzado!</span>
                                 )}
                             </div>
                         </div>
@@ -167,32 +173,40 @@ const Rewards: React.FC = () => {
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2">Canjear Recompensas</h3>
                     <div className="space-y-4">
                         {rewards.map(reward => (
-                            <div key={reward.id} className="bg-surface-dark rounded-3xl p-5 border border-white/5 flex items-center gap-4 group relative overflow-hidden transition-all hover:border-primary/30">
-                                {/* Background Image for Reward */}
-                                <div className="absolute inset-0 opacity-70 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                                    <img
-                                        src={reward.image}
-                                        alt=""
-                                        className="w-full h-full object-cover scale-110"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-r from-surface-dark/80 via-surface-dark/40 to-transparent"></div>
+                            <div key={reward.id} className="bg-white/60 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 flex items-center gap-4 group relative overflow-hidden transition-all hover:border-primary/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+                                {/* Subtle Icon Watermark */}
+                                <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
+                                    <span className="material-symbols-outlined text-[120px]">{reward.icon}</span>
                                 </div>
 
-                                <div className={`relative z-10 size-14 rounded-2xl ${reward.color}/20 text-white flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform shadow-inner`}>
+                                <div className={`relative z-10 size-14 rounded-2xl ${reward.color}/10 text-${reward.color.replace('bg-', '')} flex items-center justify-center border border-${reward.color.replace('bg-', '')}/20 group-hover:scale-110 transition-transform shadow-sm`}>
                                     <span className={`material-symbols-outlined text-3xl font-bold`}>{reward.icon}</span>
                                 </div>
                                 <div className="relative z-10 flex-1 space-y-1">
-                                    <h4 className="font-display font-black text-sm text-white drop-shadow-md group-hover:text-primary transition-colors">{reward.title}</h4>
-                                    <p className="text-[11px] text-white/90 font-bold leading-tight drop-shadow-sm">{reward.description}</p>
+                                    <div className="flex flex-col">
+                                        {reward.title.includes('%') ? (
+                                            <>
+                                                <span className="bg-primary text-white text-[10px] font-black px-2 py-0.5 rounded-md w-fit mb-1 shadow-sm">
+                                                    {reward.title.split(' ')[0]}
+                                                </span>
+                                                <h4 className="font-display font-black text-sm text-gray-900 leading-tight">
+                                                    {reward.title.split(' ').slice(1).join(' ')}
+                                                </h4>
+                                            </>
+                                        ) : (
+                                            <h4 className="font-display font-black text-sm text-gray-900 leading-tight">{reward.title}</h4>
+                                        )}
+                                    </div>
+                                    <p className="text-[11px] text-gray-600 font-bold leading-tight">{reward.description}</p>
                                     <div className="pt-2 flex items-center gap-2">
-                                        <span className="text-xs font-black text-primary bg-black/40 px-2 py-0.5 rounded-md border border-primary/20 backdrop-blur-sm">{reward.cost.toLocaleString()} pts</span>
+                                        <span className="text-xs font-black text-primary bg-green-50/50 px-2 py-0.5 rounded-md border border-green-100 backdrop-blur-sm">{reward.cost.toLocaleString()} pts</span>
                                     </div>
                                 </div>
                                 <button
                                     disabled={points < reward.cost}
                                     className={`relative z-10 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${points >= reward.cost
                                         ? 'bg-primary text-background-dark shadow-glow active:scale-95 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                                        : 'bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed'
+                                        : 'bg-white/20 text-gray-400 border border-white/10 cursor-not-allowed'
                                         }`}
                                 >
                                     Canjear
@@ -206,15 +220,15 @@ const Rewards: React.FC = () => {
                 <section className="space-y-4">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2">Historial de Puntos</h3>
                     {transactions.length === 0 ? (
-                        <div className="p-8 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
+                        <div className="p-8 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300">
                             <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Aún no tienes movimientos</p>
                         </div>
                     ) : (
-                        <div className="bg-surface-dark rounded-[32px] overflow-hidden border border-white/5">
+                        <div className="bg-white/60 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
                             {transactions.map((t, idx) => (
-                                <div key={t.id} className={`p-4 flex items-center justify-between ${idx !== transactions.length - 1 ? 'border-b border-white/5' : ''}`}>
+                                <div key={t.id} className={`p-4 flex items-center justify-between ${idx !== transactions.length - 1 ? 'border-b border-white/40' : ''} hover:bg-white/40 transition-colors`}>
                                     <div className="space-y-1">
-                                        <p className="text-[13px] font-bold text-white">{t.reason}</p>
+                                        <p className="text-[13px] font-bold text-gray-900">{t.reason}</p>
                                         <p className="text-[9px] text-gray-500 font-black uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <span className={`font-display font-black text-sm ${t.amount > 0 ? 'text-primary' : 'text-red-400'}`}>

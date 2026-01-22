@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -154,14 +155,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
     return (
       <div className="w-full flex gap-2 mb-8">
         {[1, 2, 3, 4].map(s => (
-          <div key={s} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${s <= registrationStep ? 'bg-primary' : 'bg-white/10'}`} />
+          <div key={s} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${s <= registrationStep ? 'bg-primary' : 'bg-gray-200'}`} />
         ))}
       </div>
     );
   };
 
   return (
-    <div className="relative font-sans text-slate-900 dark:text-white min-h-screen flex flex-col justify-between overflow-x-hidden antialiased selection:bg-primary/30">
+    <div className="relative font-sans text-slate-900 dark:text-white min-h-screen flex flex-col justify-between overflow-x-hidden antialiased selection:bg-primary/30 bg-[#f0f4f0] dark:bg-slate-950 transition-colors duration-300">
       <style>{`
             @keyframes blob {
                 0% { transform: translate(0px, 0px) scale(1); }
@@ -172,31 +173,25 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
             .animate-blob { animation: blob 7s infinite; }
             .animation-delay-2000 { animation-delay: 2s; }
             .animation-delay-4000 { animation-delay: 4s; }
-            .glass-panel {
-                background: rgba(255, 255, 255, 0.05);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
         `}</style>
 
       {/* Animated Background */}
-      <div className="fixed inset-0 z-0 bg-background-dark">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-blue-500/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-purple-500/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background-dark/80 to-background-dark"></div>
+      <div className="fixed inset-0 z-0 bg-[#f0f4f0] dark:bg-slate-950 transition-colors duration-300">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-secondary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-[480px] mx-auto px-6 py-8">
         <div className="mb-8 relative group cursor-default">
-          <div className="absolute -inset-4 bg-primary/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
-          <div className="relative size-24 bg-background-dark/80 backdrop-blur-xl rounded-[2rem] border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl ring-1 ring-white/5 group-hover:scale-105 transition-transform duration-500">
+          <div className="absolute -inset-4 bg-primary/30 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+          <div className="relative size-24 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border border-white/60 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-2xl ring-1 ring-white/50 dark:ring-white/10 group-hover:scale-105 transition-all duration-500">
             <img src="/logo_econexo_new.png" alt="Econexo" className="h-16 w-auto object-contain" />
           </div>
         </div>
 
         <div className="w-full text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <h1 className="text-white tracking-tighter text-4xl font-display font-black leading-tight mb-2">Econexo</h1>
+          <h1 className="text-gray-900 dark:text-white tracking-tighter text-4xl font-display font-black leading-tight mb-2 transition-colors">Econexo</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50"></div>
             <p className="text-primary/80 text-[10px] font-bold uppercase tracking-[0.3em]">
@@ -209,50 +204,50 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
         {renderStepIndicator()}
 
         {error && (
-          <div className="w-full p-4 mb-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
+          <div className="w-full p-4 mb-6 bg-red-100 border border-red-200 rounded-2xl text-red-500 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
             <span className="material-symbols-outlined text-sm">error</span>
             <span className="flex-1">{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="w-full p-4 mb-6 bg-green-500/10 border border-green-500/20 rounded-2xl text-green-400 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
+          <div className="w-full p-4 mb-6 bg-green-100 border border-green-200 rounded-2xl text-green-500 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
             <span className="material-symbols-outlined text-sm">check_circle</span>
             <span className="flex-1">{success}</span>
           </div>
         )}
 
-        <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
+        <form className="w-full flex flex-col gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[32px] p-6 border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] transition-all" onSubmit={handleSubmit}>
           {isRegistering ? (
             <>
               {registrationStep === 1 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Nombre Completo</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Name</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">person</span>
-                      <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="Juan Pérez" required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">icon</span>
+                      <input className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Cargo / Rol</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Cargo / Rol</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">badge</span>
-                      <input type="text" value={role} onChange={e => setRole(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="Encargado de Medio Ambiente" required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">badge</span>
+                      <input type="text" value={role} onChange={e => setRole(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Encargado de Medio Ambiente" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
-                      <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="usuario@empresa.cl" required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+                      <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="usuario@empresa.cl" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">lock</span>
-                      <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="••••••••" required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">lock</span>
+                      <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="••••••••" required />
                     </div>
                   </div>
                 </div>
@@ -261,38 +256,38 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 2 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Razón Social</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Razón Social</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">domain</span>
-                      <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="EcoEmpresa S.A." required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">domain</span>
+                      <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="EcoEmpresa S.A." required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">RUT Empresa</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">RUT Empresa</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">fingerprint</span>
-                      <input type="text" value={rut} onChange={e => setRut(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="12.345.678-9" required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">fingerprint</span>
+                      <input type="text" value={rut} onChange={e => setRut(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="12.345.678-9" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Dirección Corporativa</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Dirección Corporativa</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">location_on</span>
-                      <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="Av. Siempre Viva 123" required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">location_on</span>
+                      <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Av. Siempre Viva 123" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Correo de Contacto</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Correo de Contacto</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">alternate_email</span>
-                      <input type="email" value={companyEmail} onChange={e => setCompanyEmail(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="contacto@empresa.cl" required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">alternate_email</span>
+                      <input type="email" value={companyEmail} onChange={e => setCompanyEmail(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="contacto@empresa.cl" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Teléfono</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Teléfono</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">call</span>
-                      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="+56 9 ..." required />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">call</span>
+                      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="+56 9 ..." required />
                     </div>
                   </div>
                 </div>
@@ -301,30 +296,30 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 3 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Tamaño de Empresa</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Tamaño de Empresa</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">business</span>
-                      <select value={companySize} onChange={e => setCompanySize(e.target.value as any)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium appearance-none cursor-pointer focus:bg-white/10">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">business</span>
+                      <select value={companySize} onChange={e => setCompanySize(e.target.value as any)} className="w-full rounded-xl bg-white/50 h-14 pl-12 pr-4 border border-white/60 focus:border-primary/50 text-gray-900 shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium appearance-none cursor-pointer focus:bg-white/80">
                         <option value="Pequeña">Pequeña (1-10)</option>
                         <option value="Mediana">Mediana (11-50)</option>
                         <option value="Grande">Grande (51-200)</option>
                         <option value="Corporativa">Corporativa (+200)</option>
                       </select>
-                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">expand_more</span>
+                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Número de Trabajadores</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Número de Trabajadores</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">groups</span>
-                      <input type="number" value={workersCount} onChange={e => setWorkersCount(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="Ej: 25" />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">groups</span>
+                      <input type="number" value={workersCount} onChange={e => setWorkersCount(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Ej: 25" />
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <label className="text-gray-400 text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Tipos de Residuos Generados</label>
+                    <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Tipos de Residuos Generados</label>
                     <div className="grid grid-cols-2 gap-2">
                       {wasteOptions.map(opt => (
-                        <button key={opt.id} type="button" onClick={() => handleToggleWaste(opt.id)} className={`p-3 rounded-xl border flex items-center justify-center text-[10px] font-black uppercase tracking-tight transition-all duration-300 ${wasteTypes.includes(opt.id) ? 'bg-primary border-primary text-background-dark shadow-glow' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>
+                        <button key={opt.id} type="button" onClick={() => handleToggleWaste(opt.id)} className={`p-3 rounded-xl border flex items-center justify-center text-[10px] font-black uppercase tracking-tight transition-all duration-300 ${wasteTypes.includes(opt.id) ? 'bg-primary border-primary text-background-dark shadow-glow' : 'bg-white/50 border-white/60 text-gray-500 hover:bg-white/80'}`}>
                           {opt.label}
                         </button>
                       ))}
@@ -336,10 +331,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 4 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col">
-                    <label className="text-gray-400 text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Certificaciones Vigentes</label>
+                    <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Certificaciones Vigentes</label>
                     <div className="flex flex-wrap gap-2">
                       {certificationOptions.map(cert => (
-                        <button key={cert} type="button" onClick={() => handleToggleCert(cert)} className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-tight transition-all duration-300 ${certifications.includes(cert) ? 'bg-primary border-primary text-background-dark shadow-glow transform scale-105' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>
+                        <button key={cert} type="button" onClick={() => handleToggleCert(cert)} className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-tight transition-all duration-300 ${certifications.includes(cert) ? 'bg-primary border-primary text-background-dark shadow-glow transform scale-105' : 'bg-white/50 border-white/60 text-gray-500 hover:bg-white/80'}`}>
                           {cert}
                         </button>
                       ))}
@@ -349,11 +344,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <div className="relative">
                         <input type="checkbox" checked={isLeyRep} onChange={(e) => setIsLeyRep(e.target.checked)} className="sr-only peer" />
-                        <div className="w-12 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary shadow-inner"></div>
+                        <div className="w-12 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary shadow-inner"></div>
                       </div>
                       <div>
-                        <span className="text-xs font-black uppercase tracking-tight text-white group-hover:text-primary transition-colors">Declaro bajo Ley REP</span>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Activa métricas legales</p>
+                        <span className="text-xs font-black uppercase tracking-tight text-gray-900 group-hover:text-primary transition-colors">Declaro bajo Ley REP</span>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Activa métricas legales</p>
                       </div>
                     </label>
                   </div>
@@ -362,7 +357,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
 
               <div className="flex gap-3 mt-4">
                 {registrationStep > 1 && (
-                  <button type="button" onClick={() => setRegistrationStep(prev => prev - 1)} className="flex-1 h-14 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest rounded-2xl transition-all">
+                  <button type="button" onClick={() => setRegistrationStep(prev => prev - 1)} className="flex-1 h-14 bg-white/50 border border-white/60 hover:bg-white/80 text-gray-600 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">
                     Atrás
                   </button>
                 )}
@@ -378,17 +373,22 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
           ) : (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="flex flex-col group">
-                <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
+                <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-4 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="usuario@empresa.cl" required />
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="usuario@empresa.cl" required />
                 </div>
               </div>
               <div className="flex flex-col group">
-                <label className="text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
+                <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors text-[20px]">lock</span>
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl bg-white/5 h-14 pl-12 pr-12 border border-white/10 focus:border-primary/50 text-white shadow-lg focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-600 focus:bg-white/10" placeholder="••••••••" required />
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">lock</span>
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl bg-white/50 h-14 pl-12 pr-12 border border-white/60 focus:border-primary/50 text-gray-900 shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 focus:bg-white/80" placeholder="••••••••" required />
+                </div>
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => navigate('/forgot-password')} className="text-[10px] text-primary hover:text-green-700 font-bold uppercase tracking-widest transition-colors">
+                    ¿Olvidaste tu contraseña?
+                  </button>
                 </div>
               </div>
               <button type="submit" disabled={loading} className="mt-4 w-full h-16 bg-gradient-to-r from-primary to-primary-light text-background-dark text-sm font-display font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all relative overflow-hidden group">
@@ -402,14 +402,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
           )}
         </form>
 
-        <button onClick={() => { setIsRegistering(!isRegistering); setRegistrationStep(1); }} className="mt-8 text-gray-400 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 group">
+        <button onClick={() => { setIsRegistering(!isRegistering); setRegistrationStep(1); }} className="mt-8 text-gray-500 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 group">
           <span className="group-hover:-translate-x-1 transition-transform">{isRegistering ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}</span>
           <span className="text-primary group-hover:underline decoration-2 underline-offset-4">{isRegistering ? 'Inicia Sesión' : 'Regístrate aquí'}</span>
         </button>
       </div>
 
       <div className="relative z-10 w-full p-6 text-center">
-        <p className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] hover:text-white/40 transition-colors cursor-default">Econexo © 2024 • Gestión Inteligente de Residuos</p>
+        <p className="text-gray-400 text-[9px] font-black uppercase tracking-[0.2em] hover:text-gray-600 transition-colors cursor-default">Econexo © 2024 • Gestión Inteligente de Residuos</p>
       </div>
     </div>
   );
