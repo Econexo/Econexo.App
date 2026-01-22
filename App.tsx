@@ -19,10 +19,29 @@ const AppRoutes: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLeyRepUser, setIsLeyRepUser] = useState(true);
   const navigate = useNavigate();
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark' ||
+        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
 
   useEffect(() => {
-    // document.documentElement.classList.add('dark'); // Removed to support new light branding
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
+  const toggleTheme = () => {
+    setIsDarkMode(prev => !prev);
+  };
+
+  useEffect(() => {
     // Comprobar sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
@@ -70,7 +89,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/news" element={isAuthenticated ? <News /> : <Navigate to="/" />} />
         <Route path="/impact" element={isAuthenticated ? <Impact isLeyRep={isLeyRepUser} /> : <Navigate to="/" />} />
         <Route path="/notifications" element={isAuthenticated ? <Notifications /> : <Navigate to="/" />} />
-        <Route path="/profile" element={isAuthenticated ? <Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} /> : <Navigate to="/" />} />
+        <Route path="/profile" element={isAuthenticated ? <Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /> : <Navigate to="/" />} />
         <Route path="/analyze" element={isAuthenticated ? <Analyze /> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/" />} />
         <Route path="/admin" element={isAuthenticated ? <Admin /> : <Navigate to="/" />} />

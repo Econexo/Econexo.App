@@ -8,30 +8,16 @@ import { supabase } from '../services/supabase';
 interface ProfileProps {
   isLeyRep: boolean;
   onLeyRepChange: (status: boolean) => void;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
+const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode, toggleTheme }) => {
   const navigate = useNavigate();
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' ||
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    }
-    return false;
-  });
 
-  React.useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
   const [profileImage, setProfileImage] = useState<string>("https://picsum.photos/seed/profile99/200/200");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -256,9 +242,6 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
     }
   };
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-  };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -607,7 +590,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
                   </div>
                 </div>
                 <div className="relative">
-                  <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} className="sr-only peer" />
+                  <input type="checkbox" checked={isDarkMode} onChange={toggleTheme} className="sr-only peer" />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 shadow-inner"></div>
                 </div>
               </label>
@@ -805,6 +788,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
             </div>
           </div>
         </div>
+      )}
       {/* Password Update Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
