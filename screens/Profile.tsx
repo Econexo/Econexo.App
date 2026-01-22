@@ -41,6 +41,9 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
   const [submittingTicket, setSubmittingTicket] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   React.useEffect(() => {
     fetchProfile();
@@ -309,6 +312,39 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      alert('Por favor ingresa la nueva contraseña y confírmala.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert('Las contraseñas no coinciden.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+
+      alert('Contraseña actualizada correctamente.');
+      setShowPasswordModal(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error('Error updating password:', err);
+      alert('Error al actualizar contraseña: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -609,6 +645,22 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
               </div>
 
               <div
+                onClick={() => { setShowSettings(false); setShowPasswordModal(true); }}
+                className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white/60 cursor-pointer hover:bg-white/80 transition-colors group shadow-sm"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="size-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center border border-green-100">
+                    <span className="material-symbols-outlined">lock_reset</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-green-600 transition-colors">Cambiar Contraseña</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Seguridad</p>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-green-300 group-hover:text-green-500 transition-colors">chevron_right</span>
+              </div>
+
+              <div
                 onClick={handleDeleteAccount}
                 className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100 cursor-pointer hover:bg-red-100 active:scale-[0.98] transition-all group shadow-sm"
               >
@@ -745,6 +797,61 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange }) => {
                 </button>
                 <button
                   onClick={() => setShowEmailModal(false)}
+                  className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/* Password Update Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setShowPasswordModal(false)}></div>
+          <div className="relative w-full max-w-[340px] bg-white rounded-[2rem] p-6 shadow-2xl animate-in zoom-in duration-300 border border-white/80">
+            <div className="text-center mb-6">
+              <div className="size-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3 border border-green-100">
+                <span className="material-symbols-outlined text-2xl">lock</span>
+              </div>
+              <h3 className="text-lg font-display font-black text-gray-900">Nueva Contraseña</h3>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-2 mt-1">
+                Asegúrate de usar una contraseña segura.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Nueva Contraseña</label>
+                <input
+                  type="password"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-300"
+                  placeholder="******"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Confirmar Contraseña</label>
+                <input
+                  type="password"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-300"
+                  placeholder="******"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                />
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  onClick={handleChangePassword}
+                  disabled={loading || !newPassword || !confirmPassword}
+                  className="w-full py-3 bg-primary text-background-dark font-display font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Actualizando...' : 'Actualizar Contraseña'}
+                </button>
+                <button
+                  onClick={() => setShowPasswordModal(false)}
                   className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
                 >
                   Cancelar
