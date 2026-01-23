@@ -1,24 +1,16 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-
-interface Article {
-  id: string;
-  title: string;
-  category: string;
-  image: string;
-  time: string;
-  featured?: boolean;
-  url: string;
-}
+import { fetchNews, Article } from '../services/news';
 
 const News: React.FC = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [dynamicArticles, setDynamicArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const articles: Article[] = [
-    // Featured Resources (Pestañas Superiores)
+  const staticResources: Article[] = [
     {
       id: 'res-1',
       title: 'Conoce todo sobre la Ley REP y sus metas',
@@ -46,50 +38,30 @@ const News: React.FC = () => {
       featured: true,
       url: 'https://economiacircular.mma.gob.cl/hoja-de-ruta/'
     },
-
-    // Specific News Items (List below)
-    {
-      id: '1',
-      title: 'Textiles: Nuevo producto prioritario oficializado bajo la Ley REP',
-      category: 'Normativa',
-      image: 'https://picsum.photos/seed/textil1/400/300',
-      time: 'Hace 5 horas',
-      url: 'https://economiacircular.mma.gob.cl/'
-    },
-    {
-      id: '2',
-      title: 'Publicación IEMA 2024: Radiografía ambiental completa de Chile',
-      category: 'Reportes',
-      image: 'https://picsum.photos/seed/iema/100/100',
-      time: 'Hace 1 día',
-      url: 'https://sinia.mma.gob.cl/'
-    },
-    {
-      id: '3',
-      title: 'Laguna de Aculeo declarada oficialmente Humedal Urbano protegido',
-      category: 'Conservación',
-      image: 'https://picsum.photos/seed/aculeo/100/100',
-      time: 'Hace 1 día',
-      url: 'https://humedaleschile.mma.gob.cl/'
-    },
-    {
-      id: '4',
-      title: 'Nueva norma de contaminación lumínica vigente en todo el territorio',
-      category: 'Medio Ambiente',
-      image: 'https://picsum.photos/seed/luz1/100/100',
-      time: 'Hace 2 días',
-      url: 'https://luminica.mma.gob.cl/'
-    },
   ];
 
+  useEffect(() => {
+    const loadNews = async () => {
+      setLoading(true);
+      const news = await fetchNews();
+      setDynamicArticles(news);
+      setLoading(false);
+    };
+    loadNews();
+  }, []);
+
+  const allArticles = useMemo(() => {
+    return [...staticResources, ...dynamicArticles];
+  }, [dynamicArticles]);
+
   const filteredArticles = useMemo(() => {
-    if (!search.trim()) return articles;
+    if (!search.trim()) return allArticles;
     const term = search.toLowerCase();
-    return articles.filter(a =>
+    return allArticles.filter(a =>
       a.title.toLowerCase().includes(term) ||
       a.category.toLowerCase().includes(term)
     );
-  }, [search]);
+  }, [search, allArticles]);
 
   return (
     <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md mx-auto pb-28 overflow-hidden">
@@ -122,7 +94,7 @@ const News: React.FC = () => {
       <div className="p-4 space-y-6 relative z-10">
         {!search && (
           <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x pb-2">
-            {articles.filter(a => a.featured).map(a => (
+            {staticResources.map(a => (
               <a
                 key={a.id}
                 href={a.url}
@@ -143,9 +115,22 @@ const News: React.FC = () => {
         <section>
           <h2 className="font-display font-black text-lg mb-4 px-1 text-gray-900 flex items-center gap-2">
             {search ? `Resultados (${filteredArticles.length})` : 'Lo más reciente'}
+            {loading && !search && <span className="text-xs text-gray-500 font-normal animate-pulse">(Actualizando...)</span>}
           </h2>
           <div className="space-y-4">
-            {filteredArticles.length > 0 ? (
+            {loading && dynamicArticles.length === 0 ? (
+              // Loading Skeletons
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="bg-white/40 rounded-[24px] p-4 h-28 animate-pulse flex gap-4">
+                  <div className="size-20 bg-gray-200 rounded-xl"></div>
+                  <div className="flex-1 space-y-2 py-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              ))
+            ) : filteredArticles.length > 0 ? (
               filteredArticles.filter(a => search ? true : !a.featured).map((a, idx) => (
                 <a
                   key={a.id}
@@ -155,11 +140,11 @@ const News: React.FC = () => {
                   className="bg-white/60 backdrop-blur-2xl rounded-[24px] p-4 border border-white/80 flex gap-4 hover:border-primary/30 hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer block shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <img src={a.image} className="size-20 rounded-xl object-cover shadow-sm" alt={a.title} />
+                  <img src={a.image} className="size-20 rounded-xl object-cover shadow-sm" alt={a.title} onError={(e) => (e.currentTarget.src = 'https://picsum.photos/100')} />
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
                       <span className="text-[10px] font-black text-primary uppercase tracking-wider">{a.category}</span>
-                      <h4 className="font-display font-bold text-sm text-gray-900 leading-snug line-clamp-2 mt-1">{a.title}</h4>
+                      <h4 className="font-display font-bold text-sm text-gray-900 leading-snug line-clamp-2 mt-1" dangerouslySetInnerHTML={{ __html: a.title }}></h4>
                     </div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{a.time}</span>
                   </div>
