@@ -28,7 +28,8 @@ const ForgotPassword: React.FC = () => {
             console.error("Recovery error:", err);
             // For security reasons, it's often better not to reveal if an email exists or not, 
             // but provided the user asked for a recovery section, we'll show a generic error or the specific one if needed.
-            setError(err.message || 'Error al intentar enviar el correo de recuperación.');
+            setError(`Error: ${err.message}` || 'Error al intentar enviar el correo de recuperación.');
+            console.error("Full Recovery Error:", err);
         } finally {
             setLoading(false);
         }
