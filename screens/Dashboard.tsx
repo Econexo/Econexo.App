@@ -38,7 +38,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     unit: 'Kg'
   });
   const [avatarUrl, setAvatarUrl] = useState<string>("https://picsum.photos/seed/user123/100/100");
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number | 'all'>(new Date().getFullYear());
   const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()]);
   const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [userName, setUserName] = useState<string>('Usuario');
@@ -252,7 +252,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       const { data: docs } = await query;
 
       let total = 0;
-      const monthlyData: Record<string, number> = {};
+      const trendData: Record<string, number> = {};
       const wasteByType: Record<string, number> = {};
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -265,8 +265,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             const docYear = date.getFullYear();
             uniqueYears.add(docYear);
 
-            // Only aggregate if it matches selected year
-            if (docYear === selectedYear) {
+            // Filter based on selection ('all' or specific year)
+            if (selectedYear === 'all' || docYear === selectedYear) {
               const details = doc.metadata?.waste_details;
               let items = [];
 
@@ -283,14 +283,21 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
                 // Usar función compartida de normalización
                 const finalType = normalizeMaterialType(item);
-                wasteByType[finalType] = (wasteByType[finalType] || 0) + qty;
+                wasteByType[finalType] = Number(((wasteByType[finalType] || 0) + qty).toFixed(2));
               });
 
               // Suma total y por tipo con formateo
               total = Number((total + docTotal).toFixed(2));
 
-              const mName = monthNames[date.getMonth()];
-              monthlyData[mName] = Number(((monthlyData[mName] || 0) + docTotal).toFixed(2));
+              if (selectedYear === 'all') {
+                // Agrupar por AÑO para el gráfico histórico
+                const yKey = docYear.toString();
+                trendData[yKey] = Number(((trendData[yKey] || 0) + docTotal).toFixed(2));
+              } else {
+                // Agrupar por MES para el gráfico anual
+                const mName = monthNames[date.getMonth()];
+                trendData[mName] = Number(((trendData[mName] || 0) + docTotal).toFixed(2));
+              }
             }
           }
         });
@@ -308,16 +315,25 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       // Sort Breakdown
       const breakdown = Object.entries(wasteByType).map(([label, value]) => ({
         label,
-        value,
+        value, // Ya está redondeado en el loop
         ...getWasteStyle(label)
       })).sort((a, b) => b.value - a.value);
 
       // Update Chart Data
-      // Update Chart Data (Full Year)
-      const chartData = monthNames.map(name => ({
-        name,
-        value: monthlyData[name] || 0
-      }));
+      let chartData;
+      if (selectedYear === 'all') {
+        // Ordenar años ascendente para el timeline
+        const sortedYears = Array.from(uniqueYears).sort((a, b) => a - b);
+        chartData = sortedYears.map(y => ({
+          name: y.toString(),
+          value: trendData[y.toString()] || 0
+        }));
+      } else {
+        chartData = monthNames.map(name => ({
+          name,
+          value: trendData[name] || 0
+        }));
+      }
 
       setStats({
         totalRecuperado: total,
@@ -641,9 +657,10 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             <h3 className="text-gray-900 dark:text-white text-lg font-display font-black tracking-tight transition-colors">Tendencia de Recuperación</h3>
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              onChange={(e) => setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value))}
               className="bg-gray-50 border border-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
             >
+              <option value="all">Histórico (Todos)</option>
               {availableYears.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
