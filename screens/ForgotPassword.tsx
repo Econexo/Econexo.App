@@ -26,10 +26,18 @@ const ForgotPassword: React.FC = () => {
             setSuccess('Si el correo está registrado, recibirás un enlace de recuperación.');
         } catch (err: any) {
             console.error("Recovery error:", err);
-            // For security reasons, it's often better not to reveal if an email exists or not, 
-            // but provided the user asked for a recovery section, we'll show a generic error or the specific one if needed.
-            setError(`Error: ${err.message}` || 'Error al intentar enviar el correo de recuperación.');
-            console.error("Full Recovery Error:", err);
+            console.error("Full Recovery Error Object:", JSON.stringify(err, null, 2));
+
+            let errorMessage = err.message || 'Error al intentar enviar el correo de recuperación.';
+
+            // Check for common Supabase errors related to configuration
+            if (errorMessage.includes("Error sending recovery email")) {
+                errorMessage = "Error enviando el correo. Por favor verifica que la URL de redirección esté configurada en Supabase (Authentication -> URL Configuration -> Redirect URLs).";
+            } else if (err.status === 429) {
+                errorMessage = "Demasiados intentos. Por favor espera unos minutos antes de intentar de nuevo.";
+            }
+
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }

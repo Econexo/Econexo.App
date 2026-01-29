@@ -131,11 +131,11 @@ const Admin: React.FC = () => {
                 .order('created_at', { ascending: false });
             if (tError) console.error('Tickets fetch error:', tError);
 
-            // 4. Fetch Generated Certs (CR)
+            // 4. Fetch Generated Certs (CR) and Reports
             const { data: certs, error: cError } = await supabase
                 .from('documents')
                 .select('*, profiles(company_name, rut, address)')
-                .eq('type', 'CR')
+                .in('type', ['CR', 'report', 'pdf', 'custom'])
                 .order('created_at', { ascending: false });
 
             let finalCerts = certs;
@@ -145,7 +145,7 @@ const Admin: React.FC = () => {
                 const { data: simpleCerts } = await supabase
                     .from('documents')
                     .select('*')
-                    .eq('type', 'CR')
+                    .in('type', ['CR', 'report', 'pdf', 'custom'])
                     .order('created_at', { ascending: false });
                 finalCerts = simpleCerts;
             }
@@ -162,13 +162,25 @@ const Admin: React.FC = () => {
     };
 
     const updateTicketStatus = async (ticketId: string, newStatus: string) => {
-        const { error } = await supabase.from('support_tickets').update({ status: newStatus }).eq('id', ticketId);
-        if (!error) fetchAdminData();
+        try {
+            const { error } = await supabase.from('support_tickets').update({ status: newStatus }).eq('id', ticketId);
+            if (error) throw error;
+            fetchAdminData();
+        } catch (err: any) {
+            console.error('Error updating ticket:', err);
+            alert(`Error updating ticket: ${err.message || 'Unknown error'}`);
+        }
     };
 
     const validateDoc = async (docId: string) => {
-        const { error } = await supabase.from('documents').update({ verified: true }).eq('id', docId);
-        if (!error) fetchAdminData();
+        try {
+            const { error } = await supabase.from('documents').update({ verified: true }).eq('id', docId);
+            if (error) throw error;
+            fetchAdminData();
+        } catch (err: any) {
+            console.error('Error validating document:', err);
+            alert(`Error validating document: ${err.message || 'Unknown error'}`);
+        }
     };
 
     const handleAddWasteItem = () => {
@@ -259,17 +271,38 @@ const Admin: React.FC = () => {
                 const weight = doc.metadata.waste_details.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
                 const points = Math.round(weight * 2);
                 if (points > 0) {
-                    await supabase.rpc('increment_points', { user_id_param: doc.user_id, amount_param: -points });
-                    await supabase.from('points_transactions').insert([{
+                    const { error: pointsError } = await supabase.rpc('increment_points', { user_id_param: doc.user_id, amount_param: -points });
+                    if (pointsError) throw pointsError;
+
+                    const { error: txError } = await supabase.from('points_transactions').insert([{
                         user_id: doc.user_id, amount: -points, reason: `Anulación de Certificado: ${doc.metadata?.cert_number || doc.title}`
                     }]);
+                    if (txError) throw txError;
                 }
             }
-            await supabase.from('documents').delete().eq('id', doc.id);
+            // Cascading Delete: Find reports generated from this document
+            const { data: dependentReports } = await supabase
+                .from('documents')
+                .select('id, title')
+                .contains('metadata', { source_document_ids: [doc.id] });
+
+            if (dependentReports && dependentReports.length > 0) {
+                const confirmCascade = window.confirm(`Este documento está vinculado a ${dependentReports.length} reporte(s) (ej: "${dependentReports[0].title}"). \n\n¿Deseas eliminar también estos reportes?`);
+                if (confirmCascade) {
+                    const reportIds = dependentReports.map(r => r.id);
+                    const { error: cascadeError } = await supabase.from('documents').delete().in('id', reportIds);
+                    if (cascadeError) throw cascadeError;
+                }
+            }
+
+            const { error } = await supabase.from('documents').delete().eq('id', doc.id);
+            if (error) throw error;
+
             fetchAdminData();
             alert('Documento eliminado.');
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            console.error('Error deleting document:', err);
+            alert(`Error deleting document: ${err.message || 'Unknown error'}`);
         }
     };
 
@@ -430,7 +463,7 @@ const Admin: React.FC = () => {
 
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-2">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Certificados Emitidos</h3>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Documentos Emitidos</h3>
                         <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full">{generatedCerts.length}</span>
                     </div>
                     {generatedCerts.length === 0 ? (
@@ -440,7 +473,10 @@ const Admin: React.FC = () => {
                             {generatedCerts.map(cert => (
                                 <div key={cert.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center justify-between gap-4 text-xs">
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-gray-900 truncate">{cert.title}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-bold text-gray-900 truncate">{cert.title}</p>
+                                            <span className="text-[8px] bg-gray-100 px-1.5 py-0.5 rounded-full font-black uppercase text-gray-400">{cert.type}</span>
+                                        </div>
                                         <p className="text-[10px] text-primary font-black uppercase mt-1">{cert.profiles?.company_name}</p>
                                         <p className="text-[8px] text-gray-400 font-bold mt-0.5">{new Date(cert.created_at).toLocaleDateString()}</p>
                                     </div>

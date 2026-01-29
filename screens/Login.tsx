@@ -223,10 +223,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 1 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Name</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Nombre Completo</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">icon</span>
-                      <input className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" />
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">person</span>
+                      <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Juan Pérez" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">

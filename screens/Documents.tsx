@@ -299,7 +299,8 @@ const Documents: React.FC = () => {
           verified: true,
           metadata: {
             periodo: period,
-            waste_details: reportItems
+            waste_details: reportItems,
+            source_document_ids: docsToReport.map(d => d.id)
           }
         }]);
         fetchDocuments();
