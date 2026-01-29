@@ -286,10 +286,11 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 wasteByType[finalType] = (wasteByType[finalType] || 0) + qty;
               });
 
-              total += docTotal;
+              // Suma total y por tipo con formateo
+              total = Number((total + docTotal).toFixed(2));
 
               const mName = monthNames[date.getMonth()];
-              monthlyData[mName] = (monthlyData[mName] || 0) + docTotal;
+              monthlyData[mName] = Number(((monthlyData[mName] || 0) + docTotal).toFixed(2));
             }
           }
         });

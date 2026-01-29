@@ -53,11 +53,11 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
 
           items.forEach((item: any) => {
             const qty = Number(item.quantity) || 0;
-            totalKg += qty;
+            totalKg = Number((totalKg + qty).toFixed(2));
 
             // Usar función compartida de normalización
             const category = normalizeMaterialType(item);
-            materialBreakdown[category] = (materialBreakdown[category] || 0) + qty;
+            materialBreakdown[category] = Number(((materialBreakdown[category] || 0) + qty).toFixed(2));
           });
         });
       }
@@ -170,7 +170,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
               </span>
               <div className="flex items-baseline relative z-10 mt-1">
                 <span className="text-7xl font-display font-black text-gray-900 tracking-tighter">
-                  {isLeyRep ? stats.metaRep : stats.carbonFootprint.toFixed(2)}
+                  {isLeyRep ? stats.metaRep : Number(stats.carbonFootprint.toFixed(2))}
                 </span>
                 <span className="text-xl text-gray-400 font-black ml-1">{isLeyRep ? '%' : 'ton'}</span>
               </div>
