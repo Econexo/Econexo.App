@@ -1023,3 +1023,159 @@ export const generateCustomDoc = (client: CompanyData, title: string, contentHtm
 
     doc.save(`${title.replace(/\s+/g, '_')}_${referenceNumber}.pdf`);
 };
+
+export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save') => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // 1. Header (Green Brand)
+    doc.setFillColor(16, 185, 129); // Primary Green
+    doc.rect(0, 0, pageWidth, 40, 'F');
+
+    // Logo
+    if (ECONEXO_LOGO) {
+        try {
+            doc.addImage(ECONEXO_LOGO, 'PNG', 14, 5, 40, 11);
+        } catch (e) {
+            doc.setTextColor(255);
+            doc.setFontSize(20);
+            doc.text('ECONEXO', 14, 20);
+        }
+    }
+
+    doc.setTextColor(255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFICADO DE GESTIÓN MENSUAL', pageWidth - 14, 25, { align: 'right' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Período: ${month.toUpperCase()} ${year}`, pageWidth - 14, 32, { align: 'right' });
+
+    // 2. Client Info
+    let currentY = 55;
+
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('GENERADOR (CLIENTE)', 14, currentY);
+
+    doc.setDrawColor(200);
+    doc.line(14, currentY + 2, pageWidth - 14, currentY + 2);
+    currentY += 10;
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Razón Social: ${client.company_name}`, 14, currentY);
+    doc.text(`RUT: ${client.rut}`, pageWidth / 2, currentY);
+    currentY += 6;
+    doc.text(`Dirección: ${client.address}`, 14, currentY);
+
+    currentY += 15;
+
+    // 3. Aggregated Data Logic
+    // Group items by material type
+    const aggregatedData: Record<string, number> = {};
+    let totalWeight = 0;
+
+    items.forEach(item => {
+        const type = normalizeMaterialType(item);
+        const qty = Number(item.quantity) || 0;
+        aggregatedData[type] = (aggregatedData[type] || 0) + qty;
+        totalWeight += qty;
+    });
+
+    // Create table rows from aggregated data
+    const tableBody = Object.entries(aggregatedData).map(([type, qty]) => {
+        return [
+            type,
+            'Reciclaje / Valorización', // Tratamiento standard
+            'Planta Autorizada Econexo', // Destino
+            `${qty.toFixed(2)} Kg`
+        ];
+    });
+
+    // Add Total Row
+    tableBody.push(['', '', 'TOTAL GESTIONADO', `${totalWeight.toFixed(2)} Kg`]);
+
+    // 4. Waste Table
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESUMEN DE RESIDUOS GESTIONADOS', 14, currentY);
+    currentY += 4;
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Tipo de Residuo', 'Tratamiento', 'Destino Final', 'Cantidad Total']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [55, 87, 45], // Darker Green
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        bodyStyles: {
+            textColor: 50,
+            fontSize: 8,
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { halign: 'left', fontStyle: 'bold' }, // Type
+            3: { halign: 'right', fontStyle: 'bold' } // Qty
+        },
+        didParseCell: (data) => {
+            if (data.section === 'body' && data.row.index === tableBody.length - 1) {
+                data.cell.styles.fillColor = [220, 240, 220];
+                data.cell.styles.fontStyle = 'bold';
+            }
+        }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+
+    // 5. Environmental Impact Summary (Mini)
+    const co2Factor = 1.5; // Avg factor for simplicity in this cert, or calculate real
+    const totalCO2 = totalWeight * co2Factor; // Estimation
+    const waterSaved = totalWeight * 15; // Estimación litros
+
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(14, currentY, pageWidth - 28, 25, 3, 3, 'F');
+
+    doc.setFontSize(9);
+    doc.setTextColor(80);
+    doc.text('IMPACTO AMBIENTAL DEL PERÍODO', 20, currentY + 8);
+
+    doc.setFontSize(10);
+    doc.setTextColor(31, 41, 55);
+    doc.text(`CO2 Evitado: ${totalCO2.toFixed(1)} Kg`, 20, currentY + 16);
+    doc.text(`Agua Ahorrada: ${waterSaved.toFixed(0)} Litros`, pageWidth / 2, currentY + 16);
+
+
+    // 6. Footer / Certification Text
+    const footerY = pageHeight - 50;
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    const certText = "Econexo SpA certifica que los residuos detallados fueron recepcionados y gestionados conforme a la normativa legal vigente, priorizando su valorización y reincorporación a la cadena productiva.";
+    const splitCert = doc.splitTextToSize(certText, pageWidth - 28);
+    doc.text(splitCert, 14, footerY);
+
+    // Signatures
+    const sigY = pageHeight - 25;
+
+    if (ECONEXO_SIGNATURE) {
+        try {
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', (pageWidth / 2) - 20, sigY - 25, 40, 20);
+        } catch (e) { }
+    }
+
+    doc.setDrawColor(150);
+    doc.line((pageWidth / 2) - 30, sigY, (pageWidth / 2) + 30, sigY);
+    doc.text('Firma Autorizada EcoNexo', pageWidth / 2, sigY + 5, { align: 'center' });
+
+    if (action === 'preview') {
+        window.open(doc.output('bloburl'), '_blank');
+    } else {
+        doc.save(`CGM_${client.company_name.replace(/\s+/g, '_')}_${month}_${year}.pdf`);
+    }
+};

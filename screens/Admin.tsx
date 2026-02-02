@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import Navbar from '../components/Navbar';
-import { generateCR, generateEcoReport } from '../services/pdfGenerator';
+import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import DocumentEditor from '../components/DocumentEditor';
 
 interface UserProfile {
@@ -53,8 +52,12 @@ const Admin: React.FC = () => {
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
     const [showCRModal, setShowCRModal] = useState(false);
     const [showDocEditor, setShowDocEditor] = useState(false);
+    const [showMonthlyGenModal, setShowMonthlyGenModal] = useState(false);
     const [wasteItems, setWasteItems] = useState<any[]>([]);
     const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [selectedMonthGen, setSelectedMonthGen] = useState(new Date().getMonth());
+    const [selectedYearGen, setSelectedYearGen] = useState(new Date().getFullYear());
+
     const [currentWaste, setCurrentWaste] = useState({
         waste_type: '',
         description: '',
@@ -135,7 +138,7 @@ const Admin: React.FC = () => {
             const { data: certs, error: cError } = await supabase
                 .from('documents')
                 .select('*, profiles(company_name, rut, address)')
-                .in('type', ['CR', 'report', 'pdf', 'custom'])
+                .in('type', ['CR', 'report', 'pdf', 'custom', 'CGM'])
                 .order('created_at', { ascending: false });
 
             let finalCerts = certs;
@@ -145,7 +148,7 @@ const Admin: React.FC = () => {
                 const { data: simpleCerts } = await supabase
                     .from('documents')
                     .select('*')
-                    .in('type', ['CR', 'report', 'pdf', 'custom'])
+                    .in('type', ['CR', 'report', 'pdf', 'custom', 'CGM'])
                     .order('created_at', { ascending: false });
                 finalCerts = simpleCerts;
             }
@@ -256,6 +259,18 @@ const Admin: React.FC = () => {
                 { company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' },
                 doc.metadata.waste_details, doc.metadata.periodo || 'Reporte Reciclaje', action
             );
+        } else if (doc.type === 'CGM') {
+            const month = doc.metadata?.month || 'Mes';
+            const year = doc.metadata?.year || 2024;
+            // Aggregate if needed, but usually metadata has pre-aggregated or we use stored waste_details
+            // If CGM stores aggregated details in waste_details, we pass them.
+            generateCGM(
+                { company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' },
+                doc.metadata.waste_details,
+                month,
+                year,
+                action
+            );
         } else {
             generateCR(
                 { company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' },
@@ -264,45 +279,108 @@ const Admin: React.FC = () => {
         }
     };
 
+
     const handleDeleteDocument = async (doc: Document) => {
-        if (!window.confirm(`¿Estás seguro de eliminar "${doc.title}"? Se revertirán los Eco-Puntos.`)) return;
+        if (!window.confirm("¿Estás seguro de que deseas eliminar este documento? Esta acción es irreversible.")) return;
+
         try {
+            // 1. Revert points if it was a CR
             if (doc.type === 'CR' && doc.metadata?.waste_details) {
-                const weight = doc.metadata.waste_details.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
-                const points = Math.round(weight * 2);
-                if (points > 0) {
-                    const { error: pointsError } = await supabase.rpc('increment_points', { user_id_param: doc.user_id, amount_param: -points });
-                    if (pointsError) throw pointsError;
+                const totalWeight = doc.metadata.waste_details.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0);
+                const pointsToRevert = Math.round(totalWeight * 2);
 
-                    const { error: txError } = await supabase.from('points_transactions').insert([{
-                        user_id: doc.user_id, amount: -points, reason: `Anulación de Certificado: ${doc.metadata?.cert_number || doc.title}`
-                    }]);
-                    if (txError) throw txError;
-                }
-            }
-            // Cascading Delete: Find reports generated from this document
-            const { data: dependentReports } = await supabase
-                .from('documents')
-                .select('id, title')
-                .contains('metadata', { source_document_ids: [doc.id] });
-
-            if (dependentReports && dependentReports.length > 0) {
-                const confirmCascade = window.confirm(`Este documento está vinculado a ${dependentReports.length} reporte(s) (ej: "${dependentReports[0].title}"). \n\n¿Deseas eliminar también estos reportes?`);
-                if (confirmCascade) {
-                    const reportIds = dependentReports.map(r => r.id);
-                    const { error: cascadeError } = await supabase.from('documents').delete().in('id', reportIds);
-                    if (cascadeError) throw cascadeError;
-                }
+                await supabase.rpc('increment_points', { user_id_param: doc.user_id, amount_param: -pointsToRevert });
+                await supabase.from('points_transactions').insert([{
+                    user_id: doc.user_id,
+                    amount: -pointsToRevert,
+                    reason: `Eliminación de Certificado ${doc.metadata.cert_number || doc.title}`
+                }]);
             }
 
             const { error } = await supabase.from('documents').delete().eq('id', doc.id);
             if (error) throw error;
 
             fetchAdminData();
-            alert('Documento eliminado.');
         } catch (err: any) {
-            console.error('Error deleting document:', err);
-            alert(`Error deleting document: ${err.message || 'Unknown error'}`);
+            console.error("Error deleting document:", err);
+            alert("Error al eliminar: " + err.message);
+        }
+    };
+
+    const handleGenerateMonthlyReports = async () => {
+        // 1. Fetch all CRs for the selected month/year
+        setLoading(true);
+        try {
+            const startDate = new Date(selectedYearGen, selectedMonthGen, 1).toISOString();
+            const endDate = new Date(selectedYearGen, selectedMonthGen + 1, 0).toISOString();
+
+            const { data: crDocs, error } = await supabase
+                .from('documents')
+                .select('*, profiles(*)')
+                .eq('type', 'CR')
+                .gte('created_at', startDate)
+                .lte('created_at', endDate);
+
+            if (error) throw error;
+            if (!crDocs || crDocs.length === 0) {
+                alert("No se encontraron Certificados de Recepción (CR) para este período.");
+                setLoading(false);
+                return;
+            }
+
+            // 2. Group by User
+            const userGroups: Record<string, { profile: any, items: any[] }> = {};
+
+            crDocs.forEach(doc => {
+                const uid = doc.user_id;
+                if (!userGroups[uid]) {
+                    userGroups[uid] = {
+                        profile: doc.profiles,
+                        items: []
+                    };
+                }
+                const details = doc.metadata?.waste_details;
+                if (details) {
+                    if (Array.isArray(details)) userGroups[uid].items.push(...details);
+                    else userGroups[uid].items.push(details);
+                }
+            });
+
+            // 3. Generate CGM Drafts
+            const newDocs = [];
+            const monthName = new Date(selectedYearGen, selectedMonthGen).toLocaleString('es-CL', { month: 'long' });
+
+            for (const [uid, group] of Object.entries(userGroups)) {
+                // Check if already exists? (Optional, skipping for now to allow re-gen)
+
+                newDocs.push({
+                    user_id: uid,
+                    title: `Certificado Gestión Mensual - ${monthName} ${selectedYearGen}`,
+                    type: 'CGM',
+                    verified: false, // Requires admin approval
+                    created_at: new Date().toISOString(),
+                    metadata: {
+                        month: monthName,
+                        year: selectedYearGen,
+                        waste_details: group.items, // Store all items, generator aggregates them
+                        generated_by: 'Admin Batch Process'
+                    }
+                });
+            }
+
+            if (newDocs.length > 0) {
+                const { error: insError } = await supabase.from('documents').insert(newDocs);
+                if (insError) throw insError;
+                alert(`Se han generado ${newDocs.length} borradores de certificados mensuales. Revísalos en "Pendientes".`);
+            }
+
+            setShowMonthlyGenModal(false);
+            fetchAdminData();
+        } catch (err: any) {
+            console.error(err);
+            alert("Error: " + err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -323,6 +401,45 @@ const Admin: React.FC = () => {
             <main className="p-4 space-y-8 relative z-10">
                 {showDocEditor && (
                     <DocumentEditor users={users} onClose={() => setShowDocEditor(false)} onSuccess={() => { fetchAdminData(); setShowDocEditor(false); }} />
+                )}
+
+                {showMonthlyGenModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowMonthlyGenModal(false)}></div>
+                        <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-2xl animate-in zoom-in duration-200">
+                            <h3 className="text-lg font-display font-black mb-4 text-gray-900">Generar Mensuales</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-gray-500">Mes</label>
+                                    <select
+                                        value={selectedMonthGen}
+                                        onChange={(e) => setSelectedMonthGen(Number(e.target.value))}
+                                        className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
+                                    >
+                                        {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((m, i) => (
+                                            <option key={i} value={i}>{m}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-gray-500">Año</label>
+                                    <input
+                                        type="number"
+                                        value={selectedYearGen}
+                                        onChange={(e) => setSelectedYearGen(Number(e.target.value))}
+                                        className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleGenerateMonthlyReports}
+                                    className="w-full py-3 bg-primary text-white rounded-xl font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all"
+                                >
+                                    Generar Borradores
+                                </button>
+                                <button onClick={() => setShowMonthlyGenModal(false)} className="w-full text-center text-xs text-gray-500 font-bold uppercase">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {showCRModal && selectedUser && (
@@ -387,10 +504,10 @@ const Admin: React.FC = () => {
                         <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">edit_document</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Crear Doc. Especial</span>
                     </button>
-                    <div className="p-4 bg-white/40 rounded-2xl border border-white/40 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed">
-                        <div className="size-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><span className="material-symbols-outlined">query_stats</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Estadísticas</span>
-                    </div>
+                    <button onClick={() => setShowMonthlyGenModal(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
+                        <div className="size-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 border border-orange-200 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">calendar_month</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-600 transition-colors">Generar Mensuales</span>
+                    </button>
                 </section>
 
                 <section className="space-y-4">

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
-import { generateCR, generateEcoReport } from '../services/pdfGenerator';
+import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 
 interface Document {
   id: string;
@@ -17,6 +17,8 @@ interface Document {
     waste_details: any;
     generated_by: string;
     periodo?: string;
+    month?: string;
+    year?: number;
   };
 }
 
@@ -27,6 +29,7 @@ const Documents: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [currentSection, setCurrentSection] = useState<'root' | 'econexo' | 'gestores'>('root');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
@@ -41,19 +44,41 @@ const Documents: React.FC = () => {
     fetchUserProfile();
   }, []);
 
-  const folders = [
-    { id: 'reportes', name: 'Reportes de Impacto', icon: 'analytics', color: 'bg-blue-500', types: ['pdf', 'report'] },
-    { id: 'certificados', name: 'Certificados de Recepción', icon: 'verified', color: 'bg-primary', types: ['CR'] },
-    { id: 'declaraciones', name: 'Declaraciones Legales', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal'] },
+  // Define folder structure constants
+  const ROOT_SECTIONS = [
+    { id: 'econexo', name: 'Econexo', icon: 'forest', color: 'bg-primary', description: 'Documentación Ambiental' },
+    { id: 'gestores', name: 'Gestores', icon: 'local_shipping', color: 'bg-blue-600', description: 'Documentos de Terceros' }
   ];
+
+  const ECONEXO_FOLDERS = [
+    { id: 'recepcion', name: 'Recepción (CR)', icon: 'verified', color: 'bg-primary', types: ['CR'] },
+    { id: 'mensual', name: 'Gestión Mensual', icon: 'calendar_month', color: 'bg-orange-500', types: ['CGM'] },
+    { id: 'reportes', name: 'Reportes de Impacto', icon: 'analytics', color: 'bg-green-600', types: ['pdf', 'report'] }
+  ];
+
+  const GESTORES_FOLDERS = [
+    { id: 'declaraciones', name: 'Declaraciones Legales', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal'] }
+  ];
+
+  // Helper to get current folders list based on section
+  const getCurrentFolders = () => {
+    if (currentSection === 'econexo') return ECONEXO_FOLDERS;
+    if (currentSection === 'gestores') return GESTORES_FOLDERS;
+    return [];
+  };
+
+  // Helper to find folder config by id across all lists
+  const getFolderConfig = (id: string | null) => {
+    if (!id) return null;
+    return [...ECONEXO_FOLDERS, ...GESTORES_FOLDERS].find(f => f.id === id);
+  };
 
   // Logic to get available years for a folder
   const getYearsForFolder = () => {
-    const folder = folders.find(f => f.id === selectedFolder);
+    const folder = getFolderConfig(selectedFolder);
     let typesToCheck = folder?.types || [];
 
-    // If we are in Reportes, use CRs (Certificados) time-range as reference too, 
-    // so users can generate reports for periods where they have certificates.
+    // If we are in Reportes, use CRs time-range as reference optionally
     if (selectedFolder === 'reportes') {
       typesToCheck = [...typesToCheck, 'CR'];
     }
@@ -65,7 +90,7 @@ const Documents: React.FC = () => {
 
   // Logic to get available months for a year in a folder
   const getMonthsForYear = () => {
-    const folder = folders.find(f => f.id === selectedFolder);
+    const folder = getFolderConfig(selectedFolder);
     let typesToCheck = folder?.types || [];
 
     if (selectedFolder === 'reportes') {
@@ -122,6 +147,16 @@ const Documents: React.FC = () => {
           clientData,
           validItems,
           doc.metadata.periodo || 'Reporte Reciclaje',
+          action
+        );
+      } else if (doc.type === 'CGM') {
+        const month = doc.metadata?.month || 'Mes';
+        const year = doc.metadata?.year || 2024;
+        generateCGM(
+          clientData,
+          Array.isArray(doc.metadata.waste_details) ? doc.metadata.waste_details : [],
+          month,
+          year,
           action
         );
       } else {
@@ -200,12 +235,16 @@ const Documents: React.FC = () => {
 
   const filteredDocuments = (selectedFolder && selectedYear !== null)
     ? documents.filter(doc => {
-      const folder = folders.find(f => f.id === selectedFolder);
+      const folder = getFolderConfig(selectedFolder);
       if (!folder?.types.includes(doc.type)) return false;
 
       const date = new Date(doc.created_at);
-      const docYear = date.getFullYear();
-      const docMonth = date.getMonth();
+
+      // For CGM and Reports, check metadata first
+      if (doc.type === 'CGM' || doc.type === 'report' || doc.type === 'pdf') {
+        // CGM special check? or just fallback to date creation for now
+        // Ideally CGM has date in metadata, but usually creation date matches.
+      }
 
       // For reports, prioritize metadata period, but fallback to creation date for legacy docs
       if (doc.type === 'report' || doc.type === 'pdf') {
@@ -222,7 +261,7 @@ const Documents: React.FC = () => {
         }
       }
 
-      // Fallback or for CRs: use creation date
+      // Fallback or for CRs/CGMs: use creation date
       if (selectedMonth === null) return false;
       return date.getFullYear() === selectedYear && date.getMonth() === selectedMonth;
     })
@@ -317,6 +356,7 @@ const Documents: React.FC = () => {
     if (selectedMonth !== null) setSelectedMonth(null);
     else if (selectedYear !== null) setSelectedYear(null);
     else if (selectedFolder !== null) setSelectedFolder(null);
+    else if (currentSection !== 'root') setCurrentSection('root');
     else navigate(-1);
   };
 
@@ -337,7 +377,8 @@ const Documents: React.FC = () => {
         <h2 className="text-lg font-black uppercase tracking-tighter text-gray-900">
           {selectedMonth !== null ? monthNames[selectedMonth] :
             selectedYear !== null ? `Año ${selectedYear} ` :
-              selectedFolder ? folders.find(f => f.id === selectedFolder)?.name : 'Documentación'}
+              selectedFolder ? getFolderConfig(selectedFolder)?.name :
+                currentSection !== 'root' ? ROOT_SECTIONS.find(s => s.id === currentSection)?.name : 'Documentación'}
         </h2>
         <button
           onClick={() => setShowSettings(true)}
@@ -350,52 +391,54 @@ const Documents: React.FC = () => {
       <div className="p-4 space-y-6 relative z-10">
         {!selectedFolder ? (
           <>
-            <div className="relative overflow-hidden rounded-[32px] bg-white/60 backdrop-blur-2xl p-6 border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] group transition-all hover:scale-[1.01]">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full z-0 group-hover:scale-110 transition-transform duration-700"></div>
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className={`size-12 rounded-2xl flex items-center justify-center ${driveLinked ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'} border border-white/50 shadow-sm`}>
-                    <span className="material-symbols-outlined text-2xl font-bold">{driveLinked ? 'cloud_done' : 'cloud_off'}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-black text-sm text-gray-900">{driveLinked ? 'Respaldo Activo' : 'Sin Sincronización'}</h3>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{driveLinked ? 'Google Drive conectado' : 'Respalda tus archivos'}</p>
-                  </div>
-                </div>
-                {!driveLinked && (
+            {currentSection === 'root' ? (
+              // Root Menu: Econexo vs Gestores
+              <div className="grid grid-cols-1 gap-4 pt-2">
+                {ROOT_SECTIONS.map(section => (
                   <button
-                    disabled={loading}
-                    onClick={() => setDriveLinked(true)}
-                    className="w-full py-4 bg-white/50 hover:bg-white/80 border border-white/60 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all text-gray-600 shadow-sm"
+                    key={section.id}
+                    onClick={() => setCurrentSection(section.id as any)}
+                    className="relative overflow-hidden rounded-[32px] bg-white/60 backdrop-blur-2xl p-8 border border-white/80 shadow-lg group transition-all hover:scale-[1.02]"
                   >
-                    Vincular Cloud
+                    <div className={`absolute top-0 right-0 w-32 h-32 ${section.color}/10 rounded-bl-full z-0 group-hover:scale-110 transition-transform duration-700`}></div>
+                    <div className="relative z-10 flex items-center gap-6">
+                      <div className={`size-16 rounded-2xl ${section.color} text-white flex items-center justify-center shadow-lg shadow-${section.color}/30`}>
+                        <span className="material-symbols-outlined text-4xl">{section.icon}</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <h3 className="text-2xl font-display font-black text-gray-900">{section.name}</h3>
+                        <p className="text-xs text-gray-500 font-bold mt-1">{section.description}</p>
+                      </div>
+                      <span className="material-symbols-outlined text-gray-300 group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+                    </div>
                   </button>
-                )}
+                ))}
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 pt-2">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Categorías</h3>
-              {folders.map(folder => {
-                const count = documents.filter(doc => folder.types.includes(doc.type)).length;
-                return (
-                  <button
-                    key={folder.id}
-                    onClick={() => setSelectedFolder(folder.id)}
-                    className="flex items-center gap-4 p-5 bg-white/60 backdrop-blur-2xl rounded-[24px] border border-white/80 hover:border-primary/20 transition-all text-left group shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.01]"
-                  >
-                    <div className={`size-14 rounded-2xl ${folder.color}/10 flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform shadow-sm`}>
-                      <span className={`material-symbols-outlined text-3xl font-bold ${folder.id === 'certificados' ? 'filled' : ''}`} style={{ color: folder.id === 'certificados' ? '#326105' : folder.color.replace('bg-', '') }}>{folder.icon}</span>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-display font-black text-sm text-gray-900">{folder.name}</h4>
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{count} documentos</p>
-                    </div>
-                    <span className="material-symbols-outlined text-gray-300 group-hover:translate-x-1 transition-transform group-hover:text-primary">chevron_right</span>
-                  </button>
-                );
-              })}
-            </div>
+            ) : (
+              // Subfolders List
+              <div className="grid grid-cols-1 gap-4 pt-2 animate-in slide-in-from-right-4 duration-300">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Carpetas</h3>
+                {getCurrentFolders().map(folder => {
+                  const count = documents.filter(doc => folder.types.includes(doc.type)).length;
+                  return (
+                    <button
+                      key={folder.id}
+                      onClick={() => setSelectedFolder(folder.id)}
+                      className="flex items-center gap-4 p-5 bg-white/60 backdrop-blur-2xl rounded-[24px] border border-white/80 hover:border-primary/20 transition-all text-left group shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.01]"
+                    >
+                      <div className={`size-14 rounded-2xl ${folder.color}/10 flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform shadow-sm`}>
+                        <span className={`material-symbols-outlined text-3xl font-bold ${folder.id === 'recepcion' ? 'filled' : ''}`} style={{ color: folder.color.replace('bg-', 'text-').replace('-500', '-600').replace('-600', '-600') }}>{folder.icon}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-display font-black text-sm text-gray-900">{folder.name}</h4>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{count} documentos</p>
+                      </div>
+                      <span className="material-symbols-outlined text-gray-300 group-hover:translate-x-1 transition-transform group-hover:text-primary">chevron_right</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </>
         ) : selectedYear === null ? (
           <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
@@ -536,8 +579,8 @@ const Documents: React.FC = () => {
                   <div key={doc.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-[24px] border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] space-y-4 hover:border-primary/20 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="size-12 rounded-xl bg-gray-50 flex items-center justify-center text-primary border border-gray-100">
-                        <span className={`material-symbols-outlined text-2xl ${(doc.type === 'CR' || doc.type === 'pdf' || doc.type === 'report') ? 'filled' : ''}`}>
-                          {(doc.type === 'pdf' || doc.type === 'report') ? 'analytics' : (doc.type === 'CR' ? 'verified' : 'description')}
+                        <span className={`material-symbols-outlined text-2xl ${(doc.type === 'CR' || doc.type === 'pdf' || doc.type === 'report' || doc.type === 'CGM') ? 'filled' : ''}`}>
+                          {(doc.type === 'pdf' || doc.type === 'report') ? 'analytics' : (doc.type === 'CR' ? 'verified' : (doc.type === 'CGM' ? 'calendar_month' : 'description'))}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
