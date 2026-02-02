@@ -663,6 +663,7 @@ const Documents: React.FC = () => {
       )}
 
       <Navbar />
+      <div className="absolute top-20 right-4 text-[10px] text-gray-400 font-bold z-0 pointer-events-none">v1.2</div>
     </div>
   );
 };

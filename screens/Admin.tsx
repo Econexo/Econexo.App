@@ -608,6 +608,7 @@ const Admin: React.FC = () => {
                     )}
                 </section>
             </main>
+            <div className="absolute bottom-2 right-4 text-[10px] text-gray-400 font-bold z-50">v1.2</div>
             <Navbar />
         </div>
     );
