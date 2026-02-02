@@ -58,6 +58,15 @@ const Admin: React.FC = () => {
     const [selectedMonthGen, setSelectedMonthGen] = useState(new Date().getMonth());
     const [selectedYearGen, setSelectedYearGen] = useState(new Date().getFullYear());
 
+    // New State for Folder View
+    const [adminPath, setAdminPath] = useState<{
+        level: 'root' | 'company' | 'year' | 'month';
+        companyId?: string;
+        companyName?: string;
+        year?: number;
+        month?: number;
+    }>({ level: 'root' });
+
     const [currentWaste, setCurrentWaste] = useState({
         waste_type: '',
         description: '',
@@ -583,32 +592,134 @@ const Admin: React.FC = () => {
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Documentos Emitidos</h3>
                         <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full">{generatedCerts.length}</span>
                     </div>
+
+                    {/* FOLDER NAVIGATION HEADER */}
+                    {adminPath.level !== 'root' && (
+                        <div className="flex items-center gap-2 px-2 pb-2">
+                            <button
+                                onClick={() => {
+                                    if (adminPath.level === 'month') setAdminPath({ ...adminPath, level: 'year', month: undefined });
+                                    else if (adminPath.level === 'year') setAdminPath({ ...adminPath, level: 'company', year: undefined });
+                                    else if (adminPath.level === 'company') setAdminPath({ ...adminPath, level: 'root', companyId: undefined, companyName: undefined });
+                                }}
+                                className="size-8 bg-white/60 hover:bg-white rounded-full flex items-center justify-center shadow-sm transition-all"
+                            >
+                                <span className="material-symbols-outlined text-gray-600 text-sm">arrow_back</span>
+                            </button>
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Navegando</span>
+                                <span className="text-xs font-black text-gray-900">
+                                    {adminPath.level === 'company' && adminPath.companyName}
+                                    {adminPath.level === 'year' && `${adminPath.companyName} / ${adminPath.year}`}
+                                    {adminPath.level === 'month' && `${adminPath.companyName} / ${adminPath.year} / ${['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][adminPath.month || 0]}`}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     {generatedCerts.length === 0 ? (
                         <div className="p-8 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300"><p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Sin certificados</p></div>
                     ) : (
                         <div className="space-y-3">
-                            {generatedCerts.map(cert => (
-                                <div key={cert.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center justify-between gap-4 text-xs">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-bold text-gray-900 truncate">{cert.title}</p>
-                                            <span className="text-[8px] bg-gray-100 px-1.5 py-0.5 rounded-full font-black uppercase text-gray-400">{cert.type}</span>
-                                        </div>
-                                        <p className="text-[10px] text-primary font-black uppercase mt-1">{cert.profiles?.company_name}</p>
-                                        <p className="text-[8px] text-gray-400 font-bold mt-0.5">{new Date(cert.created_at).toLocaleDateString()}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => handleViewCertificate(cert, 'preview')} className="size-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-colors"><span className="material-symbols-outlined text-lg">visibility</span></button>
-                                        <button onClick={() => handleViewCertificate(cert, 'save')} className="size-9 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
-                                        <button onClick={() => handleDeleteDocument(cert)} className="size-9 bg-red-50 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors"><span className="material-symbols-outlined text-lg">delete_forever</span></button>
-                                    </div>
+                            {/* LEVEL 0: ROOT (COMPANIES) */}
+                            {adminPath.level === 'root' && (
+                                <div className="grid grid-cols-1 gap-3">
+                                    {Array.from(new Set(generatedCerts.map(c => c.user_id))).map(userId => {
+                                        const userDocs = generatedCerts.filter(c => c.user_id === userId);
+                                        const companyName = userDocs[0]?.profiles?.company_name || 'Desconocido';
+                                        return (
+                                            <button
+                                                key={userId}
+                                                onClick={() => setAdminPath({ level: 'company', companyId: userId, companyName })}
+                                                className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-sm flex items-center gap-4 hover:scale-[1.01] transition-transform"
+                                            >
+                                                <div className="size-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                                                    <span className="material-symbols-outlined">domain</span>
+                                                </div>
+                                                <div className="flex-1 text-left">
+                                                    <p className="font-bold text-sm text-gray-900">{companyName}</p>
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">{userDocs.length} documentos</p>
+                                                </div>
+                                                <span className="material-symbols-outlined text-gray-400">chevron_right</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                            ))}
+                            )}
+
+                            {/* LEVEL 1: YEARS */}
+                            {adminPath.level === 'company' && adminPath.companyId && (
+                                <div className="grid grid-cols-1 gap-3">
+                                    {Array.from(new Set(generatedCerts.filter(c => c.user_id === adminPath.companyId).map(c => new Date(c.created_at).getFullYear()))).sort((a, b) => b - a).map(year => (
+                                        <button
+                                            key={year}
+                                            onClick={() => setAdminPath({ ...adminPath, level: 'year', year })}
+                                            className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-sm flex items-center gap-4 hover:scale-[1.01] transition-transform"
+                                        >
+                                            <div className="size-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600">
+                                                <span className="material-symbols-outlined">folder_open</span>
+                                            </div>
+                                            <div className="flex-1 text-left">
+                                                <p className="font-bold text-sm text-gray-900">{year}</p>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase">Año Comercial</p>
+                                            </div>
+                                            <span className="material-symbols-outlined text-gray-400">chevron_right</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* LEVEL 2: MONTHS */}
+                            {adminPath.level === 'year' && adminPath.year !== undefined && (
+                                <div className="grid grid-cols-1 gap-3">
+                                    {Array.from(new Set(generatedCerts.filter(c => c.user_id === adminPath.companyId && new Date(c.created_at).getFullYear() === adminPath.year).map(c => new Date(c.created_at).getMonth()))).sort((a, b) => b - a).map(month => (
+                                        <button
+                                            key={month}
+                                            onClick={() => setAdminPath({ ...adminPath, level: 'month', month })}
+                                            className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-sm flex items-center gap-4 hover:scale-[1.01] transition-transform"
+                                        >
+                                            <div className="size-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600">
+                                                <span className="material-symbols-outlined">calendar_month</span>
+                                            </div>
+                                            <div className="flex-1 text-left">
+                                                <p className="font-bold text-sm text-gray-900">{['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][month]}</p>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase">Mes</p>
+                                            </div>
+                                            <span className="material-symbols-outlined text-gray-400">chevron_right</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* LEVEL 3: FILES */}
+                            {adminPath.level === 'month' && adminPath.month !== undefined && (
+                                <div className="space-y-3">
+                                    {generatedCerts
+                                        .filter(c => c.user_id === adminPath.companyId && new Date(c.created_at).getFullYear() === adminPath.year && new Date(c.created_at).getMonth() === adminPath.month)
+                                        .map(cert => (
+                                            <div key={cert.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center justify-between gap-4 text-xs">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-gray-900 truncate">{cert.title}</p>
+                                                        <span className="text-[8px] bg-gray-100 px-1.5 py-0.5 rounded-full font-black uppercase text-gray-400">{cert.type}</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-primary font-black uppercase mt-1">{cert.profiles?.company_name}</p>
+                                                    <p className="text-[8px] text-gray-400 font-bold mt-0.5">{new Date(cert.created_at).toLocaleDateString()}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => handleViewCertificate(cert, 'preview')} className="size-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-colors"><span className="material-symbols-outlined text-lg">visibility</span></button>
+                                                    <button onClick={() => handleViewCertificate(cert, 'save')} className="size-9 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-colors"><span className="material-symbols-outlined text-lg">download</span></button>
+                                                    <button onClick={() => handleDeleteDocument(cert)} className="size-9 bg-red-50 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors"><span className="material-symbols-outlined text-lg">delete_forever</span></button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </section>
             </main>
-            <div className="absolute bottom-2 right-4 text-[10px] text-gray-400 font-bold z-50">v1.2</div>
+            <div className="absolute bottom-2 right-4 text-[10px] text-gray-400 font-bold z-50">v1.3</div>
             <Navbar />
         </div>
     );

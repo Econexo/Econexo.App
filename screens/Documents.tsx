@@ -57,7 +57,7 @@ const Documents: React.FC = () => {
   ];
 
   const GESTORES_FOLDERS = [
-    { id: 'declaraciones', name: 'Declaraciones Legales', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal', 'custom'] }
+    { id: 'declaraciones', name: 'Certificados', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal', 'custom'] }
   ];
 
   // Helper to get current folders list based on section
@@ -663,7 +663,7 @@ const Documents: React.FC = () => {
       )}
 
       <Navbar />
-      <div className="absolute top-20 right-4 text-[10px] text-gray-400 font-bold z-0 pointer-events-none">v1.2</div>
+      <div className="absolute top-20 right-4 text-[10px] text-gray-400 font-bold z-0 pointer-events-none">v1.3</div>
     </div>
   );
 };
