@@ -57,7 +57,7 @@ const Documents: React.FC = () => {
   ];
 
   const GESTORES_FOLDERS = [
-    { id: 'declaraciones', name: 'Declaraciones Legales', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal'] }
+    { id: 'declaraciones', name: 'Declaraciones Legales', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal', 'custom'] }
   ];
 
   // Helper to get current folders list based on section

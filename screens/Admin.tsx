@@ -504,9 +504,9 @@ const Admin: React.FC = () => {
                         <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">edit_document</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Crear Doc. Especial</span>
                     </button>
-                    <button onClick={() => setShowMonthlyGenModal(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
-                        <div className="size-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 border border-orange-200 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">calendar_month</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-600 transition-colors">Generar Mensuales</span>
+                    <button onClick={() => setShowMonthlyGenModal(true)} className="p-4 bg-orange-500 text-white hover:bg-orange-600 rounded-2xl shadow-lg shadow-orange-500/30 flex flex-col items-center gap-2 transition-all group active:scale-95">
+                        <div className="size-10 bg-white/20 rounded-full flex items-center justify-center text-white border border-white/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">calendar_month</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Generar Mensuales</span>
                     </button>
                 </section>
 
