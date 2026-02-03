@@ -188,7 +188,8 @@ const Admin: React.FC = () => {
         try {
             const { error } = await supabase.from('documents').update({ verified: true }).eq('id', docId);
             if (error) throw error;
-            fetchAdminData();
+            await fetchAdminData();
+            alert("✅ Documento validado y publicado exitosamente.");
         } catch (err: any) {
             console.error('Error validating document:', err);
             alert(`Error validating document: ${err.message || 'Unknown error'}`);
@@ -421,7 +422,7 @@ const Admin: React.FC = () => {
             <div className="p-6 sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-white/40 flex items-center justify-between shadow-sm">
                 <div>
                     <h2 className="text-xl font-display font-black text-gray-900">Panel Administrador</h2>
-                    <span className="text-[10px] font-bold text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">v1.5.1 - Fix Generación</span>
+                    <span className="text-[10px] font-bold text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">v1.5.2 - Validación Mejorada</span>
                 </div>
                 <button onClick={fetchAdminData} className="size-10 flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-full text-primary border border-primary/20 transition-all">
                     <span className="material-symbols-outlined">refresh</span>
@@ -554,8 +555,9 @@ const Admin: React.FC = () => {
                                         <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">ID: {doc.user_id.slice(0, 8)}...</p>
                                     </div>
                                     <div className="flex gap-2">
+                                        <button onClick={() => handleViewCertificate(doc, 'preview')} className="size-9 bg-blue-50 text-blue-500 hover:bg-blue-100 rounded-xl flex items-center justify-center border border-blue-100 transition-colors" title="Previsualizar"><span className="material-symbols-outlined text-lg">visibility</span></button>
                                         <button onClick={() => validateDoc(doc.id)} className="px-3 py-2 bg-primary text-background-dark rounded-xl text-[10px] font-black uppercase tracking-widest shadow-glow hover:brightness-110 transition-all">Validar</button>
-                                        <button onClick={() => handleDeleteDocument(doc)} className="size-9 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl flex items-center justify-center border border-red-100 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>
+                                        <button onClick={() => handleDeleteDocument(doc)} className="size-9 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl flex items-center justify-center border border-red-100 transition-colors" title="Eliminar"><span className="material-symbols-outlined text-lg">delete</span></button>
                                     </div>
                                 </div>
                             ))}
