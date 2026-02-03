@@ -1029,87 +1029,151 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // 1. Header (Green Brand)
+    // --- Data Processing (Borrowed from EcoReport logic) ---
+    // Metrics Factors
+    const EQUIVALENCIES = {
+        treesPerTonPaper: 17,
+        peopleO2PerTree: 4,
+        bauxitePerKgAlu: 4.0,
+        rawMatPerTonGlass: 1.2
+    };
+
+    // Initialize Material Data
+    const materialData: { [key: string]: { qty: number, water: number, energy: number, co2: number } } = {};
+    Object.keys(materialFactors).forEach(cat => {
+        materialData[cat] = { qty: 0, water: 0, energy: 0, co2: 0 };
+    });
+
+    // Populate Data
+    items.forEach(item => {
+        const qty = Number(item.quantity) || 0;
+        const cat = normalizeMaterialType(item);
+        const factors = materialFactors[cat] || materialFactors['Otros'];
+
+        if (!materialData[cat]) materialData[cat] = { qty: 0, water: 0, energy: 0, co2: 0 };
+
+        materialData[cat].qty += qty;
+        materialData[cat].water += qty * factors.water;
+        materialData[cat].energy += qty * factors.energy;
+        materialData[cat].co2 += qty * factors.co2;
+    });
+
+    const totalKg = Object.values(materialData).reduce((sum, d) => sum + d.qty, 0);
+    const totalWater = Object.values(materialData).reduce((sum, d) => sum + d.water, 0);
+    const totalEnergy = Object.values(materialData).reduce((sum, d) => sum + d.energy, 0);
+    const totalCO2 = Object.values(materialData).reduce((sum, d) => sum + d.co2, 0);
+
+    // Specific metrics for summary
+    const paperKg = materialData['Papel/Cartón']?.qty || 0;
+    const paperTons = paperKg / 1000;
+    const trees = paperTons * EQUIVALENCIES.treesPerTonPaper;
+    const peopleO2 = trees * EQUIVALENCIES.peopleO2PerTree;
+    const aluminumKg = materialData['Aluminio']?.qty || 0;
+    const aluBauxite = aluminumKg * EQUIVALENCIES.bauxitePerKgAlu;
+    const glassKg = materialData['Vidrio']?.qty || 0;
+    const glassRawMaterial = (glassKg / 1000) * EQUIVALENCIES.rawMatPerTonGlass * 1000;
+
+    // --- Header Rendering ---
+    // Green Brand Block
     doc.setFillColor(16, 185, 129); // Primary Green
-    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.rect(0, 0, pageWidth, 45, 'F');
 
     // Logo
     if (ECONEXO_LOGO) {
         try {
-            doc.addImage(ECONEXO_LOGO, 'PNG', 14, 5, 40, 11);
+            doc.addImage(ECONEXO_LOGO, 'PNG', 14, 5, 48, 13);
         } catch (e) {
             doc.setTextColor(255);
-            doc.setFontSize(20);
-            doc.text('ECONEXO', 14, 20);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('ECONEXO', 14, 22);
         }
     }
 
     doc.setTextColor(255);
-    doc.setFontSize(16);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('EcoNexo SpA | RUT: 77.855.394-5', 14, 25);
+    doc.text('Servicios Ambientales, consultorías en gestión de residuos y capacitaciones', 14, 29);
+
+    // Title Block
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFICADO DE GESTIÓN MENSUAL', pageWidth - 14, 25, { align: 'right' });
+    doc.text('CERTIFICADO DE GESTIÓN MENSUAL', pageWidth - 14, 20, { align: 'right' });
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Período: ${month.toUpperCase()} ${year}`, pageWidth - 14, 32, { align: 'right' });
+    const periodStr = `PERÍODO: ${month.toUpperCase()} ${year}`;
+    doc.text(periodStr, pageWidth - 14, 28, { align: 'right' });
 
-    // 2. Client Info
-    let currentY = 55;
+    doc.setFontSize(8);
+    doc.text(`Emisión: ${new Date().toLocaleDateString()}`, pageWidth - 14, 34, { align: 'right' });
 
+    let currentY = 60;
+
+    // --- Client Info ---
+    doc.setTextColor(55, 87, 45); // Dark Green
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INFORMACIÓN DEL GENERADOR', 14, currentY);
+    doc.setDrawColor(55, 87, 45);
+    doc.setLineWidth(0.5);
+    doc.line(14, currentY + 2, pageWidth - 14, currentY + 2);
+
+    currentY += 10;
     doc.setTextColor(31, 41, 55);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('GENERADOR (CLIENTE)', 14, currentY);
-
-    doc.setDrawColor(200);
-    doc.line(14, currentY + 2, pageWidth - 14, currentY + 2);
-    currentY += 10;
-
+    doc.text('Razón Social:', 14, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Razón Social: ${client.company_name}`, 14, currentY);
-    doc.text(`RUT: ${client.rut}`, pageWidth / 2, currentY);
+    doc.text(client.company_name, 45, currentY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('RUT:', pageWidth / 2, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(client.rut, (pageWidth / 2) + 15, currentY);
+
     currentY += 6;
-    doc.text(`Dirección: ${client.address}`, 14, currentY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dirección:', 14, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(client.address, 45, currentY);
 
     currentY += 15;
 
-    // 3. Aggregated Data Logic
-    // Group items by material type
-    const aggregatedData: Record<string, number> = {};
-    let totalWeight = 0;
-
-    items.forEach(item => {
-        const type = normalizeMaterialType(item);
-        const qty = Number(item.quantity) || 0;
-        aggregatedData[type] = (aggregatedData[type] || 0) + qty;
-        totalWeight += qty;
-    });
-
-    // Create table rows from aggregated data
-    const tableBody = Object.entries(aggregatedData).map(([type, qty]) => {
-        return [
-            type,
-            'Reciclaje / Valorización', // Tratamiento standard
-            'Planta Autorizada Econexo', // Destino
-            `${qty.toFixed(2)} Kg`
-        ];
-    });
-
-    // Add Total Row
-    tableBody.push(['', '', 'TOTAL GESTIONADO', `${totalWeight.toFixed(2)} Kg`]);
-
-    // 4. Waste Table
+    // --- Main Waste Table (High Fidelity) ---
+    doc.setTextColor(55, 87, 45);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('RESUMEN DE RESIDUOS GESTIONADOS', 14, currentY);
+    doc.text('DETALLE DE RESIDUOS GESTIONADOS', 14, currentY);
     currentY += 4;
+
+    const tableHeaders = [['Tipo de Residuo', 'Tratamiento', 'Destino', 'Cantidad (Kg)']];
+    const tableRows: any[] = [];
+
+    // Helper format
+    const fmt = (n: number) => n.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+    Object.entries(materialData).forEach(([cat, data]) => {
+        if (data.qty > 0) {
+            tableRows.push([
+                cat,
+                'Reciclaje / Valorización',
+                'Planta Autorizada EcoNexo',
+                `${fmt(data.qty)}`
+            ]);
+        }
+    });
+
+    tableRows.push(['TOTAL GESTIONADO', '', '', `${fmt(totalKg)}`]);
 
     autoTable(doc, {
         startY: currentY,
-        head: [['Tipo de Residuo', 'Tratamiento', 'Destino Final', 'Cantidad Total']],
-        body: tableBody,
+        head: tableHeaders,
+        body: tableRows,
         theme: 'grid',
         headStyles: {
-            fillColor: [55, 87, 45], // Darker Green
+            fillColor: [55, 87, 45],
             textColor: 255,
             fontSize: 9,
             fontStyle: 'bold',
@@ -1117,61 +1181,123 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         },
         bodyStyles: {
             textColor: 50,
-            fontSize: 8,
+            fontSize: 9,
             halign: 'center'
         },
         columnStyles: {
-            0: { halign: 'left', fontStyle: 'bold' }, // Type
-            3: { halign: 'right', fontStyle: 'bold' } // Qty
+            0: { halign: 'left', fontStyle: 'bold' },
+            3: { halign: 'right', fontStyle: 'bold' }
         },
         didParseCell: (data) => {
-            if (data.section === 'body' && data.row.index === tableBody.length - 1) {
-                data.cell.styles.fillColor = [220, 240, 220];
+            // Material-based coloring
+            if (data.section === 'body' && data.column.index === 0) {
+                const text = data.cell.raw as string;
+                if (text.includes('Papel')) data.cell.styles.fillColor = [220, 230, 245];
+                if (text.includes('Plásticos')) data.cell.styles.fillColor = [255, 250, 220];
+                if (text.includes('Vidrio')) data.cell.styles.fillColor = [220, 255, 245];
+                if (text.includes('Metales')) data.cell.styles.fillColor = [240, 240, 240];
+                if (text.includes('Otros')) data.cell.styles.fillColor = [250, 245, 235];
+                if (text.includes('TOTAL')) {
+                    data.cell.styles.fillColor = [230, 240, 230];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            }
+            if (data.section === 'body' && (data.row.raw as string[])[0].includes('TOTAL')) {
                 data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fillColor = [230, 240, 230];
             }
         }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 15;
 
-    // 5. Environmental Impact Summary (Mini)
-    const co2Factor = 1.5; // Avg factor for simplicity in this cert, or calculate real
-    const totalCO2 = totalWeight * co2Factor; // Estimation
-    const waterSaved = totalWeight * 15; // Estimación litros
+    // --- Eco-Equivalencia Summary Box ---
+    // Check page break
+    if (currentY > pageHeight - 80) {
+        doc.addPage();
+        currentY = 40;
+    }
 
-    doc.setFillColor(245, 247, 250);
-    doc.roundedRect(14, currentY, pageWidth - 28, 25, 3, 3, 'F');
+    const summaryBoxHeight = 55;
 
-    doc.setFontSize(9);
-    doc.setTextColor(80);
-    doc.text('IMPACTO AMBIENTAL DEL PERÍODO', 20, currentY + 8);
+    // Box
+    doc.setDrawColor(55, 87, 45);
+    doc.setLineWidth(0.5);
+    doc.setFillColor(250, 252, 250); // Mint tint
+    doc.roundedRect(14, currentY, pageWidth - 28, summaryBoxHeight, 3, 3, 'FD');
 
+    // Box Header
+    doc.setFillColor(55, 87, 45);
+    doc.roundedRect(14, currentY, pageWidth - 28, 9, 3, 3, 'F');
+    doc.setTextColor(255);
     doc.setFontSize(10);
-    doc.setTextColor(31, 41, 55);
-    doc.text(`CO2 Evitado: ${totalCO2.toFixed(1)} Kg`, 20, currentY + 16);
-    doc.text(`Agua Ahorrada: ${waterSaved.toFixed(0)} Litros`, pageWidth / 2, currentY + 16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESUMEN DE ECO-EQUIVALENCIA (IMPACTO POSITIVO)', pageWidth / 2, currentY + 6, { align: 'center' });
 
+    // Summary Items
+    const startContentY = currentY + 18;
+    const col2X = 140;
+    const col3X = 145;
+    const padding = 20;
 
-    // 6. Footer / Certification Text
+    const drawSumRow = (y: number, label: string, val: string, unit: string) => {
+        doc.setTextColor(50);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label, 14 + padding, y);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0);
+        doc.text(val, col2X, y, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80);
+        doc.text(unit, col3X, y);
+    };
+
+    drawSumRow(startContentY, 'Agua Ahorrada', fmt(totalWater), 'Litros');
+    drawSumRow(startContentY + 7, 'Energía Ahorrada', fmt(totalEnergy), 'Kw');
+    drawSumRow(startContentY + 14, 'CO2 Evitado a la Atmósfera', fmt(totalCO2), 'Kg');
+
+    let extraY = startContentY + 21;
+    if (paperKg > 0) {
+        drawSumRow(extraY, 'Árboles Salvados', trees.toFixed(1), 'Unidades');
+    } else if (aluminumKg > 0) {
+        drawSumRow(extraY, 'Bauxita Evitada', fmt(aluBauxite), 'Kg');
+    } else {
+        drawSumRow(extraY, 'Camiones de Basura Evitados', (totalKg / 1000).toFixed(2), 'Unidades');
+    }
+
+    // --- Footer & Certification ---
     const footerY = pageHeight - 50;
+
+    // Legal Text
     doc.setFontSize(8);
     doc.setTextColor(100);
-    const certText = "Econexo SpA certifica que los residuos detallados fueron recepcionados y gestionados conforme a la normativa legal vigente, priorizando su valorización y reincorporación a la cadena productiva.";
-    const splitCert = doc.splitTextToSize(certText, pageWidth - 28);
-    doc.text(splitCert, 14, footerY);
+    const disclaimer = "Certificamos que los residuos detallados fueron gestionados conforme a la normativa legal vigente (DS 148, Ley 20.920), priorizando su valorización ambiental.";
+    const splitDisc = doc.splitTextToSize(disclaimer, pageWidth - 28);
+    doc.text(splitDisc, 14, footerY - 5);
 
-    // Signatures
+    // Signatures Area
     const sigY = pageHeight - 25;
-
     if (ECONEXO_SIGNATURE) {
         try {
             doc.addImage(ECONEXO_SIGNATURE, 'PNG', (pageWidth / 2) - 20, sigY - 25, 40, 20);
         } catch (e) { }
     }
-
-    doc.setDrawColor(150);
+    doc.setDrawColor(180);
     doc.line((pageWidth / 2) - 30, sigY, (pageWidth / 2) + 30, sigY);
-    doc.text('Firma Autorizada EcoNexo', pageWidth / 2, sigY + 5, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setTextColor(50);
+    doc.text('Firma Autorizada EcoNexo SpA', pageWidth / 2, sigY + 5, { align: 'center' });
+
+    // Watermark
+    if (ECONEXO_WATERMARK) {
+        try {
+            doc.saveGraphicsState();
+            doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
+            const wmSize = 140;
+            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, (pageHeight - wmSize) / 2, wmSize, wmSize);
+            doc.restoreGraphicsState();
+        } catch (e) { }
+    }
 
     if (action === 'preview') {
         window.open(doc.output('bloburl'), '_blank');

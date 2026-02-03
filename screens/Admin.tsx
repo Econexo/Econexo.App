@@ -422,7 +422,7 @@ const Admin: React.FC = () => {
             <div className="p-6 sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-white/40 flex items-center justify-between shadow-sm">
                 <div>
                     <h2 className="text-xl font-display font-black text-gray-900">Panel Administrador</h2>
-                    <span className="text-[10px] font-bold text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">v1.5.2 - Validación Mejorada</span>
+                    <span className="text-[10px] font-bold text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">v1.6 - CGM High Fidelity</span>
                 </div>
                 <button onClick={fetchAdminData} className="size-10 flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-full text-primary border border-primary/20 transition-all">
                     <span className="material-symbols-outlined">refresh</span>
