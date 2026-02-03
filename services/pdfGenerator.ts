@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2 } from './constants';
+import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
 interface CompanyData {
@@ -1039,18 +1039,12 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const TABLE_LIGHT_GREY = [235, 235, 235];
 
     // --- 1. HEADER ---
-    // Dark Grey Top Bar
     doc.setFillColor(HEADER_GREY[0], HEADER_GREY[1], HEADER_GREY[2]);
     doc.rect(0, 0, pageWidth, 35, 'F');
 
-    // Logo (Centered & Proportional)
-    // Use V2 LOGO if available
     const logoToUse = ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
-
     if (logoToUse) {
         try {
-            // Target Height 24px (fits in 35px with padding)
-            // Aspect ratio ~ 4.5~5 : 1 => Width ~ 108
             const logoH = 24;
             const logoW = 108;
             doc.addImage(logoToUse, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
@@ -1067,49 +1061,38 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         doc.text("EcoNexo", pageWidth / 2, 23, { align: 'center' });
     }
 
-    // Number Identifier (Top Right)
     doc.setTextColor(255);
-    doc.setFontSize(14); // 9.5
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     const numText = "Nº60";
     const numX = pageWidth - 20;
     const numY = 22;
     doc.text(numText, numX, numY, { align: 'right' });
 
-    // Underline
     const textW = doc.getTextWidth(numText);
     doc.setDrawColor(255);
     doc.setLineWidth(0.5);
     doc.line(numX - textW, numY + 2, numX, numY + 2);
 
-    // Green Sub-Header
     doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
     doc.rect(0, 35, pageWidth, 18, 'F');
     doc.setTextColor(255);
-    doc.setFontSize(16); // Larger
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    // Centered Vertically in 18px (35 -> 53). Mid = 44.
-    // Text baseline bottom -> 46 works well.
     doc.text("CERTIFICADO GESTION MENSUAL DE RESIDUOS", pageWidth / 2, 46, { align: 'center' });
 
     // --- 2. LEGAL TEXT ---
     let currentY = 65;
     doc.setTextColor(0);
-    // Bigger Font for this paragraph
     doc.setFontSize(12);
-    // Normal weight only to avoid bold overlay issues
     doc.setFont('helvetica', 'normal');
 
     const margin = 22;
     const textBoxWidth = pageWidth - (margin * 2);
-
-    // Text content
     const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
 
     const lines = doc.splitTextToSize(plainText, textBoxWidth);
     doc.text(lines, margin, currentY, { align: 'justify', maxWidth: textBoxWidth });
-
-    // Spacing adjustment (reduced)
     currentY += (lines.length * 6) + 2;
 
     // --- 3. CLIENT INFO ---
@@ -1122,7 +1105,6 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         doc.setFont('helvetica', 'bold');
         doc.text(lbl, margin, currentY);
         doc.setFont('helvetica', 'normal');
-        // Align values
         doc.text(val, margin + 30, currentY);
         currentY += 5;
     };
@@ -1137,7 +1119,6 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("De los cuales, se gestionó un total de:", margin, currentY);
     currentY += 8;
 
-    // Prepare Data
     const categories: any = {
         'Plásticos': { color: TABLE_YELLOW, textMain: [0, 0, 0], qty: 0, pct: 0 },
         'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
@@ -1156,12 +1137,10 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         else categories['Otros'].qty += q;
     });
     if (totalKg === 0) totalKg = 1;
-
     Object.keys(categories).forEach(k => {
         categories[k].pct = (categories[k].qty / totalKg) * 100;
     });
 
-    // TABLE GEOMETRY
     const tX = margin;
     const col1 = 60;
     const col2 = 30;
@@ -1169,37 +1148,30 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const rowH = 10;
     const gap = 2;
 
-    // Header
     doc.setFillColor(220, 220, 220);
     doc.rect(tX, currentY, col1, rowH, 'F');
     doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
     doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
     doc.text("RESIDUOS", tX + col1 / 2, currentY + 7, { align: 'center' });
     doc.text("KG", tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
     doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-
     currentY += rowH + gap;
 
-    // Rows
     const drawRow = (display: string, key: string) => {
         const d = categories[key];
-        if (d.qty <= 0) return; // Hide
-
+        if (d.qty <= 0) return;
         doc.setFillColor(d.color[0], d.color[1], d.color[2]);
         doc.rect(tX, currentY, col1, rowH, 'F');
         doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
         doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-
         doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
         doc.setFont('helvetica', 'bold');
         doc.text(display, tX + col1 / 2, currentY + 7, { align: 'center' });
         doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
         doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-
         currentY += rowH + gap;
     };
 
@@ -1209,34 +1181,21 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     drawRow("METALES", "Metales");
     if (categories['Vidrio'].qty > 0) drawRow("VIDRIO", "Vidrio");
 
-    // Total
-    // GREY Background for Total
     doc.setFillColor(TABLE_LIGHT_GREY[0], TABLE_LIGHT_GREY[1], TABLE_LIGHT_GREY[2]);
     doc.rect(tX, currentY, col1, rowH, 'F');
     doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
     doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
     doc.text(totalKg.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
     doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
 
-    // --- PIE CHART ---
-    // Moved Lower and Smaller (Radius 18, Offset +5)
-    // Table width = 124. X start = 22. End = 146.
-    // Page width ~ 210. Space right = 64. Center ~ 178.
     const pieX = 175;
-    // Lower relative to where it was.
-    // Was: currentY - (rowH * 2) - 10
-    // New: currentY - (rowH * 2) + 5
     const pieY = currentY - (rowH * 2) + 5;
-    const radius = 18; // Smaller
-
-    // Start Angle: Vertical (-90 deg or -PI/2)
+    const radius = 18;
     let startAngle = -Math.PI / 2;
     const activeCats = Object.keys(categories).filter(k => categories[k].pct > 0);
-
     if (activeCats.length === 0) {
         doc.setDrawColor(200);
         doc.circle(pieX, pieY, radius, 'S');
@@ -1249,41 +1208,27 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
             const cat = categories[k];
             const sliceAngle = (cat.pct / 100) * (2 * Math.PI);
             const endAngle = startAngle + sliceAngle;
-
             doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
-
-            // Draw fan
             for (let i = startAngle; i < endAngle; i += 0.04) {
                 const a1 = i;
                 const a2 = Math.min(i + 0.05, endAngle);
-
-                doc.triangle(
-                    pieX, pieY,
-                    pieX + radius * Math.cos(a1), pieY + radius * Math.sin(a1),
-                    pieX + radius * Math.cos(a2), pieY + radius * Math.sin(a2),
-                    'F'
-                );
+                doc.triangle(pieX, pieY, pieX + radius * Math.cos(a1), pieY + radius * Math.sin(a1), pieX + radius * Math.cos(a2), pieY + radius * Math.sin(a2), 'F');
             }
             startAngle += sliceAngle;
         });
     }
 
-    // --- 5. DESTINATIONS ---
-    // Increased spacing
     currentY += 25;
-
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text("DESTINO AUTORIZADO:", margin, currentY);
     currentY += 5;
-
     doc.setFont('helvetica', 'normal');
     const destinations = [
         ["SOREPA SPA., RUT: 86.359.300-K", "Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA"],
         ["GCR, RUT: 76.958.842-6", "Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA"]
     ];
-
     destinations.forEach(d => {
         doc.text(d[0], margin, currentY);
         currentY += 5;
@@ -1291,9 +1236,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         currentY += 8;
     });
 
-    // --- 6. SIGNATURE ---
     const sigY = pageHeight - 45;
-
     if (ECONEXO_SIGNATURE) {
         try {
             doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 30, 40, 30);
@@ -1302,90 +1245,54 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setLineWidth(0.5);
     doc.setDrawColor(0);
     doc.line(pageWidth - 80, sigY, pageWidth - 20, sigY);
-
     doc.setFont('helvetica', 'bold');
     doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
     doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
 
-    // --- 7. FOOTER WITH CORRECT ALIGNMENT & PHONE ICON ---
+    // --- 7. FOOTER BAR ---
     doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.rect(0, pageHeight - 14, pageWidth, 14, 'F');
+    const footerH = 14;
+    doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
 
     doc.setTextColor(255);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
 
-    // Vertical Center:
-    // Box Height = 14. Y = pageHeight - 14.
-    // Center Y = pageHeight - 7.
-    // Text Baseline Middle -> approx +1.5 from center (since baseline is bottom). 
-    // Let's use `baseline: 'middle'` if possible, but standard text usage: 
-    // pageHeight - 5 puts baseline 9px from top.
-    const footerY = pageHeight - 5;
+    const footerMidY = pageHeight - (footerH / 2);
     const spacing = 65;
-    const startX = (pageWidth - (spacing * 2)) / 2 - 10;
+    const startX = (pageWidth - (spacing * 2)) / 2 - 12;
 
     doc.setDrawColor(255);
     doc.setLineWidth(0.4);
 
-    // 1. Email Icon (Envelope)
-    // Center of icon should align with center of text.
-    // Text center approx footerY - 1.5. 
-    // Icon Height = 4. Icon Top = Center - 2.
-    // Center = footerY - 1.5. Icon Top = footerY - 3.5.
-    const iconBaseY = footerY - 1.5;
+    // 1. Email Icon
     const icon1X = startX - 5;
+    doc.rect(icon1X, footerMidY - 2, 6, 4);
+    doc.line(icon1X, footerMidY - 2, icon1X + 3, footerMidY);
+    doc.line(icon1X + 6, footerMidY - 2, icon1X + 3, footerMidY);
+    // Text align middle
+    doc.text("Econexo.huh@gmail.com", startX + 3, footerMidY, { baseline: 'middle' });
 
-    // Draw Envelope centered at iconBaseY
-    doc.rect(icon1X, iconBaseY - 2, 6, 4);
-    doc.line(icon1X, iconBaseY - 2, icon1X + 3, iconBaseY);
-    doc.line(icon1X + 6, iconBaseY - 2, icon1X + 3, iconBaseY);
-    doc.text("Econexo.huh@gmail.com", startX + 3, footerY); // Adjusted X
-
-    // 2. Phone Icon (Receiver Shape)
+    // 2. Phone Icon (IMAGE)
     const phoneX = startX + spacing + 10;
-    const icon2X = phoneX - 5;
+    const icon2X = phoneX - 6;
+    if (PHONE_ICON) {
+        try {
+            const pH = 6.4;
+            const pW = 5.2;
+            doc.addImage(PHONE_ICON, 'PNG', icon2X, footerMidY - (pH / 2), pW, pH);
+        } catch (e) { }
+    }
+    doc.text("+569 35626886", phoneX + 2, footerMidY, { baseline: 'middle' });
 
-    // Draw Receiver:
-    // A thick curved line or filled shape.
-    // Simulate a handset: [ ]=====[ ]
-    // Tilted 45 deg.
-    // Simple approach: Draw a thick line with rounding.
-    doc.setLineWidth(1.5);
-    // Line from (x, y+2) to (x+3, y-1) 
-    doc.line(icon2X + 1, iconBaseY + 1.5, icon2X + 4, iconBaseY - 1.5);
-    // Add "caps" (earpiece/mouthpiece) using small lines perpendicular?
-    // Or just a thicker, shorter line?
-    // Let's do a filled path for better look.
-    // Or just the thick line is often enough for a small icon.
-    // Let's try drawing a small arc?
-    // No, simple "U" shape rotated:
-    // Points: (0,0) -> (1,1) -> (4,1) -> (5,0)
-    doc.setLineWidth(0.6);
-    // Handset body
-    doc.lines([[1, 1], [3, 0], [1, -1]], icon2X, iconBaseY - 1, [1, 1], 'S', true);
-    // Actually, let's keep it simple: Thick line with rounded caps
-    doc.setLineCap('round');
-    doc.setLineWidth(1.5);
-    doc.line(icon2X + 1, iconBaseY + 1.5, icon2X + 4, iconBaseY - 1.5);
-    // Reset defaults
-    doc.setLineCap('butt');
-    doc.setLineWidth(0.4);
-
-    doc.text("+569 35626886", phoneX + 2, footerY);
-
-    // 3. Web Icon (Globe)
-    // Centered at iconBaseY
+    // 3. Web Icon
     const webX = phoneX + spacing - 10;
     const icon3X = webX - 5;
+    doc.circle(icon3X + 2.5, footerMidY, 2.5, 'S');
+    doc.line(icon3X, footerMidY, icon3X + 5, footerMidY);
+    doc.line(icon3X + 2.5, footerMidY - 2.5, icon3X + 2.5, footerMidY + 2.5);
+    doc.text("econexo.cl", webX + 1, footerMidY, { baseline: 'middle' });
 
-    doc.circle(icon3X + 2.5, iconBaseY, 2.5, 'S');
-    doc.line(icon3X, iconBaseY, icon3X + 5, iconBaseY); // Equator
-    doc.line(icon3X + 2.5, iconBaseY - 2.5, icon3X + 2.5, iconBaseY + 2.5); // Meridian
-
-    doc.text("econexo.cl", webX + 1, footerY);
-
-    // --- WATERMARK ---
     if (ECONEXO_WATERMARK) {
         try {
             doc.saveGraphicsState();
