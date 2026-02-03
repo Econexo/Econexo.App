@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO } from './constants';
+import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2 } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
 interface CompanyData {
@@ -1044,13 +1044,13 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.rect(0, 0, pageWidth, 35, 'F');
 
     // Logo (Centered & Proportional)
-    // Use FULL LOGO if available, else standard
-    const logoToUse = ECONEXO_FULL_LOGO || ECONEXO_LOGO;
+    // Use V2 LOGO if available
+    const logoToUse = ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
 
     if (logoToUse) {
         try {
             // Target Height 24px (fits in 35px with padding)
-            // Aspect ratio ~ 4.5 : 1 => Width ~ 108
+            // Aspect ratio ~ 4.5~5 : 1 => Width ~ 108
             const logoH = 24;
             const logoW = 108;
             doc.addImage(logoToUse, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
@@ -1069,7 +1069,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // Number Identifier (Top Right)
     doc.setTextColor(255);
-    doc.setFontSize(14);
+    doc.setFontSize(14); // 9.5
     doc.setFont('helvetica', 'bold');
     const numText = "Nº60";
     const numX = pageWidth - 20;
@@ -1089,8 +1089,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setFontSize(16); // Larger
     doc.setFont('helvetica', 'bold');
     // Centered Vertically in 18px (35 -> 53). Mid = 44.
-    // Text baseline is bottom, so add approx 1/3 font size or adjust manually.
-    // 16pt ~ 5.6mm height. 44 + 2 = 46.
+    // Text baseline bottom -> 46 works well.
     doc.text("CERTIFICADO GESTION MENSUAL DE RESIDUOS", pageWidth / 2, 46, { align: 'center' });
 
     // --- 2. LEGAL TEXT ---
@@ -1105,7 +1104,6 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const textBoxWidth = pageWidth - (margin * 2);
 
     // Text content
-    // Justify manually logic not perfect in jsPDF without plugins, but 'justify' align works for multiline text calls usually
     const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
 
     const lines = doc.splitTextToSize(plainText, textBoxWidth);
@@ -1164,9 +1162,6 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     });
 
     // TABLE GEOMETRY
-    // Center table relative to margins?
-    // User said "align texts and tables to the first paragraph".
-    // So Table starts at `margin`.
     const tX = margin;
     const col1 = 60;
     const col2 = 30;
@@ -1228,15 +1223,15 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
 
     // --- PIE CHART ---
-    // Right of table. 
-    // Table width = 60 + 30 + 30 + 4 = 124.
-    // X start = margin (22). End = 146.
-    // Page width ~ 210. 
-    // Space right = 210 - 146 = 64.
-    // Center pie in that space: 146 + 32 = 178.
+    // Moved Lower and Smaller (Radius 18, Offset +5)
+    // Table width = 124. X start = 22. End = 146.
+    // Page width ~ 210. Space right = 64. Center ~ 178.
     const pieX = 175;
-    const pieY = currentY - (rowH * 2) - 10;
-    const radius = 22;
+    // Lower relative to where it was.
+    // Was: currentY - (rowH * 2) - 10
+    // New: currentY - (rowH * 2) + 5
+    const pieY = currentY - (rowH * 2) + 5;
+    const radius = 18; // Smaller
 
     // Start Angle: Vertical (-90 deg or -PI/2)
     let startAngle = -Math.PI / 2;
@@ -1258,7 +1253,6 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
             doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
 
             // Draw fan
-            // 2 degree steps = 0.035 rads
             for (let i = startAngle; i < endAngle; i += 0.04) {
                 const a1 = i;
                 const a2 = Math.min(i + 0.05, endAngle);
@@ -1274,9 +1268,10 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         });
     }
 
-    currentY += 15;
-
     // --- 5. DESTINATIONS ---
+    // Increased spacing
+    currentY += 25;
+
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
@@ -1312,7 +1307,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
     doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
 
-    // --- 7. FOOTER WITH CORRECT ICONS ---
+    // --- 7. FOOTER WITH CORRECT ALIGNMENT & PHONE ICON ---
     doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
     doc.rect(0, pageHeight - 14, pageWidth, 14, 'F');
 
@@ -1320,49 +1315,73 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
 
+    // Vertical Center:
+    // Box Height = 14. Y = pageHeight - 14.
+    // Center Y = pageHeight - 7.
+    // Text Baseline Middle -> approx +1.5 from center (since baseline is bottom). 
+    // Let's use `baseline: 'middle'` if possible, but standard text usage: 
+    // pageHeight - 5 puts baseline 9px from top.
     const footerY = pageHeight - 5;
     const spacing = 65;
-    // Align Icons closer to text
     const startX = (pageWidth - (spacing * 2)) / 2 - 10;
 
     doc.setDrawColor(255);
     doc.setLineWidth(0.4);
 
     // 1. Email Icon (Envelope)
-    const iconY = footerY - 3.5;
+    // Center of icon should align with center of text.
+    // Text center approx footerY - 1.5. 
+    // Icon Height = 4. Icon Top = Center - 2.
+    // Center = footerY - 1.5. Icon Top = footerY - 3.5.
+    const iconBaseY = footerY - 1.5;
     const icon1X = startX - 5;
-    doc.rect(icon1X, iconY - 2, 6, 4);
-    doc.line(icon1X, iconY - 2, icon1X + 3, iconY);
-    doc.line(icon1X + 6, iconY - 2, icon1X + 3, iconY);
-    doc.text("Econexo.huh@gmail.com", startX + 3, footerY);
+
+    // Draw Envelope centered at iconBaseY
+    doc.rect(icon1X, iconBaseY - 2, 6, 4);
+    doc.line(icon1X, iconBaseY - 2, icon1X + 3, iconBaseY);
+    doc.line(icon1X + 6, iconBaseY - 2, icon1X + 3, iconBaseY);
+    doc.text("Econexo.huh@gmail.com", startX + 3, footerY); // Adjusted X
 
     // 2. Phone Icon (Receiver Shape)
     const phoneX = startX + spacing + 10;
     const icon2X = phoneX - 5;
-    // Simple Receiver: Filled rounded rect rotated? 
-    // Or just path:
-    //  /--\
-    // |    |
-    //  \--/
-    // Let's create a thicker "U" shape curve tilted
-    // Or just a small filled block with corners
+
+    // Draw Receiver:
+    // A thick curved line or filled shape.
+    // Simulate a handset: [ ]=====[ ]
+    // Tilted 45 deg.
+    // Simple approach: Draw a thick line with rounding.
     doc.setLineWidth(1.5);
-    // Draw small line
-    doc.line(icon2X + 1, iconY + 1, icon2X + 4, iconY - 2);
-    // Reset
+    // Line from (x, y+2) to (x+3, y-1) 
+    doc.line(icon2X + 1, iconBaseY + 1.5, icon2X + 4, iconBaseY - 1.5);
+    // Add "caps" (earpiece/mouthpiece) using small lines perpendicular?
+    // Or just a thicker, shorter line?
+    // Let's do a filled path for better look.
+    // Or just the thick line is often enough for a small icon.
+    // Let's try drawing a small arc?
+    // No, simple "U" shape rotated:
+    // Points: (0,0) -> (1,1) -> (4,1) -> (5,0)
+    doc.setLineWidth(0.6);
+    // Handset body
+    doc.lines([[1, 1], [3, 0], [1, -1]], icon2X, iconBaseY - 1, [1, 1], 'S', true);
+    // Actually, let's keep it simple: Thick line with rounded caps
+    doc.setLineCap('round');
+    doc.setLineWidth(1.5);
+    doc.line(icon2X + 1, iconBaseY + 1.5, icon2X + 4, iconBaseY - 1.5);
+    // Reset defaults
+    doc.setLineCap('butt');
     doc.setLineWidth(0.4);
 
     doc.text("+569 35626886", phoneX + 2, footerY);
 
     // 3. Web Icon (Globe)
+    // Centered at iconBaseY
     const webX = phoneX + spacing - 10;
     const icon3X = webX - 5;
-    // Circle
-    doc.circle(icon3X + 2.5, iconY, 2.5, 'S');
-    // Equator
-    doc.line(icon3X, iconY, icon3X + 5, iconY);
-    // Meridian (Vertical line)
-    doc.line(icon3X + 2.5, iconY - 2.5, icon3X + 2.5, iconY + 2.5);
+
+    doc.circle(icon3X + 2.5, iconBaseY, 2.5, 'S');
+    doc.line(icon3X, iconBaseY, icon3X + 5, iconBaseY); // Equator
+    doc.line(icon3X + 2.5, iconBaseY - 2.5, icon3X + 2.5, iconBaseY + 2.5); // Meridian
 
     doc.text("econexo.cl", webX + 1, footerY);
 
