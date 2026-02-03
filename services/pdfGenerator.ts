@@ -1024,277 +1024,264 @@ export const generateCustomDoc = (client: CompanyData, title: string, contentHtm
     doc.save(`${title.replace(/\s+/g, '_')}_${referenceNumber}.pdf`);
 };
 
+
 export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save') => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // --- Data Processing (Borrowed from EcoReport logic) ---
-    // Metrics Factors
-    const EQUIVALENCIES = {
-        treesPerTonPaper: 17,
-        peopleO2PerTree: 4,
-        bauxitePerKgAlu: 4.0,
-        rawMatPerTonGlass: 1.2
-    };
+    // --- COLORS (Matched from Image) ---
+    const HEADER_GREY = [50, 50, 50];
+    const HEADER_GREEN = [45, 106, 79];
+    const TABLE_YELLOW = [255, 225, 100];
+    const TABLE_BLUE = [0, 85, 165];
+    const TABLE_GREY = [160, 160, 160];
 
-    // Initialize Material Data
-    const materialData: { [key: string]: { qty: number, water: number, energy: number, co2: number } } = {};
-    Object.keys(materialFactors).forEach(cat => {
-        materialData[cat] = { qty: 0, water: 0, energy: 0, co2: 0 };
-    });
+    // --- 1. HEADER ---
+    // Dark Grey Top Bar
+    doc.setFillColor(HEADER_GREY[0], HEADER_GREY[1], HEADER_GREY[2]);
+    doc.rect(0, 0, pageWidth, 35, 'F');
 
-    // Populate Data
-    items.forEach(item => {
-        const qty = Number(item.quantity) || 0;
-        const cat = normalizeMaterialType(item);
-        const factors = materialFactors[cat] || materialFactors['Otros'];
-
-        if (!materialData[cat]) materialData[cat] = { qty: 0, water: 0, energy: 0, co2: 0 };
-
-        materialData[cat].qty += qty;
-        materialData[cat].water += qty * factors.water;
-        materialData[cat].energy += qty * factors.energy;
-        materialData[cat].co2 += qty * factors.co2;
-    });
-
-    const totalKg = Object.values(materialData).reduce((sum, d) => sum + d.qty, 0);
-    const totalWater = Object.values(materialData).reduce((sum, d) => sum + d.water, 0);
-    const totalEnergy = Object.values(materialData).reduce((sum, d) => sum + d.energy, 0);
-    const totalCO2 = Object.values(materialData).reduce((sum, d) => sum + d.co2, 0);
-
-    // Specific metrics for summary
-    const paperKg = materialData['Papel/Cartón']?.qty || 0;
-    const paperTons = paperKg / 1000;
-    const trees = paperTons * EQUIVALENCIES.treesPerTonPaper;
-    const peopleO2 = trees * EQUIVALENCIES.peopleO2PerTree;
-    const aluminumKg = materialData['Aluminio']?.qty || 0;
-    const aluBauxite = aluminumKg * EQUIVALENCIES.bauxitePerKgAlu;
-    const glassKg = materialData['Vidrio']?.qty || 0;
-    const glassRawMaterial = (glassKg / 1000) * EQUIVALENCIES.rawMatPerTonGlass * 1000;
-
-    // --- Header Rendering ---
-    // Green Brand Block
-    doc.setFillColor(16, 185, 129); // Primary Green
-    doc.rect(0, 0, pageWidth, 45, 'F');
-
-    // Logo
+    // Logo (Centered)
     if (ECONEXO_LOGO) {
         try {
-            doc.addImage(ECONEXO_LOGO, 'PNG', 14, 5, 48, 13);
+            doc.addImage(ECONEXO_LOGO, 'PNG', (pageWidth / 2) - 25, 5, 50, 15);
         } catch (e) {
             doc.setTextColor(255);
-            doc.setFontSize(22);
+            doc.setFontSize(24);
             doc.setFont('helvetica', 'bold');
-            doc.text('ECONEXO', 14, 22);
+            doc.text("EcoNexo", pageWidth / 2, 20, { align: 'center' });
         }
-    }
-
-    doc.setTextColor(255);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('EcoNexo SpA | RUT: 77.855.394-5', 14, 25);
-    doc.text('Servicios Ambientales, consultorías en gestión de residuos y capacitaciones', 14, 29);
-
-    // Title Block
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFICADO DE GESTIÓN MENSUAL', pageWidth - 14, 20, { align: 'right' });
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    const periodStr = `PERÍODO: ${month.toUpperCase()} ${year}`;
-    doc.text(periodStr, pageWidth - 14, 28, { align: 'right' });
-
-    doc.setFontSize(8);
-    doc.text(`Emisión: ${new Date().toLocaleDateString()}`, pageWidth - 14, 34, { align: 'right' });
-
-    let currentY = 60;
-
-    // --- Client Info ---
-    doc.setTextColor(55, 87, 45); // Dark Green
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INFORMACIÓN DEL GENERADOR', 14, currentY);
-    doc.setDrawColor(55, 87, 45);
-    doc.setLineWidth(0.5);
-    doc.line(14, currentY + 2, pageWidth - 14, currentY + 2);
-
-    currentY += 10;
-    doc.setTextColor(31, 41, 55);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Razón Social:', 14, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(client.company_name, 45, currentY);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('RUT:', pageWidth / 2, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(client.rut, (pageWidth / 2) + 15, currentY);
-
-    currentY += 6;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Dirección:', 14, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(client.address, 45, currentY);
-
-    currentY += 15;
-
-    // --- Main Waste Table (High Fidelity) ---
-    doc.setTextColor(55, 87, 45);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DETALLE DE RESIDUOS GESTIONADOS', 14, currentY);
-    currentY += 4;
-
-    const tableHeaders = [['Tipo de Residuo', 'Tratamiento', 'Destino', 'Cantidad (Kg)']];
-    const tableRows: any[] = [];
-
-    // Helper format
-    const fmt = (n: number) => n.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-
-    Object.entries(materialData).forEach(([cat, data]) => {
-        if (data.qty > 0) {
-            tableRows.push([
-                cat,
-                'Reciclaje / Valorización',
-                'Planta Autorizada EcoNexo',
-                `${fmt(data.qty)}`
-            ]);
-        }
-    });
-
-    tableRows.push(['TOTAL GESTIONADO', '', '', `${fmt(totalKg)}`]);
-
-    autoTable(doc, {
-        startY: currentY,
-        head: tableHeaders,
-        body: tableRows,
-        theme: 'grid',
-        headStyles: {
-            fillColor: [55, 87, 45],
-            textColor: 255,
-            fontSize: 9,
-            fontStyle: 'bold',
-            halign: 'center'
-        },
-        bodyStyles: {
-            textColor: 50,
-            fontSize: 9,
-            halign: 'center'
-        },
-        columnStyles: {
-            0: { halign: 'left', fontStyle: 'bold' },
-            3: { halign: 'right', fontStyle: 'bold' }
-        },
-        didParseCell: (data) => {
-            // Material-based coloring
-            if (data.section === 'body' && data.column.index === 0) {
-                const text = data.cell.raw as string;
-                if (text.includes('Papel')) data.cell.styles.fillColor = [220, 230, 245];
-                if (text.includes('Plásticos')) data.cell.styles.fillColor = [255, 250, 220];
-                if (text.includes('Vidrio')) data.cell.styles.fillColor = [220, 255, 245];
-                if (text.includes('Metales')) data.cell.styles.fillColor = [240, 240, 240];
-                if (text.includes('Otros')) data.cell.styles.fillColor = [250, 245, 235];
-                if (text.includes('TOTAL')) {
-                    data.cell.styles.fillColor = [230, 240, 230];
-                    data.cell.styles.fontStyle = 'bold';
-                }
-            }
-            if (data.section === 'body' && (data.row.raw as string[])[0].includes('TOTAL')) {
-                data.cell.styles.fontStyle = 'bold';
-                data.cell.styles.fillColor = [230, 240, 230];
-            }
-        }
-    });
-
-    currentY = (doc as any).lastAutoTable.finalY + 15;
-
-    // --- Eco-Equivalencia Summary Box ---
-    // Check page break
-    if (currentY > pageHeight - 80) {
-        doc.addPage();
-        currentY = 40;
-    }
-
-    const summaryBoxHeight = 55;
-
-    // Box
-    doc.setDrawColor(55, 87, 45);
-    doc.setLineWidth(0.5);
-    doc.setFillColor(250, 252, 250); // Mint tint
-    doc.roundedRect(14, currentY, pageWidth - 28, summaryBoxHeight, 3, 3, 'FD');
-
-    // Box Header
-    doc.setFillColor(55, 87, 45);
-    doc.roundedRect(14, currentY, pageWidth - 28, 9, 3, 3, 'F');
-    doc.setTextColor(255);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RESUMEN DE ECO-EQUIVALENCIA (IMPACTO POSITIVO)', pageWidth / 2, currentY + 6, { align: 'center' });
-
-    // Summary Items
-    const startContentY = currentY + 18;
-    const col2X = 140;
-    const col3X = 145;
-    const padding = 20;
-
-    const drawSumRow = (y: number, label: string, val: string, unit: string) => {
-        doc.setTextColor(50);
-        doc.setFont('helvetica', 'normal');
-        doc.text(label, 14 + padding, y);
+    } else {
+        doc.setTextColor(255);
+        doc.setFontSize(24);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0);
-        doc.text(val, col2X, y, { align: 'right' });
+        doc.text("EcoNexo", pageWidth / 2, 20, { align: 'center' });
+    }
+
+    // Number Identifier (Top Right)
+    doc.setTextColor(255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text("Nº60", pageWidth - 15, 22, { align: 'right' });
+    doc.setDrawColor(255);
+    doc.setLineWidth(0.5);
+    doc.line(pageWidth - 32, 24, pageWidth - 15, 24);
+
+    // Green Sub-Header
+    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+    doc.rect(0, 35, pageWidth, 18, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(14);
+    doc.text("CERTIFICADO GESTION MENSUAL", pageWidth / 2, 41, { align: 'center' });
+    doc.text("DE RESIDUOS", pageWidth / 2, 48, { align: 'center' });
+
+    // --- 2. LEGAL TEXT ---
+    let currentY = 65;
+    doc.setTextColor(0);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+
+    // "EcoNexo SpA," (Bold)
+    doc.setFont('helvetica', 'bold');
+    doc.text("EcoNexo SpA,", 14, currentY);
+
+    // Normal Text Flow
+    doc.setFont('helvetica', 'normal');
+    const fullText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
+    const lines = doc.splitTextToSize(fullText, pageWidth - 28);
+    doc.text(lines, 14, currentY);
+    // Overprint bold prefix
+    doc.setFont('helvetica', 'bold');
+    doc.text("EcoNexo SpA,", 14, currentY);
+
+    currentY += (lines.length * 5) + 12;
+
+    // --- 3. CLIENT INFO ---
+    doc.setFont('helvetica', 'bold');
+    doc.text("Provenientes de la empresa:", 14, currentY);
+    currentY += 6;
+
+    const drawLabelVal = (lbl: string, val: string) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(lbl, 14, currentY);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(80);
-        doc.text(unit, col3X, y);
+        doc.text(val, 45, currentY);
+        currentY += 5;
     };
 
-    drawSumRow(startContentY, 'Agua Ahorrada', fmt(totalWater), 'Litros');
-    drawSumRow(startContentY + 7, 'Energía Ahorrada', fmt(totalEnergy), 'Kw');
-    drawSumRow(startContentY + 14, 'CO2 Evitado a la Atmósfera', fmt(totalCO2), 'Kg');
+    drawLabelVal("Razón Social:", client.company_name.toUpperCase());
+    drawLabelVal("RUT:", client.rut);
+    drawLabelVal("Dirección:", client.address);
+    currentY += 10;
 
-    let extraY = startContentY + 21;
-    if (paperKg > 0) {
-        drawSumRow(extraY, 'Árboles Salvados', trees.toFixed(1), 'Unidades');
-    } else if (aluminumKg > 0) {
-        drawSumRow(extraY, 'Bauxita Evitada', fmt(aluBauxite), 'Kg');
-    } else {
-        drawSumRow(extraY, 'Camiones de Basura Evitados', (totalKg / 1000).toFixed(2), 'Unidades');
+    // --- 4. DATA SECTION ---
+    doc.setFont('helvetica', 'bold');
+    doc.text("De los cuales, se gestionó un total de:", 14, currentY);
+    currentY += 8;
+
+    // Prepare Data Aggregation
+    const categories: any = {
+        'Plásticos': { color: TABLE_YELLOW, textMain: [0, 0, 0], qty: 0, pct: 0 },
+        'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Aluminio': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Metales': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Vidrio': { color: [100, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 },
+        'Otros': { color: [200, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 }
+    };
+
+    let totalKg = 0;
+    items.forEach(i => {
+        const cat = normalizeMaterialType(i);
+        const q = Number(i.quantity) || 0;
+        totalKg += q;
+        if (categories[cat]) categories[cat].qty += q;
+        else categories['Otros'].qty += q;
+    });
+    if (totalKg === 0) totalKg = 1;
+
+    Object.keys(categories).forEach(k => {
+        categories[k].pct = (categories[k].qty / totalKg) * 100;
+    });
+
+    // TABLE GEOMETRY
+    const tX = 14;
+    const col1 = 55; // Residuos
+    const col2 = 35; // Kg
+    const col3 = 35; // %
+    const rowH = 12; // Taller rows like image
+    const gap = 3;   // White gap
+
+    // Header Row (Light Grey)
+    doc.setFillColor(220, 220, 220);
+    doc.rect(tX, currentY, col1, rowH, 'F');
+    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
+    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
+    doc.text("RESIDUOS", tX + col1 / 2, currentY + 8, { align: 'center' });
+    doc.text("KG", tX + col1 + gap + col2 / 2, currentY + 8, { align: 'center' });
+    doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 8, { align: 'center' });
+
+    currentY += rowH + gap;
+
+    // Helper to draw row
+    const drawRow = (display: string, key: string) => {
+        const d = categories[key];
+        // Always show Aluminium row as placeholder if 0? Image has it.
+        // We show if >0 OR if it's Key Category
+        if (d.qty <= 0 && display !== 'ALUMINIO') return;
+
+        doc.setFillColor(d.color[0], d.color[1], d.color[2]);
+        doc.rect(tX, currentY, col1, rowH, 'F');
+        doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
+        doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
+
+        doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(display, tX + col1 / 2, currentY + 8, { align: 'center' });
+        doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 8, { align: 'center' });
+        doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 8, { align: 'center' });
+
+        currentY += rowH + gap;
+    };
+
+    drawRow("PLÁSTICOS", "Plásticos");
+    drawRow("CARTÓN/PAPEL", "Papel/Cartón");
+    drawRow("ALUMINIO", "Aluminio");
+    drawRow("METALES", "Metales");
+    if (categories['Vidrio'].qty > 0) drawRow("VIDRIO", "Vidrio");
+
+    // Total
+    currentY += 2;
+    doc.setTextColor(0);
+    doc.setFont('helvetica', 'bold');
+    doc.text("TOTAL", tX + col1 / 2, currentY + 8, { align: 'center' });
+    doc.text(totalKg.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 8, { align: 'center' });
+    doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 8, { align: 'center' });
+
+
+    // --- PIE CHART (Right Side) ---
+    // Pie center
+    const pieX = 170;
+    const pieY = currentY - (rowH * 2.5);
+    const radius = 26;
+
+    // Draw Base (Paper - Blue)
+    doc.setFillColor(TABLE_BLUE[0], TABLE_BLUE[1], TABLE_BLUE[2]);
+    doc.circle(pieX, pieY, radius, 'F');
+
+    // Draw Plastic Wedge (Yellow) if needed
+    if (categories['Plásticos'].pct > 0) {
+        doc.setFillColor(TABLE_YELLOW[0], TABLE_YELLOW[1], TABLE_YELLOW[2]);
+        doc.triangle(pieX, pieY, pieX + 15, pieY - 20, pieX + 20, pieY, 'F');
+        doc.triangle(pieX, pieY, pieX + 20, pieY, pieX + 15, pieY + 20, 'F');
+    }
+    // Grey slice for Aluminum?
+    if (categories['Aluminio'].pct > 0 || categories['Metales'].pct > 0) {
+        doc.setFillColor(TABLE_GREY[0], TABLE_GREY[1], TABLE_GREY[2]);
+        doc.triangle(pieX, pieY, pieX - 5, pieY - radius, pieX + 5, pieY - radius, 'F');
     }
 
-    // --- Footer & Certification ---
-    const footerY = pageHeight - 50;
+    currentY += 20;
 
-    // Legal Text
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    const disclaimer = "Certificamos que los residuos detallados fueron gestionados conforme a la normativa legal vigente (DS 148, Ley 20.920), priorizando su valorización ambiental.";
-    const splitDisc = doc.splitTextToSize(disclaimer, pageWidth - 28);
-    doc.text(splitDisc, 14, footerY - 5);
+    // --- 5. DESTINATIONS ---
+    doc.setTextColor(0);
+    doc.setFont('helvetica', 'bold');
+    doc.text("DESTINO AUTORIZADO:", 14, currentY);
+    currentY += 5;
 
-    // Signatures Area
-    const sigY = pageHeight - 25;
+    doc.setFont('helvetica', 'normal');
+    const destinations = [
+        ["SOREPA SPA., RUT: 86.359.300-K", "Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA"],
+        ["GCR, RUT: 76.958.842-6", "Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA"]
+    ];
+
+    destinations.forEach(d => {
+        doc.text(d[0], 14, currentY);
+        currentY += 5;
+        doc.text(d[1], 14, currentY);
+        currentY += 8;
+    });
+
+    // --- 6. SIGNATURE ---
+    const sigY = pageHeight - 45;
+
+    // Signature Image
     if (ECONEXO_SIGNATURE) {
         try {
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', (pageWidth / 2) - 20, sigY - 25, 40, 20);
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 30, 40, 30);
         } catch (e) { }
     }
-    doc.setDrawColor(180);
-    doc.line((pageWidth / 2) - 30, sigY, (pageWidth / 2) + 30, sigY);
-    doc.setFontSize(9);
-    doc.setTextColor(50);
-    doc.text('Firma Autorizada EcoNexo SpA', pageWidth / 2, sigY + 5, { align: 'center' });
 
-    // Watermark
+    // Line
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(0);
+    doc.line(pageWidth - 80, sigY, pageWidth - 20, sigY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
+    doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
+
+    // --- 7. FOOTER BAR ---
+    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+    doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
+
+    doc.setTextColor(255);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const footerText = "Econexo.huh@gmail.com      +569 35626886      econexo.cl";
+    doc.text(footerText, pageWidth / 2, pageHeight - 4, { align: 'center' });
+
+    // --- WATERMARK ---
     if (ECONEXO_WATERMARK) {
         try {
             doc.saveGraphicsState();
             doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
-            const wmSize = 140;
-            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, (pageHeight - wmSize) / 2, wmSize, wmSize);
+            const wmSize = 160;
+            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, 70, wmSize, wmSize);
             doc.restoreGraphicsState();
         } catch (e) { }
     }
