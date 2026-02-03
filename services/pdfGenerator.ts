@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG } from './constants';
+import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
 interface CompanyData {
@@ -1036,6 +1036,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const TABLE_YELLOW = [255, 225, 100];
     const TABLE_BLUE = [0, 85, 165];
     const TABLE_GREY = [160, 160, 160];
+    const TABLE_LIGHT_GREY = [235, 235, 235];
 
     // --- 1. HEADER ---
     // Dark Grey Top Bar
@@ -1043,11 +1044,16 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.rect(0, 0, pageWidth, 35, 'F');
 
     // Logo (Centered & Proportional)
-    if (ECONEXO_LOGO) {
+    // Use FULL LOGO if available, else standard
+    const logoToUse = ECONEXO_FULL_LOGO || ECONEXO_LOGO;
+
+    if (logoToUse) {
         try {
-            const logoH = 18;
-            const logoW = 60;
-            doc.addImage(ECONEXO_LOGO, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
+            // Target Height 24px (fits in 35px with padding)
+            // Aspect ratio ~ 4.5 : 1 => Width ~ 108
+            const logoH = 24;
+            const logoW = 108;
+            doc.addImage(logoToUse, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
         } catch (e) {
             doc.setTextColor(255);
             doc.setFontSize(24);
@@ -1070,7 +1076,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const numY = 22;
     doc.text(numText, numX, numY, { align: 'right' });
 
-    // Underline - match text width
+    // Underline
     const textW = doc.getTextWidth(numText);
     doc.setDrawColor(255);
     doc.setLineWidth(0.5);
@@ -1080,47 +1086,46 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
     doc.rect(0, 35, pageWidth, 18, 'F');
     doc.setTextColor(255);
-    doc.setFontSize(15);
+    doc.setFontSize(16); // Larger
     doc.setFont('helvetica', 'bold');
-    doc.text("CERTIFICADO GESTION MENSUAL", pageWidth / 2, 41, { align: 'center' });
-    doc.text("DE RESIDUOS", pageWidth / 2, 47, { align: 'center' });
+    // Centered Vertically in 18px (35 -> 53). Mid = 44.
+    // Text baseline is bottom, so add approx 1/3 font size or adjust manually.
+    // 16pt ~ 5.6mm height. 44 + 2 = 46.
+    doc.text("CERTIFICADO GESTION MENSUAL DE RESIDUOS", pageWidth / 2, 46, { align: 'center' });
 
     // --- 2. LEGAL TEXT ---
     let currentY = 65;
     doc.setTextColor(0);
     // Bigger Font for this paragraph
     doc.setFontSize(12);
+    // Normal weight only to avoid bold overlay issues
     doc.setFont('helvetica', 'normal');
 
-    const marginLeft = 25;
-    const marginRight = 25;
-    const textBoxWidth = pageWidth - marginLeft - marginRight;
+    const margin = 22;
+    const textBoxWidth = pageWidth - (margin * 2);
 
-    // Construct Text
+    // Text content
+    // Justify manually logic not perfect in jsPDF without plugins, but 'justify' align works for multiline text calls usually
     const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
 
-    // Split text
     const lines = doc.splitTextToSize(plainText, textBoxWidth);
-    doc.text(lines, marginLeft, currentY, { align: 'justify', maxWidth: textBoxWidth });
-
-    // Bold Overlay (First 12 chars: "EcoNexo SpA,")
-    doc.setFont('helvetica', 'bold');
-    doc.text("EcoNexo SpA,", marginLeft, currentY);
+    doc.text(lines, margin, currentY, { align: 'justify', maxWidth: textBoxWidth });
 
     // Spacing adjustment (reduced)
-    currentY += (lines.length * 6) + 4;
+    currentY += (lines.length * 6) + 2;
 
     // --- 3. CLIENT INFO ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text("Provenientes de la empresa:", 14, currentY);
+    doc.text("Provenientes de la empresa:", margin, currentY);
     currentY += 5;
 
     const drawLabelVal = (lbl: string, val: string) => {
         doc.setFont('helvetica', 'bold');
-        doc.text(lbl, 14, currentY);
+        doc.text(lbl, margin, currentY);
         doc.setFont('helvetica', 'normal');
-        doc.text(val, 45, currentY);
+        // Align values
+        doc.text(val, margin + 30, currentY);
         currentY += 5;
     };
 
@@ -1131,7 +1136,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // --- 4. DATA SECTION ---
     doc.setFont('helvetica', 'bold');
-    doc.text("De los cuales, se gestionó un total de:", 14, currentY);
+    doc.text("De los cuales, se gestionó un total de:", margin, currentY);
     currentY += 8;
 
     // Prepare Data
@@ -1159,10 +1164,13 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     });
 
     // TABLE GEOMETRY
-    const tX = 14;
-    const col1 = 55;
-    const col2 = 35;
-    const col3 = 35;
+    // Center table relative to margins?
+    // User said "align texts and tables to the first paragraph".
+    // So Table starts at `margin`.
+    const tX = margin;
+    const col1 = 60;
+    const col2 = 30;
+    const col3 = 30;
     const rowH = 10;
     const gap = 2;
 
@@ -1184,8 +1192,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // Rows
     const drawRow = (display: string, key: string) => {
         const d = categories[key];
-        // STRICTLY HIDE IF 0
-        if (d.qty <= 0) return;
+        if (d.qty <= 0) return; // Hide
 
         doc.setFillColor(d.color[0], d.color[1], d.color[2]);
         doc.rect(tX, currentY, col1, rowH, 'F');
@@ -1208,7 +1215,12 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     if (categories['Vidrio'].qty > 0) drawRow("VIDRIO", "Vidrio");
 
     // Total
-    currentY += 2;
+    // GREY Background for Total
+    doc.setFillColor(TABLE_LIGHT_GREY[0], TABLE_LIGHT_GREY[1], TABLE_LIGHT_GREY[2]);
+    doc.rect(tX, currentY, col1, rowH, 'F');
+    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
+    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
+
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
@@ -1216,11 +1228,18 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
 
     // --- PIE CHART ---
-    const pieX = 165;
+    // Right of table. 
+    // Table width = 60 + 30 + 30 + 4 = 124.
+    // X start = margin (22). End = 146.
+    // Page width ~ 210. 
+    // Space right = 210 - 146 = 64.
+    // Center pie in that space: 146 + 32 = 178.
+    const pieX = 175;
     const pieY = currentY - (rowH * 2) - 10;
     const radius = 22;
 
-    let startAngle = 0;
+    // Start Angle: Vertical (-90 deg or -PI/2)
+    let startAngle = -Math.PI / 2;
     const activeCats = Object.keys(categories).filter(k => categories[k].pct > 0);
 
     if (activeCats.length === 0) {
@@ -1231,18 +1250,18 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         doc.setFillColor(c.color[0], c.color[1], c.color[2]);
         doc.circle(pieX, pieY, radius, 'F');
     } else {
-        // Multi-slice approximation
         activeCats.forEach(k => {
             const cat = categories[k];
-            const sliceAngle = (cat.pct / 100) * 360;
+            const sliceAngle = (cat.pct / 100) * (2 * Math.PI);
             const endAngle = startAngle + sliceAngle;
 
             doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
 
             // Draw fan
-            for (let i = startAngle; i < endAngle; i += 2) {
-                const a1 = i * (Math.PI / 180);
-                const a2 = (i + 2.5) * (Math.PI / 180);
+            // 2 degree steps = 0.035 rads
+            for (let i = startAngle; i < endAngle; i += 0.04) {
+                const a1 = i;
+                const a2 = Math.min(i + 0.05, endAngle);
 
                 doc.triangle(
                     pieX, pieY,
@@ -1261,7 +1280,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text("DESTINO AUTORIZADO:", 14, currentY);
+    doc.text("DESTINO AUTORIZADO:", margin, currentY);
     currentY += 5;
 
     doc.setFont('helvetica', 'normal');
@@ -1271,9 +1290,9 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     ];
 
     destinations.forEach(d => {
-        doc.text(d[0], 14, currentY);
+        doc.text(d[0], margin, currentY);
         currentY += 5;
-        doc.text(d[1], 14, currentY);
+        doc.text(d[1], margin, currentY);
         currentY += 8;
     });
 
@@ -1293,7 +1312,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
     doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
 
-    // --- 7. FOOTER WITH ICONS ---
+    // --- 7. FOOTER WITH CORRECT ICONS ---
     doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
     doc.rect(0, pageHeight - 14, pageWidth, 14, 'F');
 
@@ -1303,29 +1322,49 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     const footerY = pageHeight - 5;
     const spacing = 65;
+    // Align Icons closer to text
     const startX = (pageWidth - (spacing * 2)) / 2 - 10;
 
-    // 1. Email Icon
-    const iconY = footerY - 3.5;
     doc.setDrawColor(255);
-    doc.setLineWidth(0.3);
-    doc.rect(startX - 5, iconY - 2, 6, 4);
-    doc.line(startX - 5, iconY - 2, startX - 2, iconY);
-    doc.line(startX + 1, iconY - 2, startX - 2, iconY);
+    doc.setLineWidth(0.4);
 
+    // 1. Email Icon (Envelope)
+    const iconY = footerY - 3.5;
+    const icon1X = startX - 5;
+    doc.rect(icon1X, iconY - 2, 6, 4);
+    doc.line(icon1X, iconY - 2, icon1X + 3, iconY);
+    doc.line(icon1X + 6, iconY - 2, icon1X + 3, iconY);
     doc.text("Econexo.huh@gmail.com", startX + 3, footerY);
 
-    // 2. Phone Icon
+    // 2. Phone Icon (Receiver Shape)
     const phoneX = startX + spacing + 10;
-    doc.circle(phoneX - 3, iconY, 2.5, 'S');
+    const icon2X = phoneX - 5;
+    // Simple Receiver: Filled rounded rect rotated? 
+    // Or just path:
+    //  /--\
+    // |    |
+    //  \--/
+    // Let's create a thicker "U" shape curve tilted
+    // Or just a small filled block with corners
+    doc.setLineWidth(1.5);
+    // Draw small line
+    doc.line(icon2X + 1, iconY + 1, icon2X + 4, iconY - 2);
+    // Reset
+    doc.setLineWidth(0.4);
+
     doc.text("+569 35626886", phoneX + 2, footerY);
 
-    // 3. Web Icon
+    // 3. Web Icon (Globe)
     const webX = phoneX + spacing - 10;
-    doc.circle(webX - 3, iconY, 2.5, 'S');
-    doc.line(webX - 5.5, iconY, webX - 0.5, iconY);
+    const icon3X = webX - 5;
+    // Circle
+    doc.circle(icon3X + 2.5, iconY, 2.5, 'S');
+    // Equator
+    doc.line(icon3X, iconY, icon3X + 5, iconY);
+    // Meridian (Vertical line)
+    doc.line(icon3X + 2.5, iconY - 2.5, icon3X + 2.5, iconY + 2.5);
 
-    doc.text("econexo.cl", webX + 2, footerY);
+    doc.text("econexo.cl", webX + 1, footerY);
 
     // --- WATERMARK ---
     if (ECONEXO_WATERMARK) {
