@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON } from './constants';
+import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2 } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
 interface CompanyData {
@@ -1270,17 +1270,21 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.rect(icon1X, footerMidY - 2, 6, 4);
     doc.line(icon1X, footerMidY - 2, icon1X + 3, footerMidY);
     doc.line(icon1X + 6, footerMidY - 2, icon1X + 3, footerMidY);
-    // Text align middle
     doc.text("Econexo.huh@gmail.com", startX + 3, footerMidY, { baseline: 'middle' });
 
-    // 2. Phone Icon (IMAGE)
+    // 2. Phone Icon (IMAGE V2 - Larger)
     const phoneX = startX + spacing + 10;
-    const icon2X = phoneX - 6;
-    if (PHONE_ICON) {
+    const iconRef = PHONE_ICON_V2 || PHONE_ICON;
+    // User requested matching "Web Circle" radius which is R=2.5 Dia=5.
+    // However, they said previous icon (6.4 height) was "too small".
+    // This implies visually they want more weight.
+    // I will try 7.5x7.5 to give it significant presence.
+    const pSize = 7.5;
+    const icon2X = phoneX - 7;
+
+    if (iconRef) {
         try {
-            const pH = 6.4;
-            const pW = 5.2;
-            doc.addImage(PHONE_ICON, 'PNG', icon2X, footerMidY - (pH / 2), pW, pH);
+            doc.addImage(iconRef, 'PNG', icon2X, footerMidY - (pSize / 2), pSize, pSize);
         } catch (e) { }
     }
     doc.text("+569 35626886", phoneX + 2, footerMidY, { baseline: 'middle' });
