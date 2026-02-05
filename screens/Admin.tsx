@@ -61,7 +61,7 @@ const Admin: React.FC = () => {
     // Upload Modal State
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadFile, setUploadFile] = useState<File | null>(null);
-    const [uploadTitle, setUploadTitle] = useState('');
+    const [uploadDate, setUploadDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [uploadType, setUploadType] = useState('declaration'); // Default to 'Declaración'
 
     // New State for Folder View
@@ -324,7 +324,7 @@ const Admin: React.FC = () => {
     };
 
     const handleUploadDocument = async () => {
-        if (!uploadFile || !uploadTitle || !selectedUser) {
+        if (!uploadFile || !selectedUser || !uploadDate) {
             alert("Por favor completa todos los campos y selecciona un archivo.");
             return;
         }
@@ -350,11 +350,11 @@ const Admin: React.FC = () => {
             // 3. Save to DB
             const { error: dbError } = await supabase.from('documents').insert([{
                 user_id: selectedUser.id,
-                title: uploadTitle,
-                type: uploadType, // 'declaration', 'legal', 'custom', 'report', etc.
+                title: uploadFile.name, // Use original filename as title
+                type: uploadType,
                 verified: true,
                 content_url: publicUrl,
-                created_at: new Date().toISOString(),
+                created_at: new Date(uploadDate).toISOString(), // Use selected date
                 metadata: {
                     original_name: uploadFile.name,
                     size: uploadFile.size,
@@ -368,10 +368,9 @@ const Admin: React.FC = () => {
             alert("Documento subido exitosamente.");
             setShowUploadModal(false);
             setUploadFile(null);
-            setUploadTitle('');
+            setUploadDate(new Date().toISOString().split('T')[0]);
             setSelectedUser(null);
             fetchAdminData();
-
         } catch (err: any) {
             console.error("Upload error:", err);
             alert("Error al subir el documento: " + (err.message || "Error desconocido"));
@@ -558,12 +557,12 @@ const Admin: React.FC = () => {
                                     </select>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-gray-500">Título del Documento</label>
+                                    <label className="text-[10px] font-black uppercase text-gray-500">Fecha del Documento</label>
                                     <input
+                                        type="date"
                                         className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
-                                        placeholder="Ej: Certificado Disposición Final"
-                                        value={uploadTitle}
-                                        onChange={(e) => setUploadTitle(e.target.value)}
+                                        value={uploadDate}
+                                        onChange={(e) => setUploadDate(e.target.value)}
                                     />
                                 </div>
                                 <div className="space-y-1">
