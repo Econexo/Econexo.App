@@ -1231,6 +1231,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         });
     }
 
+    currentY += 25;
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
