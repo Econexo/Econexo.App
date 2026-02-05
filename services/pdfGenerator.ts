@@ -1324,31 +1324,30 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     doc.text("+569 35626886", phoneX + 4, iconY, { baseline: 'middle' });
 
-    // 3. Instagram: Solid White Circle + Green Camera Icon
+    // 3. Web: Solid White Circle + Green Globe Icon
     // Text: econexo.cl
     const webX = phoneX + spacing - 10;
     const icon3X = webX - 7;
+    const cx = icon3X + 2.5;
+    const cy = iconY;
 
-    // Solid White Circle
+    // Solid White Circle Background
     doc.setFillColor(255, 255, 255);
-    doc.circle(icon3X + 2.5, iconY, 3.5, 'F');
+    doc.circle(cx, cy, 3.5, 'F');
 
-    // Green Camera Icon
+    // Green Globe Icon
     doc.setDrawColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.setLineWidth(1.2);
+    doc.setLineWidth(0.4); // Thinner lines for detailed icon
 
-    const camSize = 4;
-    const camX = icon3X + 2.5 - (camSize / 2);
-    const camY = iconY - (camSize / 2);
-
-    // Outer rounded square (Green Outline)
-    doc.setLineWidth(0.35);
-    doc.roundedRect(camX, camY, camSize, camSize, 1, 1, 'S');
-    // Inner Circle (Green Outline)
-    doc.circle(icon3X + 2.5, iconY, 1.2, 'S');
-    // Dot (Flash) (Green Fill)
-    doc.circle(camX + camSize - 0.8, camY + 0.8, 0.3, 'F'); // Filled dot
+    const r = 2.2;
+    // Outer Rim
+    doc.circle(cx, cy, r, 'S');
+    // Cross
+    doc.line(cx, cy - r, cx, cy + r); // Vertical
+    doc.line(cx - r, cy, cx + r, cy); // Horizontal
+    // Meridians/Latitudes (Ellipses)
+    doc.ellipse(cx, cy, 1.1, r, 'S'); // Vertical Ellipse
+    doc.ellipse(cx, cy, r, 1.1, 'S'); // Horizontal Ellipse
 
     doc.setTextColor(255); // Reset text to white
     doc.text("econexo.cl", webX + 4, iconY, { baseline: 'middle' });
