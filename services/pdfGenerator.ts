@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import jsPDF from 'jspdf'; // Force redeploy v2
 import autoTable from 'jspdf-autotable';
 import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2 } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
