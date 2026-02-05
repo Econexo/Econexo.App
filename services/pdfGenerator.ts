@@ -1300,14 +1300,15 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const cx2 = icon2X + 2.5;
     const cy2 = iconY;
 
-    // Solid White Circle
-    doc.setFillColor(255, 255, 255);
+    // Solid Green Circle (Inverted for visibility of white icon)
+    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
     doc.circle(cx2, cy2, 3.5, 'F');
 
     // Phone Icon (PNG Asset)
     // Replaces vector drawing to match user reference
     try {
-        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 2, cy2 - 2, 4, 4);
+        // Increased size to ~80% of diameter (5.5x5.5)
+        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 2.75, cy2 - 2.75, 5.5, 5.5);
     } catch (e) {
         console.warn("Failed to add phone icon png", e);
     }
