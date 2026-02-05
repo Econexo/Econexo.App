@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable';
 import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2 } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
+import { PHONE_ICON_BASE64 } from './phoneIconBase64';
+
 interface CompanyData {
     company_name: string;
     rut: string;
@@ -1302,29 +1304,13 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setFillColor(255, 255, 255);
     doc.circle(cx2, cy2, 3.5, 'F');
 
-    // Green Receiver Icon
-    doc.setDrawColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.setLineWidth(1.8); // Thicker for "weight"
-    doc.setLineCap('round');
-    doc.setLineJoin('round');
-
-    // Standard Handset Shape (Diagonal C-curve)
-    // We draw a curve from bottom-left to top-right
-
-
-    // Standard Handset Shape (Geometric Construction)
-    // Start (Bottom-Left), End (Top-Right)
-    const phX = cx2 - 0.8;
-    const phY = cy2 + 0.8;
-
-    // 1. Draw connecting handle (Simple Curve, not swollen)
-    // Relative Bezier: Mild curve outwards (0.2, 0.2)
-    doc.lines([[0.2, 0.2, 1.4, -1.4, 1.6, -1.6]], phX, phY, [1, 1], 'S', false);
-
-    // 2. Draw "Cups" at ends (Thicker dots to simulate receiver ends)
-    doc.setLineWidth(2.2);
-    doc.line(phX, phY, phX, phY); // Bottom-Left Cup
-    doc.line(phX + 1.6, phY - 1.6, phX + 1.6, phY - 1.6); // Top-Right Cup
+    // Phone Icon (PNG Asset)
+    // Replaces vector drawing to match user reference
+    try {
+        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 2, cy2 - 2, 4, 4);
+    } catch (e) {
+        console.warn("Failed to add phone icon png", e);
+    }
 
 
 
