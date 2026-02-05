@@ -1308,20 +1308,18 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setLineCap('round');
     doc.setLineJoin('round');
 
-    // Draw a curved handset (Diagonal)
-    // Start (Bottom-Left), End (Top-Right)
-    // We use a cubic bezier to give it a slight "C" curve shape typical of phone icons
-    const startX2 = cx2 - 1.2;
-    const startY2 = cy2 + 1.2;
+    // Standard Handset Shape (Diagonal C-curve)
+    // We draw a curve from bottom-left to top-right
+    const psx = cx2 - 1.0;
+    const psy = cy2 + 1.0;
 
-    // Relative Bezier: (c1x, c1y, c2x, c2y, ex, ey)
-    // We want a curve that bulges slightly towards bottom-right
-    doc.lines([[0.5, 0.5, 1.9, -1.9, 2.4, -2.4]], startX2, startY2, [1, 1], 'S', false);
+    // Cubic Bezier: bulge towards bottom-right
+    // P0(psx, psy) -> C1 -> C2 -> P3(pex, pey)
+    // High bulge to simulate the handset curve
+    // Adjusted co-ords for "classic" look
+    doc.lines([[0.6, 0.6, 2.2, -1.0, 1.8, -1.8]], psx, psy, [1, 1], 'S', false);
 
-    // Add endpoints to make it look like a receiver (thick dots)
-    doc.setLineWidth(1.6);
-    doc.line(startX2 + 0.1, startY2 - 0.1, startX2 + 0.1, startY2 - 0.1); // Bottom earpiece
-    doc.line(cx2 + 1.1, cy2 - 1.1, cx2 + 1.1, cy2 - 1.1); // Top earpiece
+
 
     // Reset
     doc.setLineCap('butt');
