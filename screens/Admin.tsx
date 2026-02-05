@@ -58,6 +58,12 @@ const Admin: React.FC = () => {
     const [selectedMonthGen, setSelectedMonthGen] = useState(new Date().getMonth());
     const [selectedYearGen, setSelectedYearGen] = useState(new Date().getFullYear());
 
+    // Upload Modal State
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploadTitle, setUploadTitle] = useState('');
+    const [uploadType, setUploadType] = useState('declaration'); // Default to 'Declaración'
+
     // New State for Folder View
     const [adminPath, setAdminPath] = useState<{
         level: 'home' | 'history_companies' | 'history_years' | 'history_months' | 'history_files' | 'monthly_gen_users';
@@ -317,6 +323,63 @@ const Admin: React.FC = () => {
         }
     };
 
+    const handleUploadDocument = async () => {
+        if (!uploadFile || !uploadTitle || !selectedUser) {
+            alert("Por favor completa todos los campos y selecciona un archivo.");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // 1. Upload to Supabase Storage
+            const timestamp = Date.now();
+            const fileExt = uploadFile.name.split('.').pop();
+            const fileName = `${selectedUser.id}/${timestamp}_${uploadFile.name.replace(/\s+/g, '_')}`;
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('documents')
+                .upload(fileName, uploadFile);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('documents')
+                .getPublicUrl(fileName);
+
+            // 3. Save to DB
+            const { error: dbError } = await supabase.from('documents').insert([{
+                user_id: selectedUser.id,
+                title: uploadTitle,
+                type: uploadType, // 'declaration', 'legal', 'custom', 'report', etc.
+                verified: true,
+                content_url: publicUrl,
+                created_at: new Date().toISOString(),
+                metadata: {
+                    original_name: uploadFile.name,
+                    size: uploadFile.size,
+                    mime_type: uploadFile.type,
+                    uploaded_by: 'admin'
+                }
+            }]);
+
+            if (dbError) throw dbError;
+
+            alert("Documento subido exitosamente.");
+            setShowUploadModal(false);
+            setUploadFile(null);
+            setUploadTitle('');
+            setSelectedUser(null);
+            fetchAdminData();
+
+        } catch (err: any) {
+            console.error("Upload error:", err);
+            alert("Error al subir el documento: " + (err.message || "Error desconocido"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleGenerateMonthlyReports = async () => {
         // 1. Fetch all CRs for the selected month/year
         setLoading(true);
@@ -475,6 +538,72 @@ const Admin: React.FC = () => {
                     </div>
                 )}
 
+                {showUploadModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowUploadModal(false)}></div>
+                        <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-2xl animate-in zoom-in duration-200">
+                            <h3 className="text-xl font-display font-black mb-6 text-gray-900">Subir Documento</h3>
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-gray-500">Empresa Destino</label>
+                                    <select
+                                        className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
+                                        value={selectedUser?.id || ''}
+                                        onChange={(e) => setSelectedUser(users.find(u => u.id === e.target.value) || null)}
+                                    >
+                                        <option value="">Seleccionar Empresa...</option>
+                                        {users.map(u => (
+                                            <option key={u.id} value={u.id}>{u.company_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-gray-500">Título del Documento</label>
+                                    <input
+                                        className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
+                                        placeholder="Ej: Certificado Disposición Final"
+                                        value={uploadTitle}
+                                        onChange={(e) => setUploadTitle(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-gray-500">Tipo de Documento</label>
+                                    <select
+                                        className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
+                                        value={uploadType}
+                                        onChange={(e) => setUploadType(e.target.value)}
+                                    >
+                                        <option value="declaration">Declaración / Certificado (Gestores)</option>
+                                        <option value="legal">Documento Legal</option>
+                                        <option value="custom">Otro</option>
+                                        {/* <option value="CR">Certificado Recepción (Interno)</option> */}
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-gray-500">Archivo (PDF / Imagen)</label>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.png,.jpg,.jpeg"
+                                        className="w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                                        onChange={(e) => setUploadFile(e.target.files ? e.target.files[0] : null)}
+                                    />
+                                </div>
+
+                                <div className="pt-2 space-y-2">
+                                    <button
+                                        onClick={handleUploadDocument}
+                                        disabled={loading}
+                                        className="w-full py-3 bg-primary text-white rounded-xl font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                                    >
+                                        {loading ? 'Subiendo...' : 'Subir Documento'}
+                                    </button>
+                                    <button onClick={() => setShowUploadModal(false)} className="w-full text-center text-xs text-gray-500 font-bold uppercase">Cancelar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {showCRModal && selectedUser && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
                         <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowCRModal(false)}></div>
@@ -532,10 +661,14 @@ const Admin: React.FC = () => {
                     </div>
                 )}
 
-                <section className="grid grid-cols-1 gap-4">
+                <section className="grid grid-cols-2 gap-4">
                     <button onClick={() => setShowDocEditor(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">edit_document</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Crear Doc. Especial</span>
+                    </button>
+                    <button onClick={() => setShowUploadModal(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
+                        <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 border border-blue-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">cloud_upload</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento</span>
                     </button>
                 </section>
 
