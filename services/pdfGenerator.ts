@@ -1301,16 +1301,17 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const cy2 = iconY;
 
     // Solid Green Circle (Inverted for visibility of white icon)
+    // Large radius (5.0) to exceed text height
     doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.circle(cx2, cy2, 3.5, 'F');
+    doc.circle(cx2, cy2, 5.0, 'F');
 
     // Phone Icon (PNG Asset)
     // Replaces vector drawing to match user reference
     try {
-        // Maximize size to fill circle (assuming PNG has internal padding)
-        // Circle Radius = 3.5 -> Diameter = 7
-        // Image Size = 6.8 (97%)
-        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 3.4, cy2 - 3.4, 6.8, 6.8);
+        // Maximize size to fill large circle
+        // Circle Radius = 5.0 -> Diameter = 10.0
+        // Image Size = 10.0 (Full fill, assuming padding)
+        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 5.0, cy2 - 5.0, 10.0, 10.0);
     } catch (e) {
         console.warn("Failed to add phone icon png", e);
     }
