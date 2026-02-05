@@ -1135,9 +1135,9 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const categories: any = {
         'Plásticos': { color: TABLE_YELLOW, textMain: [0, 0, 0], qty: 0, pct: 0 },
         'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Aluminio': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Metales': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Vidrio': { color: [0, 150, 150], textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Aluminio': { color: [70, 70, 70], textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Metales': { color: [70, 70, 70], textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Vidrio': { color: [45, 106, 79], textMain: [255, 255, 255], qty: 0, pct: 0 },
         'Otros': { color: [150, 150, 150], textMain: [0, 0, 0], qty: 0, pct: 0 }
     };
 
@@ -1231,11 +1231,13 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         });
     }
 
-    currentY += 25;
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text("DESTINO AUTORIZADO:", margin, currentY);
+    const destTxt = "DESTINO AUTORIZADO:";
+    doc.text(destTxt, margin, currentY);
+    const destTxtW = doc.getTextWidth(destTxt);
+    doc.line(margin, currentY + 1, margin + destTxtW, currentY + 1);
     currentY += 5;
     doc.setFont('helvetica', 'normal');
     const destinations = [
