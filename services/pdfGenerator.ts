@@ -1304,7 +1304,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // Green Receiver Icon
     doc.setDrawColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.setLineWidth(1.1);
+    doc.setLineWidth(1.8); // Thicker for "weight"
     doc.setLineCap('round');
     doc.setLineJoin('round');
 
