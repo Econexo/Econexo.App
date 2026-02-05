@@ -1324,7 +1324,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setDrawColor(255);
     doc.setTextColor(255);
 
-    doc.text("+569 35626886", phoneX + 3.5, iconY, { baseline: 'middle' });
+    doc.text("+569 35626886", phoneX + 1.5, iconY, { baseline: 'middle' });
 
     // 3. Web: Solid White Circle + Green Globe Icon
     // Text: econexo.cl
