@@ -1307,8 +1307,10 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // Phone Icon (PNG Asset)
     // Replaces vector drawing to match user reference
     try {
-        // Increased size to ~80% of diameter (5.5x5.5)
-        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 2.75, cy2 - 2.75, 5.5, 5.5);
+        // Maximize size to fill circle (assuming PNG has internal padding)
+        // Circle Radius = 3.5 -> Diameter = 7
+        // Image Size = 6.8 (97%)
+        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 3.4, cy2 - 3.4, 6.8, 6.8);
     } catch (e) {
         console.warn("Failed to add phone icon png", e);
     }
