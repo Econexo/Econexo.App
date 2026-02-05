@@ -1292,7 +1292,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.line(envX, envY, envX + envW / 2, envY + envH / 2 + 0.2); // V-shape down
     doc.line(envX + envW, envY, envX + envW / 2, envY + envH / 2 + 0.2); // V-shape up
 
-    doc.text("Econexo.huh@gmail.com", startX + 9, iconY, { baseline: 'middle' });
+    // Text: Closer to icon (2mm gap)
+    doc.text("Econexo.huh@gmail.com", startX + 2.5, iconY, { baseline: 'middle' });
 
     // 2. Phone: Solid White Circle + Green Receiver
     const phoneX = startX + spacing + 10;
@@ -1323,7 +1324,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setDrawColor(255);
     doc.setTextColor(255);
 
-    doc.text("+569 35626886", phoneX + 4, iconY, { baseline: 'middle' });
+    doc.text("+569 35626886", phoneX + 3.5, iconY, { baseline: 'middle' });
 
     // 3. Web: Solid White Circle + Green Globe Icon
     // Text: econexo.cl
@@ -1351,7 +1352,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.ellipse(cx, cy, r, 1.1, 'S'); // Horizontal Ellipse
 
     doc.setTextColor(255); // Reset text to white
-    doc.text("econexo.cl", webX + 4, iconY, { baseline: 'middle' });
+    doc.text("econexo.cl", webX + 0.5, iconY, { baseline: 'middle' });
 
     if (ECONEXO_WATERMARK) {
         try {
