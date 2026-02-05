@@ -1310,14 +1310,21 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // Standard Handset Shape (Diagonal C-curve)
     // We draw a curve from bottom-left to top-right
-    const psx = cx2 - 1.0;
-    const psy = cy2 + 1.0;
 
-    // Cubic Bezier: bulge towards bottom-right
-    // P0(psx, psy) -> C1 -> C2 -> P3(pex, pey)
-    // High bulge to simulate the handset curve
-    // Adjusted co-ords for "classic" look
-    doc.lines([[0.6, 0.6, 2.2, -1.0, 1.8, -1.8]], psx, psy, [1, 1], 'S', false);
+
+    // Standard Handset Shape (Geometric Construction)
+    // Start (Bottom-Left), End (Top-Right)
+    const psx = cx2 - 0.8;
+    const psy = cy2 + 0.8;
+
+    // 1. Draw connecting handle (Simple Curve, not swollen)
+    // Relative Bezier: Mild curve outwards (0.2, 0.2)
+    doc.lines([[0.2, 0.2, 1.4, -1.4, 1.6, -1.6]], psx, psy, [1, 1], 'S', false);
+
+    // 2. Draw "Cups" at ends (Thicker dots to simulate receiver ends)
+    doc.setLineWidth(2.2);
+    doc.line(psx, psy, psx, psy); // Bottom-Left Cup
+    doc.line(psx + 1.6, psy - 1.6, psx + 1.6, psy - 1.6); // Top-Right Cup
 
 
 
