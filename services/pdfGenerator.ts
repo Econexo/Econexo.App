@@ -1295,27 +1295,33 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // 2. Phone: Solid White Circle + Green Receiver
     const phoneX = startX + spacing + 10;
     const icon2X = phoneX - 5;
+    const cx2 = icon2X + 2.5;
+    const cy2 = iconY;
 
     // Solid White Circle
     doc.setFillColor(255, 255, 255);
-    doc.circle(icon2X + 2.5, iconY, 3.5, 'F');
+    doc.circle(cx2, cy2, 3.5, 'F');
 
-    // Green Receiver
+    // Green Receiver Icon
     doc.setDrawColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.setLineWidth(1.2);
-
-    // Receiver Shape (Approximated with lines/curves for robustness)
-    const rx = icon2X + 2.5;
-    const ry = iconY;
-    // Draw a simple receiver shape
-    doc.lines([[0.8, 0.8], [0.5, -0.5]], rx - 1.5, ry + 0.5, [1, 1], 'S', true);
-    // Actually a simple arc/line looks cleaner at this size
+    doc.setLineWidth(1.1);
     doc.setLineCap('round');
-    doc.line(rx - 1.2, ry + 1.2, rx + 1.2, ry - 1.2);
-    // Add "earpieces"
-    doc.setLineWidth(1.8);
-    doc.line(rx - 1.2, ry + 1.0, rx - 1.2, ry + 1.0); // Dot
-    doc.line(rx + 1.0, ry - 1.2, rx + 1.0, ry - 1.2); // Dot
+    doc.setLineJoin('round');
+
+    // Draw a curved handset (Diagonal)
+    // Start (Bottom-Left), End (Top-Right)
+    // We use a cubic bezier to give it a slight "C" curve shape typical of phone icons
+    const startX2 = cx2 - 1.2;
+    const startY2 = cy2 + 1.2;
+
+    // Relative Bezier: (c1x, c1y, c2x, c2y, ex, ey)
+    // We want a curve that bulges slightly towards bottom-right
+    doc.lines([[0.5, 0.5, 1.9, -1.9, 2.4, -2.4]], startX2, startY2, [1, 1], 'S', false);
+
+    // Add endpoints to make it look like a receiver (thick dots)
+    doc.setLineWidth(1.6);
+    doc.line(startX2 + 0.1, startY2 - 0.1, startX2 + 0.1, startY2 - 0.1); // Bottom earpiece
+    doc.line(cx2 + 1.1, cy2 - 1.1, cx2 + 1.1, cy2 - 1.1); // Top earpiece
 
     // Reset
     doc.setLineCap('butt');
