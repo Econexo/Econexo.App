@@ -1037,9 +1037,9 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // --- COLORS ---
     const HEADER_GREY = [40, 40, 40];
     const HEADER_GREEN = [45, 106, 79];
-    const TABLE_YELLOW = [255, 225, 100];
-    const TABLE_BLUE = [0, 85, 165];
-    const TABLE_GREY = [160, 160, 160];
+    const TABLE_YELLOW = [255, 200, 0];
+    const TABLE_BLUE = [0, 70, 160];
+    const TABLE_GREY = [100, 100, 100];
     const TABLE_LIGHT_GREY = [235, 235, 235];
 
     // --- 1. HEADER ---
@@ -1100,10 +1100,15 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     currentY += (lines.length * 6) + 2;
 
     // --- 3. CLIENT INFO ---
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text("Provenientes de la empresa:", margin, currentY);
-    currentY += 5;
+    const txt1 = "Provenientes de la empresa:";
+    doc.text(txt1, margin, currentY);
+    const txt1W = doc.getTextWidth(txt1);
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(0);
+    doc.line(margin, currentY + 1, margin + txt1W, currentY + 1);
+    currentY += 6;
 
     const drawLabelVal = (lbl: string, val: string) => {
         doc.setFont('helvetica', 'bold');
@@ -1120,7 +1125,11 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // --- 4. DATA SECTION ---
     doc.setFont('helvetica', 'bold');
-    doc.text("De los cuales, se gestionó un total de:", margin, currentY);
+    doc.setFontSize(11);
+    const txt2 = "De los cuales, se gestionó un total de:";
+    doc.text(txt2, margin, currentY);
+    const txt2W = doc.getTextWidth(txt2);
+    doc.line(margin, currentY + 1, margin + txt2W, currentY + 1);
     currentY += 8;
 
     const categories: any = {
@@ -1128,8 +1137,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
         'Aluminio': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
         'Metales': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Vidrio': { color: [100, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 },
-        'Otros': { color: [200, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 }
+        'Vidrio': { color: [0, 150, 150], textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Otros': { color: [150, 150, 150], textMain: [0, 0, 0], qty: 0, pct: 0 }
     };
 
     let totalKg = 0;
