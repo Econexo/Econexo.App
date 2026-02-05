@@ -1025,579 +1025,7 @@ export const generateCustomDoc = (client: CompanyData, title: string, contentHtm
 };
 
 
-export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save') => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
 
-    // --- COLORS ---
-    const HEADER_GREY = [40, 40, 40];
-    const HEADER_GREEN = [45, 106, 79];
-    const TABLE_YELLOW = [255, 225, 100];
-    const TABLE_BLUE = [0, 85, 165];
-    const TABLE_GREY = [160, 160, 160];
-    const TABLE_LIGHT_GREY = [235, 235, 235];
-
-    // --- 1. HEADER ---
-    doc.setFillColor(HEADER_GREY[0], HEADER_GREY[1], HEADER_GREY[2]);
-    doc.rect(0, 0, pageWidth, 35, 'F');
-
-    const logoToUse = ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
-    if (logoToUse) {
-        try {
-            const logoH = 24;
-            const logoW = 108;
-            doc.addImage(logoToUse, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
-        } catch (e) {
-            doc.setTextColor(255);
-            doc.setFontSize(24);
-            doc.setFont('helvetica', 'bold');
-            doc.text("EcoNexo", pageWidth / 2, 23, { align: 'center' });
-        }
-    } else {
-        doc.setTextColor(255);
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'bold');
-        doc.text("EcoNexo", pageWidth / 2, 23, { align: 'center' });
-    }
-
-    doc.setTextColor(255);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    const numText = "Nº60";
-    const numX = pageWidth - 20;
-    const numY = 22;
-    doc.text(numText, numX, numY, { align: 'right' });
-
-    const textW = doc.getTextWidth(numText);
-    doc.setDrawColor(255);
-    doc.setLineWidth(0.5);
-    doc.line(numX - textW, numY + 2, numX, numY + 2);
-
-    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.rect(0, 35, pageWidth, 18, 'F');
-    doc.setTextColor(255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text("CERTIFICADO GESTION MENSUAL DE RESIDUOS", pageWidth / 2, 46, { align: 'center' });
-
-    // --- 2. LEGAL TEXT ---
-    let currentY = 65;
-    doc.setTextColor(0);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-
-    const margin = 22;
-    const textBoxWidth = pageWidth - (margin * 2);
-    const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
-
-    const lines = doc.splitTextToSize(plainText, textBoxWidth);
-    doc.text(lines, margin, currentY, { align: 'justify', maxWidth: textBoxWidth });
-    currentY += (lines.length * 6) + 2;
-
-    // --- 3. CLIENT INFO ---
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("Provenientes de la empresa:", margin, currentY);
-    currentY += 5;
-
-    const drawLabelVal = (lbl: string, val: string) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(lbl, margin, currentY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(val, margin + 30, currentY);
-        currentY += 5;
-    };
-
-    drawLabelVal("Razón Social:", client.company_name.toUpperCase());
-    drawLabelVal("RUT:", client.rut);
-    drawLabelVal("Dirección:", client.address);
-    currentY += 8;
-
-    // --- 4. DATA SECTION ---
-    doc.setFont('helvetica', 'bold');
-    doc.text("De los cuales, se gestionó un total de:", margin, currentY);
-    currentY += 8;
-
-    const categories: any = {
-        'Plásticos': { color: TABLE_YELLOW, textMain: [0, 0, 0], qty: 0, pct: 0 },
-        'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Aluminio': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Metales': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Vidrio': { color: [100, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 },
-        'Otros': { color: [200, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 }
-    };
-
-    let totalKg = 0;
-    items.forEach(i => {
-        const cat = normalizeMaterialType(i);
-        const q = Number(i.quantity) || 0;
-        totalKg += q;
-        if (categories[cat]) categories[cat].qty += q;
-        else categories['Otros'].qty += q;
-    });
-    if (totalKg === 0) totalKg = 1;
-    Object.keys(categories).forEach(k => {
-        categories[k].pct = (categories[k].qty / totalKg) * 100;
-    });
-
-    const tX = margin;
-    const col1 = 60;
-    const col2 = 30;
-    const col3 = 30;
-    const rowH = 10;
-    const gap = 2;
-
-    doc.setFillColor(220, 220, 220);
-    doc.rect(tX, currentY, col1, rowH, 'F');
-    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0);
-    doc.text("RESIDUOS", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text("KG", tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-    doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-    currentY += rowH + gap;
-
-    const drawRow = (display: string, key: string) => {
-        const d = categories[key];
-        if (d.qty <= 0) return;
-        doc.setFillColor(d.color[0], d.color[1], d.color[2]);
-        doc.rect(tX, currentY, col1, rowH, 'F');
-        doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-        doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-        doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
-        doc.setFont('helvetica', 'bold');
-        doc.text(display, tX + col1 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-        currentY += rowH + gap;
-    };
-
-    drawRow("PLÁSTICOS", "Plásticos");
-    drawRow("CARTÓN/PAPEL", "Papel/Cartón");
-    drawRow("ALUMINIO", "Aluminio");
-    drawRow("METALES", "Metales");
-    if (categories['Vidrio'].qty > 0) drawRow("VIDRIO", "Vidrio");
-
-    doc.setFillColor(TABLE_LIGHT_GREY[0], TABLE_LIGHT_GREY[1], TABLE_LIGHT_GREY[2]);
-    doc.rect(tX, currentY, col1, rowH, 'F');
-    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text(totalKg.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-    doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-
-    const pieX = 175;
-    const pieY = currentY - (rowH * 2) + 5;
-    const radius = 18;
-    let startAngle = -Math.PI / 2;
-    const activeCats = Object.keys(categories).filter(k => categories[k].pct > 0);
-    if (activeCats.length === 0) {
-        doc.setDrawColor(200);
-        doc.circle(pieX, pieY, radius, 'S');
-    } else if (activeCats.length === 1) {
-        const c = categories[activeCats[0]];
-        doc.setFillColor(c.color[0], c.color[1], c.color[2]);
-        doc.circle(pieX, pieY, radius, 'F');
-    } else {
-        activeCats.forEach(k => {
-            const cat = categories[k];
-            const sliceAngle = (cat.pct / 100) * (2 * Math.PI);
-            const endAngle = startAngle + sliceAngle;
-            doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
-            for (let i = startAngle; i < endAngle; i += 0.04) {
-                const a1 = i;
-                const a2 = Math.min(i + 0.05, endAngle);
-                doc.triangle(pieX, pieY, pieX + radius * Math.cos(a1), pieY + radius * Math.sin(a1), pieX + radius * Math.cos(a2), pieY + radius * Math.sin(a2), 'F');
-            }
-            startAngle += sliceAngle;
-        });
-    }
-
-    currentY += 25;
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text("DESTINO AUTORIZADO:", margin, currentY);
-    currentY += 5;
-    doc.setFont('helvetica', 'normal');
-    const destinations = [
-        ["SOREPA SPA., RUT: 86.359.300-K", "Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA"],
-        ["GCR, RUT: 76.958.842-6", "Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA"]
-    ];
-    destinations.forEach(d => {
-        doc.text(d[0], margin, currentY);
-        currentY += 5;
-        doc.text(d[1], margin, currentY);
-        currentY += 8;
-    });
-
-    const sigY = pageHeight - 45;
-    if (ECONEXO_SIGNATURE) {
-        try {
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 30, 40, 30);
-        } catch (e) { }
-    }
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(0);
-    doc.line(pageWidth - 80, sigY, pageWidth - 20, sigY);
-    doc.setFont('helvetica', 'bold');
-    doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
-    doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
-
-    // --- 7. FOOTER BAR ---
-    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    const footerH = 14;
-    doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
-
-    doc.setTextColor(255);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-
-    const footerMidY = pageHeight - (footerH / 2);
-    const spacing = 65;
-    const startX = (pageWidth - (spacing * 2)) / 2 - 12;
-
-    doc.setDrawColor(255);
-    doc.setLineWidth(0.4);
-
-    // 1. Email Icon
-    const icon1X = startX - 5;
-    doc.rect(icon1X, footerMidY - 2, 6, 4);
-    doc.line(icon1X, footerMidY - 2, icon1X + 3, footerMidY);
-    doc.line(icon1X + 6, footerMidY - 2, icon1X + 3, footerMidY);
-    doc.text("Econexo.huh@gmail.com", startX + 3, footerMidY, { baseline: 'middle' });
-
-    // 2. Phone Icon (IMAGE V2 - Larger)
-    const phoneX = startX + spacing + 10;
-    const iconRef = PHONE_ICON_V2 || PHONE_ICON;
-    // User requested matching "Web Circle" radius which is R=2.5 Dia=5.
-    // However, they said previous icon (6.4 height) was "too small".
-    // This implies visually they want more weight.
-    // I will try 7.5x7.5 to give it significant presence.
-    const pSize = 7.5;
-    const icon2X = phoneX - 7;
-
-    if (iconRef) {
-        try {
-            doc.addImage(iconRef, 'PNG', icon2X, footerMidY - (pSize / 2), pSize, pSize);
-        } catch (e) { }
-    }
-    doc.text("+569 35626886", phoneX + 2, footerMidY, { baseline: 'middle' });
-
-    // 3. Web Icon
-    const webX = phoneX + spacing - 10;
-    const icon3X = webX - 5;
-    doc.circle(icon3X + 2.5, footerMidY, 2.5, 'S');
-    doc.line(icon3X, footerMidY, icon3X + 5, footerMidY);
-    doc.line(icon3X + 2.5, footerMidY - 2.5, icon3X + 2.5, footerMidY + 2.5);
-    doc.text("econexo.cl", webX + 1, footerMidY, { baseline: 'middle' });
-
-    if (ECONEXO_WATERMARK) {
-        try {
-            doc.saveGraphicsState();
-            doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
-            const wmSize = 160;
-            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, 70, wmSize, wmSize);
-            doc.restoreGraphicsState();
-        } catch (e) { }
-    }
-
-    if (action === 'preview') {
-        window.open(doc.output('bloburl'), '_blank');
-    } else {
-        doc.save(`CGM_${client.company_name.replace(/\s+/g, '_')}_${month}_${year}.pdf`);
-    }
-};
-
-export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save') => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    // --- COLORS ---
-    const HEADER_GREY = [40, 40, 40];
-    const HEADER_GREEN = [45, 106, 79];
-    const TABLE_YELLOW = [255, 225, 100];
-    const TABLE_BLUE = [0, 85, 165];
-    const TABLE_GREY = [160, 160, 160];
-    const TABLE_LIGHT_GREY = [235, 235, 235];
-
-    // --- 1. HEADER ---
-    doc.setFillColor(HEADER_GREY[0], HEADER_GREY[1], HEADER_GREY[2]);
-    doc.rect(0, 0, pageWidth, 35, 'F');
-
-    const logoToUse = ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
-    if (logoToUse) {
-        try {
-            const logoH = 24;
-            const logoW = 108;
-            doc.addImage(logoToUse, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
-        } catch (e) {
-            doc.setTextColor(255);
-            doc.setFontSize(24);
-            doc.setFont('helvetica', 'bold');
-            doc.text("EcoNexo", pageWidth / 2, 23, { align: 'center' });
-        }
-    } else {
-        doc.setTextColor(255);
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'bold');
-        doc.text("EcoNexo", pageWidth / 2, 23, { align: 'center' });
-    }
-
-    doc.setTextColor(255);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    const numText = "Nº60";
-    const numX = pageWidth - 20;
-    const numY = 22;
-    doc.text(numText, numX, numY, { align: 'right' });
-
-    const textW = doc.getTextWidth(numText);
-    doc.setDrawColor(255);
-    doc.setLineWidth(0.5);
-    doc.line(numX - textW, numY + 2, numX, numY + 2);
-
-    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.rect(0, 35, pageWidth, 18, 'F');
-    doc.setTextColor(255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text("CERTIFICADO GESTION MENSUAL DE RESIDUOS", pageWidth / 2, 46, { align: 'center' });
-
-    // --- 2. LEGAL TEXT ---
-    let currentY = 65;
-    doc.setTextColor(0);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-
-    const margin = 22;
-    const textBoxWidth = pageWidth - (margin * 2);
-    const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
-
-    const lines = doc.splitTextToSize(plainText, textBoxWidth);
-    doc.text(lines, margin, currentY, { align: 'justify', maxWidth: textBoxWidth });
-    currentY += (lines.length * 6) + 2;
-
-    // --- 3. CLIENT INFO ---
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text("Provenientes de la empresa:", margin, currentY);
-    currentY += 5;
-
-    const drawLabelVal = (lbl: string, val: string) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(lbl, margin, currentY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(val, margin + 30, currentY);
-        currentY += 5;
-    };
-
-    drawLabelVal("Razón Social:", client.company_name.toUpperCase());
-    drawLabelVal("RUT:", client.rut);
-    drawLabelVal("Dirección:", client.address);
-    currentY += 8;
-
-    // --- 4. DATA SECTION ---
-    doc.setFont('helvetica', 'bold');
-    doc.text("De los cuales, se gestionó un total de:", margin, currentY);
-    currentY += 8;
-
-    const categories: any = {
-        'Plásticos': { color: TABLE_YELLOW, textMain: [0, 0, 0], qty: 0, pct: 0 },
-        'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Aluminio': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Metales': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Vidrio': { color: [100, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 },
-        'Otros': { color: [200, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 }
-    };
-
-    let totalKg = 0;
-    items.forEach(i => {
-        const cat = normalizeMaterialType(i);
-        const q = Number(i.quantity) || 0;
-        totalKg += q;
-        if (categories[cat]) categories[cat].qty += q;
-        else categories['Otros'].qty += q;
-    });
-    if (totalKg === 0) totalKg = 1;
-    Object.keys(categories).forEach(k => {
-        categories[k].pct = (categories[k].qty / totalKg) * 100;
-    });
-
-    const tX = margin;
-    const col1 = 60;
-    const col2 = 30;
-    const col3 = 30;
-    const rowH = 10;
-    const gap = 2;
-
-    doc.setFillColor(220, 220, 220);
-    doc.rect(tX, currentY, col1, rowH, 'F');
-    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0);
-    doc.text("RESIDUOS", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text("KG", tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-    doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-    currentY += rowH + gap;
-
-    const drawRow = (display: string, key: string) => {
-        const d = categories[key];
-        if (d.qty <= 0) return;
-        doc.setFillColor(d.color[0], d.color[1], d.color[2]);
-        doc.rect(tX, currentY, col1, rowH, 'F');
-        doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-        doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-        doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
-        doc.setFont('helvetica', 'bold');
-        doc.text(display, tX + col1 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-        currentY += rowH + gap;
-    };
-
-    drawRow("PLÁSTICOS", "Plásticos");
-    drawRow("CARTÓN/PAPEL", "Papel/Cartón");
-    drawRow("ALUMINIO", "Aluminio");
-    drawRow("METALES", "Metales");
-    if (categories['Vidrio'].qty > 0) drawRow("VIDRIO", "Vidrio");
-
-    doc.setFillColor(TABLE_LIGHT_GREY[0], TABLE_LIGHT_GREY[1], TABLE_LIGHT_GREY[2]);
-    doc.rect(tX, currentY, col1, rowH, 'F');
-    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text(totalKg.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-    doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-
-    const pieX = 175;
-    const pieY = currentY - (rowH * 2) + 5;
-    const radius = 18;
-    let startAngle = -Math.PI / 2;
-    const activeCats = Object.keys(categories).filter(k => categories[k].pct > 0);
-    if (activeCats.length === 0) {
-        doc.setDrawColor(200);
-        doc.circle(pieX, pieY, radius, 'S');
-    } else if (activeCats.length === 1) {
-        const c = categories[activeCats[0]];
-        doc.setFillColor(c.color[0], c.color[1], c.color[2]);
-        doc.circle(pieX, pieY, radius, 'F');
-    } else {
-        activeCats.forEach(k => {
-            const cat = categories[k];
-            const sliceAngle = (cat.pct / 100) * (2 * Math.PI);
-            const endAngle = startAngle + sliceAngle;
-            doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
-            for (let i = startAngle; i < endAngle; i += 0.04) {
-                const a1 = i;
-                const a2 = Math.min(i + 0.05, endAngle);
-                doc.triangle(pieX, pieY, pieX + radius * Math.cos(a1), pieY + radius * Math.sin(a1), pieX + radius * Math.cos(a2), pieY + radius * Math.sin(a2), 'F');
-            }
-            startAngle += sliceAngle;
-        });
-    }
-
-    currentY += 25;
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text("DESTINO AUTORIZADO:", margin, currentY);
-    currentY += 5;
-    doc.setFont('helvetica', 'normal');
-    const destinations = [
-        ["SOREPA SPA., RUT: 86.359.300-K", "Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA"],
-        ["GCR, RUT: 76.958.842-6", "Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA"]
-    ];
-    destinations.forEach(d => {
-        doc.text(d[0], margin, currentY);
-        currentY += 5;
-        doc.text(d[1], margin, currentY);
-        currentY += 8;
-    });
-
-    const sigY = pageHeight - 45;
-    if (ECONEXO_SIGNATURE) {
-        try {
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 30, 40, 30);
-        } catch (e) { }
-    }
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(0);
-    doc.line(pageWidth - 80, sigY, pageWidth - 20, sigY);
-    doc.setFont('helvetica', 'bold');
-    doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
-    doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
-
-    // --- 7. FOOTER BAR ---
-    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    const footerH = 14;
-    doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
-
-    doc.setTextColor(255);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-
-    const footerMidY = pageHeight - (footerH / 2);
-    const spacing = 65;
-    const startX = (pageWidth - (spacing * 2)) / 2 - 12;
-
-    doc.setDrawColor(255);
-    doc.setLineWidth(0.4);
-
-    // 1. Email Icon (Envelope)
-    const icon1X = startX - 5;
-    doc.rect(icon1X, footerMidY - 2, 6, 4);
-    doc.line(icon1X, footerMidY - 2, icon1X + 3, footerMidY);
-    doc.line(icon1X + 6, footerMidY - 2, icon1X + 3, footerMidY);
-    doc.text("Econexo.huh@gmail.com", startX + 3, footerMidY, { baseline: 'middle' });
-
-    // 2. Phone Slot (+569) - Globe Icon (Swapped here)
-    const phoneX = startX + spacing + 10;
-    const icon2X = phoneX - 5;
-    doc.circle(icon2X + 2.5, footerMidY, 2.5, 'S');
-    doc.line(icon2X, footerMidY, icon2X + 5, footerMidY);
-    doc.line(icon2X + 2.5, footerMidY - 2.5, icon2X + 2.5, footerMidY + 2.5);
-    doc.text("+569 35626886", phoneX + 2, footerMidY, { baseline: 'middle' });
-
-    // 3. Web Slot (econexo.cl) - Phone Icon V2 (Swapped here & Enlarged)
-    const webX = phoneX + spacing - 10;
-    const icon3X = webX - 7;
-    const iconRef = PHONE_ICON_V2 || PHONE_ICON;
-
-    if (iconRef) {
-        try {
-            const pSize = 13; // 13mm size
-            doc.addImage(iconRef, 'PNG', icon3X - 2, footerMidY - (pSize / 2), pSize, pSize);
-        } catch (e) { }
-    }
-    doc.text("econexo.cl", webX + 4, footerMidY, { baseline: 'middle' });
-
-    if (ECONEXO_WATERMARK) {
-        try {
-            doc.saveGraphicsState();
-            doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
-            const wmSize = 160;
-            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, 70, wmSize, wmSize);
-            doc.restoreGraphicsState();
-        } catch (e) { }
-    }
-
-    if (action === 'preview') {
-        window.open(doc.output('bloburl'), '_blank');
-    } else {
-        doc.save(`CGM_${client.company_name.replace(/\s+/g, '_')}_${month}_${year}.pdf`);
-    }
-};
 
 export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save') => {
     const doc = new jsPDF();
@@ -1839,52 +1267,91 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setDrawColor(255);
     doc.setLineWidth(0.6); // Thicker outline for icons
 
-    // 1. Email Icon (Circle + Envelope)
+    // --- ICONS & TEXT ---
+    // Y position centering
+    const iconY = footerMidY;
+
+    // 1. Email: Outline Circle + Outline Envelope
+    // Text: Econexo.huh@gmail.com (Matching reference, even if 'hub' is standard)
     const icon1X = startX - 5;
-    doc.circle(icon1X + 3, footerMidY, 4, 'S'); // Circle Outline
-    doc.setLineWidth(0.4);
-    // Envelope inside
-    const envX = icon1X + 0.5;
-    const envY = footerMidY - 1.5;
-    doc.rect(envX, envY, 5, 3);
-    doc.line(envX, envY, envX + 2.5, envY + 2);
-    doc.line(envX + 5, envY, envX + 2.5, envY + 2);
 
-    doc.text("Econexo.huh@gmail.com", startX + 9, footerMidY, { baseline: 'middle' });
+    // Circle Outline
+    doc.setDrawColor(255);
+    doc.setLineWidth(0.5);
+    doc.circle(icon1X + 2.5, iconY, 3.5, 'S');
 
-    // 2. Phone Slot (+569) - Phone Icon (White Filled Circle + Green Receiver)
+    // Envelope
+    doc.setLineWidth(0.3);
+    const envW = 4;
+    const envH = 2.5;
+    const envX = icon1X + 2.5 - (envW / 2);
+    const envY = iconY - (envH / 2);
+    doc.rect(envX, envY, envW, envH, 'S');
+    doc.line(envX, envY, envX + envW / 2, envY + envH / 2 + 0.2); // V-shape down
+    doc.line(envX + envW, envY, envX + envW / 2, envY + envH / 2 + 0.2); // V-shape up
+
+    doc.text("Econexo.huh@gmail.com", startX + 9, iconY, { baseline: 'middle' });
+
+    // 2. Phone: Solid White Circle + Green Receiver
     const phoneX = startX + spacing + 10;
     const icon2X = phoneX - 5;
 
-    // Filled White Circle
+    // Solid White Circle
     doc.setFillColor(255, 255, 255);
-    doc.circle(icon2X + 2.5, footerMidY, 4, 'F');
+    doc.circle(icon2X + 2.5, iconY, 3.5, 'F');
 
-    // Receiver in Green (Simulating transparency hole)
+    // Green Receiver
     doc.setDrawColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
     doc.setLineWidth(1.2);
+
+    // Receiver Shape (Approximated with lines/curves for robustness)
+    const rx = icon2X + 2.5;
+    const ry = iconY;
+    // Draw a simple receiver shape
+    doc.lines([[0.8, 0.8], [0.5, -0.5]], rx - 1.5, ry + 0.5, [1, 1], 'S', true);
+    // Actually a simple arc/line looks cleaner at this size
     doc.setLineCap('round');
-    // Simple receiver curve
-    doc.line(icon2X + 1.5, footerMidY + 1.5, icon2X + 3.5, footerMidY - 1.5);
-    // Reset defaults
+    doc.line(rx - 1.2, ry + 1.2, rx + 1.2, ry - 1.2);
+    // Add "earpieces"
+    doc.setLineWidth(1.8);
+    doc.line(rx - 1.2, ry + 1.0, rx - 1.2, ry + 1.0); // Dot
+    doc.line(rx + 1.0, ry - 1.2, rx + 1.0, ry - 1.2); // Dot
+
+    // Reset
     doc.setLineCap('butt');
     doc.setDrawColor(255);
     doc.setTextColor(255);
 
-    doc.text("+569 35626886", phoneX + 4, footerMidY, { baseline: 'middle' });
+    doc.text("+569 35626886", phoneX + 4, iconY, { baseline: 'middle' });
 
-    // 3. Web Slot (econexo.cl) - Phone Icon V2 (Swapped here & Enlarged)
+    // 3. Instagram: Solid White Circle + Green Camera Icon
+    // Text: econexo.cl
     const webX = phoneX + spacing - 10;
     const icon3X = webX - 7;
-    const iconRef = PHONE_ICON_V2 || PHONE_ICON;
 
-    if (iconRef) {
-        try {
-            const pSize = 13; // 13mm size for visual weight
-            doc.addImage(iconRef, 'PNG', icon3X - 2, footerMidY - (pSize / 2), pSize, pSize);
-        } catch (e) { }
-    }
-    doc.text("econexo.cl", webX + 4, footerMidY, { baseline: 'middle' });
+    // Solid White Circle
+    doc.setFillColor(255, 255, 255);
+    doc.circle(icon3X + 2.5, iconY, 3.5, 'F');
+
+    // Green Camera Icon
+    doc.setDrawColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+    doc.setLineWidth(1.2);
+
+    const camSize = 4;
+    const camX = icon3X + 2.5 - (camSize / 2);
+    const camY = iconY - (camSize / 2);
+
+    // Outer rounded square (Green Outline)
+    doc.setLineWidth(0.35);
+    doc.roundedRect(camX, camY, camSize, camSize, 1, 1, 'S');
+    // Inner Circle (Green Outline)
+    doc.circle(icon3X + 2.5, iconY, 1.2, 'S');
+    // Dot (Flash) (Green Fill)
+    doc.circle(camX + camSize - 0.8, camY + 0.8, 0.3, 'F'); // Filled dot
+
+    doc.setTextColor(255); // Reset text to white
+    doc.text("econexo.cl", webX + 4, iconY, { baseline: 'middle' });
 
     if (ECONEXO_WATERMARK) {
         try {
