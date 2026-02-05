@@ -333,8 +333,13 @@ const Admin: React.FC = () => {
         try {
             // 1. Upload to Supabase Storage
             const timestamp = Date.now();
-            const fileExt = uploadFile.name.split('.').pop();
-            const fileName = `${selectedUser.id}/${timestamp}_${uploadFile.name.replace(/\s+/g, '_')}`;
+            // Sanitize filename: remove accents and special chars
+            const cleanFileName = uploadFile.name
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/[^a-zA-Z0-9._-]/g, "_"); // Replace non-alphanumeric with _
+
+            const fileName = `${selectedUser.id}/${timestamp}_${cleanFileName}`;
 
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('documents')
