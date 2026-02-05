@@ -1314,17 +1314,17 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // Standard Handset Shape (Geometric Construction)
     // Start (Bottom-Left), End (Top-Right)
-    const psx = cx2 - 0.8;
-    const psy = cy2 + 0.8;
+    const phX = cx2 - 0.8;
+    const phY = cy2 + 0.8;
 
     // 1. Draw connecting handle (Simple Curve, not swollen)
     // Relative Bezier: Mild curve outwards (0.2, 0.2)
-    doc.lines([[0.2, 0.2, 1.4, -1.4, 1.6, -1.6]], psx, psy, [1, 1], 'S', false);
+    doc.lines([[0.2, 0.2, 1.4, -1.4, 1.6, -1.6]], phX, phY, [1, 1], 'S', false);
 
     // 2. Draw "Cups" at ends (Thicker dots to simulate receiver ends)
     doc.setLineWidth(2.2);
-    doc.line(psx, psy, psx, psy); // Bottom-Left Cup
-    doc.line(psx + 1.6, psy - 1.6, psx + 1.6, psy - 1.6); // Top-Right Cup
+    doc.line(phX, phY, phX, phY); // Bottom-Left Cup
+    doc.line(phX + 1.6, phY - 1.6, phX + 1.6, phY - 1.6); // Top-Right Cup
 
 
 
