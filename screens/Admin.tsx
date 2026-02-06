@@ -368,7 +368,10 @@ const Admin: React.FC = () => {
                 }
             }]);
 
-            if (dbError) throw dbError;
+            if (dbError) {
+                console.error("Database Insert Error Details:", dbError);
+                throw new Error(`Error en Base de Datos: ${dbError.message} (${dbError.code})`);
+            }
 
             alert("Documento subido exitosamente.");
             setShowUploadModal(false);
@@ -377,7 +380,7 @@ const Admin: React.FC = () => {
             setSelectedUser(null);
             fetchAdminData();
         } catch (err: any) {
-            console.error("Upload error:", err);
+            console.error("FULL Upload error details:", err);
             alert("Error al subir el documento: " + (err.message || "Error desconocido"));
         } finally {
             setLoading(false);
@@ -580,7 +583,7 @@ const Admin: React.FC = () => {
                                         <option value="declaration">Declaración / Certificado (Gestores)</option>
                                         <option value="legal">Documento Legal</option>
                                         <option value="custom">Otro</option>
-                                        {/* <option value="CR">Certificado Recepción (Interno)</option> */}
+                                        <option value="CR">Certificado Recepción (Prueba)</option>
                                     </select>
                                 </div>
                                 <div className="space-y-1">
