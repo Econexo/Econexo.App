@@ -352,21 +352,22 @@ const Admin: React.FC = () => {
                 .from('documents')
                 .getPublicUrl(fileName);
 
-            // 3. Save to DB
-            const { error: dbError } = await supabase.from('documents').insert([{
-                user_id: selectedUser.id,
-                title: uploadFile.name, // Use original filename as title
-                type: uploadType,
-                verified: true,
-                content_url: publicUrl,
-                created_at: new Date(uploadDate).toISOString(), // Use selected date
-                metadata: {
+            // 3. Save to DB using RPC to bypass RLS
+            // We use a Remote Procedure Call (RPC) because standard RLS policies
+            // might block an admin from inserting rows for another user_id.
+            const { error: dbError } = await supabase.rpc('create_admin_document', {
+                _user_id: selectedUser.id,
+                _title: uploadFile.name,
+                _type: uploadType,
+                _content_url: publicUrl,
+                _created_at: new Date(uploadDate).toISOString(),
+                _metadata: {
                     original_name: uploadFile.name,
                     size: uploadFile.size,
                     mime_type: uploadFile.type,
                     uploaded_by: 'admin'
                 }
-            }]);
+            });
 
             if (dbError) {
                 console.error("Database Insert Error Details:", dbError);
