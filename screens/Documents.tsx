@@ -142,10 +142,7 @@ const Documents: React.FC = () => {
         address: userProfile.address || 'Chile'
       };
 
-      if (doc.content_url) {
-        window.open(doc.content_url, '_blank');
-        return;
-      }
+
 
       if (doc.type === 'pdf' || doc.type === 'report') {
         generateEcoReport(

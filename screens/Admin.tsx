@@ -346,10 +346,7 @@ const Admin: React.FC = () => {
                 .from('documents')
                 .upload(fileName, uploadFile);
 
-            if (uploadError) {
-                console.error("Storage Upload Error:", uploadError);
-                throw new Error(`Error STORAGE: ${uploadError.message}`);
-            }
+            if (uploadError) throw uploadError;
 
             // 2. Get Public URL
             const { data: { publicUrl } } = supabase.storage
@@ -371,10 +368,7 @@ const Admin: React.FC = () => {
                 }
             });
 
-            if (dbError) {
-                console.error("Database Insert Error Details:", dbError);
-                throw new Error(`Error DB RPC: ${dbError.message} (${dbError.code})`);
-            }
+            if (dbError) throw dbError;
 
             alert("Documento subido exitosamente.");
             setShowUploadModal(false);
@@ -383,9 +377,7 @@ const Admin: React.FC = () => {
             setSelectedUser(null);
             fetchAdminData();
         } catch (err: any) {
-            console.error("FULL Upload error details:", err);
-            // Show the specific error prefix
-            alert("Fallo Subida: " + (err.message || "Error desconocido"));
+            alert("Error al subir el documento: " + (err.message || "Error desconocido"));
         } finally {
             setLoading(false);
         }
@@ -587,7 +579,7 @@ const Admin: React.FC = () => {
                                         <option value="declaration">Declaración / Certificado (Gestores)</option>
                                         <option value="legal">Documento Legal</option>
                                         <option value="custom">Otro</option>
-                                        <option value="CR">Certificado Recepción (Prueba)</option>
+                                        <option value="CR">Certificado Recepción (Interno)</option>
                                     </select>
                                 </div>
                                 <div className="space-y-1">
@@ -679,7 +671,7 @@ const Admin: React.FC = () => {
                     </button>
                     <button onClick={() => setShowUploadModal(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 border border-blue-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">cloud_upload</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento (V2)</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento</span>
                     </button>
                 </section>
 
