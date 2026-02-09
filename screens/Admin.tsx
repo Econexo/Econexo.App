@@ -192,13 +192,23 @@ const Admin: React.FC = () => {
 
     const validateDoc = async (docId: string) => {
         try {
+            // Optimistic update: Remove from UI immediately
+            setPendingDocs(prev => prev.filter(d => d.id !== docId));
+
             const { error } = await supabase.from('documents').update({ verified: true }).eq('id', docId);
-            if (error) throw error;
-            await fetchAdminData();
+            if (error) {
+                // Revert on error (optional, but good practice)
+                await fetchAdminData();
+                throw error;
+            }
+
+            // Background refresh to ensure consistency
+            fetchAdminData();
             alert("✅ Documento validado y publicado exitosamente.");
         } catch (err: any) {
             console.error('Error validating document:', err);
             alert(`Error validating document: ${err.message || 'Unknown error'}`);
+            fetchAdminData(); // Refresh to restore correct state
         }
     };
 
