@@ -17,6 +17,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     metaRep: 0,
     arbolesRescatados: 0,
     aguaAhorrada: 0,
+    energiaAhorrada: 0,
     carbonFootprint: 0
   });
 
