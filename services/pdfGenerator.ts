@@ -597,11 +597,13 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
     doc.text(splitP1, 20, currentY);
     currentY += (splitP1.length * 4.5) + 4;
 
-    // Paragraph 2 (Static Context)
-    const p2 = "Es importante señalar que las operaciones principales de la empresa se realizaron fuera de la ciudad durante este periodo, lo que influyó directamente en una menor generación de residuos en las instalaciones habituales.";
-    const splitP2 = doc.splitTextToSize(p2, pageWidth - 40);
-    doc.text(splitP2, 20, currentY);
-    currentY += (splitP2.length * 4.5) + 4;
+    // Paragraph 2 (Static Context) - Conditional for Electroram 2025 ONLY
+    if (client.company_name.toLowerCase().includes('electroram') && periodo.includes('2025')) {
+        const p2 = "Es importante señalar que las operaciones principales de la empresa se realizaron fuera de la ciudad durante este periodo, lo que influyó directamente en una menor generación de residuos en las instalaciones habituales.";
+        const splitP2 = doc.splitTextToSize(p2, pageWidth - 40);
+        doc.text(splitP2, 20, currentY);
+        currentY += (splitP2.length * 4.5) + 4;
+    }
 
     // Paragraph 3 (Baseline Context) - EXCLUSIVE FOR ELECTRORAM
     if (client.company_name.toLowerCase().includes('electroram')) {
@@ -610,9 +612,17 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         doc.text(splitP3, 20, currentY);
         currentY += (splitP3.length * 4.5) + 2;
 
-        // Bullets (Baseline)
-        const isRange = periodo.includes('-') || periodo.toLowerCase().includes('trimestre');
-        const monthsCount = isRange ? 3 : 1;
+        // Determine Months Count based on Periodo string
+        // If it's just a year (e.g. "2025") or contains "Anual", it's 12 months.
+        // If "Trimestre", 3 months.
+        // Otherwise (default), 1 month.
+        let monthsCount = 1;
+        const isAnnual = /^\d{4}$/.test(periodo.trim()) || periodo.toLowerCase().includes('anual');
+        const isQuarter = periodo.toLowerCase().includes('trimestre');
+
+        if (isAnnual) monthsCount = 12;
+        else if (isQuarter) monthsCount = 3;
+
         const baselineMin = 72 * monthsCount;
         const baselineMax = 80 * monthsCount;
 
@@ -623,7 +633,9 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         currentY += (splitB1.length * 4.5) + 2;
 
         let b2 = "";
-        if (isRange) {
+        if (isAnnual) {
+            b2 = `Esto equivale a un peso anual estimado entre ${baselineMin} y ${baselineMax} kg (proyección de 12 meses).`;
+        } else if (isQuarter) {
             b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en un trimestre (3 meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
         } else {
             b2 = `Esto equivale a un peso mensual estimado entre ${baselineMin} y ${baselineMax} kg.`;
