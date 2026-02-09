@@ -194,9 +194,43 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     }
 };
 
-export const generateEcoReport = (client: CompanyData, items: WasteItem[], periodo: string, action: 'save' | 'preview' = 'save') => {
+export const generateEcoReport = (client: CompanyData, items: WasteItem[], periodo: string, action: 'save' | 'preview' = 'save', customMonthsCount?: number) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    // ... (rest of function body until logic update)
+
+    // ... inside logic ...
+    // Determine Months Count based on Periodo string OR custom parameter
+    // If it's just a year (e.g. "2025") or contains "Anual", it's 12 months.
+    // If "Trimestre", 3 months.
+    // Otherwise (default), 1 month.
+    let monthsCount = customMonthsCount || 1;
+    const pLower = periodo.toLowerCase();
+    const isAnnual = !customMonthsCount && (/^\d{4}$/.test(periodo.trim()) || pLower.includes('anual') || pLower.includes('año') || pLower.includes('ano'));
+    const isQuarter = !customMonthsCount && pLower.includes('trimestre');
+
+    if (isAnnual) monthsCount = 12;
+    else if (isQuarter) monthsCount = 3;
+
+    const baselineMin = 72 * monthsCount;
+    const baselineMax = 80 * monthsCount;
+
+    const b1 = `En las oficinas de ${client.company_name} se estima una generación típica de 4 bolsas de residuos por semana, con un peso entre 4,5 y 5 kg por bolsa.`;
+    const splitB1 = doc.splitTextToSize(b1, pageWidth - 50);
+    doc.circle(24, currentY + 1.5, 1, 'F');
+    doc.text(splitB1, 28, currentY + 2);
+    currentY += (splitB1.length * 4.5) + 2;
+
+    let b2 = "";
+    if (customMonthsCount && customMonthsCount > 1 && customMonthsCount < 12) {
+        b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en el periodo seleccionado (${monthsCount} meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
+    } else if (isAnnual || (customMonthsCount === 12)) {
+        b2 = `Esto equivale a un peso anual estimado entre ${baselineMin} y ${baselineMax} kg (proyección de 12 meses).`;
+    } else if (isQuarter) {
+        b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en un trimestre (3 meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
+    } else {
+        b2 = `Esto equivale a un peso mensual estimado entre ${baselineMin} y ${baselineMax} kg.`;
+    }
     const pageHeight = doc.internal.pageSize.getHeight();
 
     // --- Data Processing & Calculation ---
@@ -605,114 +639,55 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         currentY += (splitP2.length * 4.5) + 4;
     }
 
-    // Paragraph 3 (Baseline Context) - EXCLUSIVE FOR ELECTRORAM
-    if (client.company_name.toLowerCase().includes('electroram')) {
-        const p3 = "Para dimensionar el alcance de la recuperación, consideramos la línea base de generación en condiciones operativas normales:";
-        const splitP3 = doc.splitTextToSize(p3, pageWidth - 40);
-        doc.text(splitP3, 20, currentY);
-        currentY += (splitP3.length * 4.5) + 2;
 
-        // Determine Months Count based on Periodo string
-        // If it's just a year (e.g. "2025") or contains "Anual", it's 12 months.
-        // If "Trimestre", 3 months.
-        // Otherwise (default), 1 month.
-        let monthsCount = 1;
-        const pLower = periodo.toLowerCase();
-        const isAnnual = /^\d{4}$/.test(periodo.trim()) || pLower.includes('anual') || pLower.includes('año') || pLower.includes('ano');
-        const isQuarter = pLower.includes('trimestre');
+    // Comparison Logic
+    const pctMin = (totalKg / baselineMin * 100).toFixed(1);
+    const pctMax = (totalKg / baselineMax * 100).toFixed(1);
 
-        if (isAnnual) monthsCount = 12;
-        else if (isQuarter) monthsCount = 3;
+    const p4 = `Frente a este escenario de referencia, los ${totalKg.toFixed(2)} kg recuperados representan:`;
+    doc.text(p4, 20, currentY);
+    currentY += 5;
 
-        const baselineMin = 72 * monthsCount;
-        const baselineMax = 80 * monthsCount;
+    doc.setFont('helvetica', 'bold');
+    doc.circle(24, currentY + 1.5, 1, 'F');
+    doc.text(`${pctMin}%`, 28, currentY + 2);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`respecto al escenario de menor generación (${baselineMin} kg).`, 40, currentY + 2);
+    currentY += 5;
 
-        const b1 = `En las oficinas de ${client.company_name} se estima una generación típica de 4 bolsas de residuos por semana, con un peso entre 4,5 y 5 kg por bolsa.`;
-        const splitB1 = doc.splitTextToSize(b1, pageWidth - 50);
-        doc.circle(24, currentY + 1.5, 1, 'F');
-        doc.text(splitB1, 28, currentY + 2);
-        currentY += (splitB1.length * 4.5) + 2;
+    doc.setFont('helvetica', 'bold');
+    doc.circle(24, currentY + 1.5, 1, 'F');
+    doc.text(`${pctMax}%`, 28, currentY + 2);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`respecto al escenario de mayor generación (${baselineMax} kg).`, 40, currentY + 2);
+    currentY += 8;
 
-        let b2 = "";
-        if (isAnnual) {
-            b2 = `Esto equivale a un peso anual estimado entre ${baselineMin} y ${baselineMax} kg (proyección de 12 meses).`;
-        } else if (isQuarter) {
-            b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en un trimestre (3 meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
-        } else {
-            b2 = `Esto equivale a un peso mensual estimado entre ${baselineMin} y ${baselineMax} kg.`;
-        }
+    // Analysis - Dependent on the percentages above
+    const p5 = "Estos porcentajes reflejan un avance significativo en la gestión de residuos, especialmente considerando el contexto operativo atípico del período.";
+    const splitP5 = doc.splitTextToSize(p5, pageWidth - 40);
+    doc.text(splitP5, 20, currentY);
+    currentY += (splitP5.length * 4.5) + 2;
+}
 
-        const splitB2 = doc.splitTextToSize(b2, pageWidth - 50);
-        doc.circle(24, currentY + 1.5, 1, 'F');
-        doc.text(splitB2, 28, currentY + 2);
-        currentY += (splitB2.length * 4.5) + 6;
+const p6 = "Los resultados obtenidos demuestran un compromiso activo con la economía circular y la reducción del impacto ambiental, aún en condiciones de operación descentralizada.";
+const splitP6 = doc.splitTextToSize(p6, pageWidth - 40);
+doc.text(splitP6, 20, currentY);
+currentY += (splitP6.length * 4.5) + 6;
 
-        // Comparison Logic
-        const pctMin = (totalKg / baselineMin * 100).toFixed(1);
-        const pctMax = (totalKg / baselineMax * 100).toFixed(1);
+// Commitments
+doc.text("Se mantendrán los esfuerzos para:", 20, currentY);
+currentY += 6;
 
-        const p4 = `Frente a este escenario de referencia, los ${totalKg.toFixed(2)} kg recuperados representan:`;
-        doc.text(p4, 20, currentY);
-        currentY += 5;
+const goals = [
+    "1. Incrementar progresivamente las tasas de recuperación.",
+    "2. Fortalecer las estrategias de segregación y valorización.",
+    "3. Alinear las operaciones externas con los protocolos de sostenibilidad de la empresa."
+];
 
-        doc.setFont('helvetica', 'bold');
-        doc.circle(24, currentY + 1.5, 1, 'F');
-        doc.text(`${pctMin}%`, 28, currentY + 2);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`respecto al escenario de menor generación (${baselineMin} kg).`, 40, currentY + 2);
-        currentY += 5;
-
-        doc.setFont('helvetica', 'bold');
-        doc.circle(24, currentY + 1.5, 1, 'F');
-        doc.text(`${pctMax}%`, 28, currentY + 2);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`respecto al escenario de mayor generación (${baselineMax} kg).`, 40, currentY + 2);
-        currentY += 8;
-
-        // Analysis - Dependent on the percentages above
-        const p5 = "Estos porcentajes reflejan un avance significativo en la gestión de residuos, especialmente considerando el contexto operativo atípico del período.";
-        const splitP5 = doc.splitTextToSize(p5, pageWidth - 40);
-        doc.text(splitP5, 20, currentY);
-        currentY += (splitP5.length * 4.5) + 2;
-    }
-
-    const p6 = "Los resultados obtenidos demuestran un compromiso activo con la economía circular y la reducción del impacto ambiental, aún en condiciones de operación descentralizada.";
-    const splitP6 = doc.splitTextToSize(p6, pageWidth - 40);
-    doc.text(splitP6, 20, currentY);
-    currentY += (splitP6.length * 4.5) + 6;
-
-    // Commitments
-    doc.text("Se mantendrán los esfuerzos para:", 20, currentY);
-    currentY += 6;
-
-    const goals = [
-        "1. Incrementar progresivamente las tasas de recuperación.",
-        "2. Fortalecer las estrategias de segregación y valorización.",
-        "3. Alinear las operaciones externas con los protocolos de sostenibilidad de la empresa."
-    ];
-
-    goals.forEach(g => {
-        const splitG = doc.splitTextToSize(g, pageWidth - 40);
-        if (currentY + (splitG.length * 5) > pageHeight - 25) {
-            // Footer for current page before adding a new one
-            doc.setFillColor(55, 87, 45);
-            doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
-            doc.setTextColor(255);
-            doc.setFontSize(14);
-            doc.text('2', pageWidth / 2, pageHeight - 5, { align: 'center' });
-
-            doc.addPage();
-            currentY = 30;
-            doc.setTextColor(0);
-        }
-        doc.text(splitG, 26, currentY);
-        currentY += (splitG.length * 4.5) + 1;
-    });
-
-    currentY += 6;
-
-    // Final Closing
-    if (currentY > pageHeight - 40) {
+goals.forEach(g => {
+    const splitG = doc.splitTextToSize(g, pageWidth - 40);
+    if (currentY + (splitG.length * 5) > pageHeight - 25) {
+        // Footer for current page before adding a new one
         doc.setFillColor(55, 87, 45);
         doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
         doc.setTextColor(255);
@@ -723,175 +698,193 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         currentY = 30;
         doc.setTextColor(0);
     }
+    doc.text(splitG, 26, currentY);
+    currentY += (splitG.length * 4.5) + 1;
+});
 
-    const footerText = `${client.company_name} mantiene su compromiso con la gestión ambiental responsable, promoviendo acciones concretas que fomenten la economía circular y contribuyan a minimizar el impacto ambiental de sus operaciones.`;
-    const splitFooter = doc.splitTextToSize(footerText, pageWidth - 40);
-    doc.setFont('helvetica', 'bold');
-    doc.text(splitFooter, pageWidth / 2, currentY, { align: 'center' });
+currentY += 6;
 
-
-    // Footer Page 2 (Green Bar)
-    doc.setFillColor(55, 87, 45); // Unified Dark Green
+// Final Closing
+if (currentY > pageHeight - 40) {
+    doc.setFillColor(55, 87, 45);
     doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
     doc.setTextColor(255);
     doc.setFontSize(14);
     doc.text('2', pageWidth / 2, pageHeight - 5, { align: 'center' });
 
-    // --- PAGE 3 ---
     doc.addPage();
+    currentY = 30;
+    doc.setTextColor(0);
+}
 
-    // Header Image (Full Ratio)
-    try {
-        if (REPORT_HEADER_BG) {
-            const imgHeight = pageWidth * 0.312; // Aspect ratio from 318/1018
-            doc.addImage(REPORT_HEADER_BG, 'PNG', 0, 0, pageWidth, imgHeight);
-        }
-    } catch (e) { }
+const footerText = `${client.company_name} mantiene su compromiso con la gestión ambiental responsable, promoviendo acciones concretas que fomenten la economía circular y contribuyan a minimizar el impacto ambiental de sus operaciones.`;
+const splitFooter = doc.splitTextToSize(footerText, pageWidth - 40);
+doc.setFont('helvetica', 'bold');
+doc.text(splitFooter, pageWidth / 2, currentY, { align: 'center' });
 
-    // Watermark (Faded/Opacity)
-    try {
-        if (ECONEXO_WATERMARK) {
-            doc.saveGraphicsState();
-            doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
-            const wmSize = 150; // Adjusted size (180 reduced by ~0.2)
-            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, 80, wmSize, wmSize);
-            doc.restoreGraphicsState();
-        }
-    } catch (e) { }
 
-    currentY = 100;
+// Footer Page 2 (Green Bar)
+doc.setFillColor(55, 87, 45); // Unified Dark Green
+doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
+doc.setTextColor(255);
+doc.setFontSize(14);
+doc.text('2', pageWidth / 2, pageHeight - 5, { align: 'center' });
 
-    // Certification Text (Rich Text)
-    const certFontSize = 18;
-    doc.setFontSize(certFontSize);
+// --- PAGE 3 ---
+doc.addPage();
 
-    // Define parts
-    const parts = [
-        { text: "Este reporte es emitido por ", bold: false },
-        { text: "Sebastián Frías Thompson", bold: true },
-        { text: ", representante legal de ", bold: false },
-        { text: "EcoNexo", bold: true, color: [76, 175, 80] }, // Green
-        { text: ", técnico en gestión de calidad y ambiente y reciclador de base, y representa un registro fiel y exacto de la gestión realizada durante este periodo.", bold: false }
-    ];
-
-    const maxWidth = pageWidth - 40;
-    const lineHeight = 9;
-
-    // Flatten into words with style info
-    let words: { text: string, bold: boolean, color?: number[] }[] = [];
-    parts.forEach(p => {
-        const pWords = p.text.split(/(\s+)/); // Maintain spaces
-        pWords.forEach(w => {
-            if (w) words.push({ text: w, bold: p.bold, color: p.color });
-        });
-    });
-
-    let line: typeof words = [];
-
-    // Function to measure line width
-    const getLineWidth = (l: typeof words) => {
-        let width = 0;
-        l.forEach(w => {
-            doc.setFont('helvetica', w.bold ? 'bold' : 'normal');
-            width += doc.getTextWidth(w.text);
-        });
-        return width;
-    };
-
-    // Build and render lines
-    for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        let testLine = [...line, word];
-        if (getLineWidth(testLine) > maxWidth && line.length > 0) {
-            // Render current line
-            const lineWidth = getLineWidth(line);
-            let cursorX = (pageWidth - lineWidth) / 2;
-
-            line.forEach(w => {
-                doc.setFont('helvetica', w.bold ? 'bold' : 'normal');
-                doc.setTextColor(w.color ? w.color[0] : 0, w.color ? w.color[1] : 0, w.color ? w.color[2] : 0);
-                doc.text(w.text, cursorX, currentY);
-                cursorX += doc.getTextWidth(w.text);
-            });
-
-            currentY += lineHeight;
-            line = [word];
-        } else {
-            line.push(word);
-        }
+// Header Image (Full Ratio)
+try {
+    if (REPORT_HEADER_BG) {
+        const imgHeight = pageWidth * 0.312; // Aspect ratio from 318/1018
+        doc.addImage(REPORT_HEADER_BG, 'PNG', 0, 0, pageWidth, imgHeight);
     }
-    // Render last line
-    if (line.length > 0) {
+} catch (e) { }
+
+// Watermark (Faded/Opacity)
+try {
+    if (ECONEXO_WATERMARK) {
+        doc.saveGraphicsState();
+        doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
+        const wmSize = 150; // Adjusted size (180 reduced by ~0.2)
+        doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, 80, wmSize, wmSize);
+        doc.restoreGraphicsState();
+    }
+} catch (e) { }
+
+currentY = 100;
+
+// Certification Text (Rich Text)
+const certFontSize = 18;
+doc.setFontSize(certFontSize);
+
+// Define parts
+const parts = [
+    { text: "Este reporte es emitido por ", bold: false },
+    { text: "Sebastián Frías Thompson", bold: true },
+    { text: ", representante legal de ", bold: false },
+    { text: "EcoNexo", bold: true, color: [76, 175, 80] }, // Green
+    { text: ", técnico en gestión de calidad y ambiente y reciclador de base, y representa un registro fiel y exacto de la gestión realizada durante este periodo.", bold: false }
+];
+
+const maxWidth = pageWidth - 40;
+const lineHeight = 9;
+
+// Flatten into words with style info
+let words: { text: string, bold: boolean, color?: number[] }[] = [];
+parts.forEach(p => {
+    const pWords = p.text.split(/(\s+)/); // Maintain spaces
+    pWords.forEach(w => {
+        if (w) words.push({ text: w, bold: p.bold, color: p.color });
+    });
+});
+
+let line: typeof words = [];
+
+// Function to measure line width
+const getLineWidth = (l: typeof words) => {
+    let width = 0;
+    l.forEach(w => {
+        doc.setFont('helvetica', w.bold ? 'bold' : 'normal');
+        width += doc.getTextWidth(w.text);
+    });
+    return width;
+};
+
+// Build and render lines
+for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    let testLine = [...line, word];
+    if (getLineWidth(testLine) > maxWidth && line.length > 0) {
+        // Render current line
         const lineWidth = getLineWidth(line);
         let cursorX = (pageWidth - lineWidth) / 2;
+
         line.forEach(w => {
             doc.setFont('helvetica', w.bold ? 'bold' : 'normal');
             doc.setTextColor(w.color ? w.color[0] : 0, w.color ? w.color[1] : 0, w.color ? w.color[2] : 0);
             doc.text(w.text, cursorX, currentY);
             cursorX += doc.getTextWidth(w.text);
         });
+
         currentY += lineHeight;
-    }
-
-    currentY += 20;
-
-    // Thank You Text
-    const thanksText = "¡Gracias por la confianza depositada en nosotros para colaborar en la sostenibilidad empresarial!";
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bolditalic');
-    doc.setTextColor(76, 175, 80); // Eco Green
-
-    const splitThanks = doc.splitTextToSize(thanksText, pageWidth - 40);
-    doc.text(splitThanks, pageWidth / 2, currentY, { align: 'center' });
-
-    // Signatures
-    const sigY = 220;
-
-    // Left Signature (Sebastian)
-    doc.setDrawColor(100);
-    doc.setLineWidth(0.5);
-    doc.line(30, sigY, 90, sigY); // Line
-
-    try {
-        if (ECONEXO_SIGNATURE) {
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', 35, sigY - 35, 50, 40);
-        }
-    } catch (e) { }
-
-    doc.setFontSize(10);
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.text("Sebastián Frías Thompson", 60, sigY + 5, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(80);
-    doc.text("CEO EcoNexo", 60, sigY + 10, { align: 'center' });
-
-    // Right Signature (Client)
-    doc.setDrawColor(100);
-    doc.line(120, sigY, 180, sigY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0);
-    doc.setFontSize(10);
-
-    let clientName = client.company_name.toUpperCase();
-    if (clientName.length > 25) doc.setFontSize(8);
-
-    doc.text(clientName, 150, sigY + 5, { align: 'center' });
-
-    // Page 3 Footer (Green Bar with Number '3')
-    doc.setFillColor(55, 87, 45); // Dark Green
-    doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
-    doc.setTextColor(255);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('3', pageWidth / 2, pageHeight - 5, { align: 'center' });
-
-    if (action === 'preview') {
-        window.open(doc.output('bloburl'), '_blank');
+        line = [word];
     } else {
-        doc.save(`Reporte_EcoEq_${client.company_name.trim()}_${periodo}.pdf`);
+        line.push(word);
     }
+}
+// Render last line
+if (line.length > 0) {
+    const lineWidth = getLineWidth(line);
+    let cursorX = (pageWidth - lineWidth) / 2;
+    line.forEach(w => {
+        doc.setFont('helvetica', w.bold ? 'bold' : 'normal');
+        doc.setTextColor(w.color ? w.color[0] : 0, w.color ? w.color[1] : 0, w.color ? w.color[2] : 0);
+        doc.text(w.text, cursorX, currentY);
+        cursorX += doc.getTextWidth(w.text);
+    });
+    currentY += lineHeight;
+}
+
+currentY += 20;
+
+// Thank You Text
+const thanksText = "¡Gracias por la confianza depositada en nosotros para colaborar en la sostenibilidad empresarial!";
+doc.setFontSize(22);
+doc.setFont('helvetica', 'bolditalic');
+doc.setTextColor(76, 175, 80); // Eco Green
+
+const splitThanks = doc.splitTextToSize(thanksText, pageWidth - 40);
+doc.text(splitThanks, pageWidth / 2, currentY, { align: 'center' });
+
+// Signatures
+const sigY = 220;
+
+// Left Signature (Sebastian)
+doc.setDrawColor(100);
+doc.setLineWidth(0.5);
+doc.line(30, sigY, 90, sigY); // Line
+
+try {
+    if (ECONEXO_SIGNATURE) {
+        doc.addImage(ECONEXO_SIGNATURE, 'PNG', 35, sigY - 35, 50, 40);
+    }
+} catch (e) { }
+
+doc.setFontSize(10);
+doc.setTextColor(0);
+doc.setFont('helvetica', 'bold');
+doc.text("Sebastián Frías Thompson", 60, sigY + 5, { align: 'center' });
+doc.setFont('helvetica', 'normal');
+doc.setFontSize(9);
+doc.setTextColor(80);
+doc.text("CEO EcoNexo", 60, sigY + 10, { align: 'center' });
+
+// Right Signature (Client)
+doc.setDrawColor(100);
+doc.line(120, sigY, 180, sigY);
+doc.setFont('helvetica', 'bold');
+doc.setTextColor(0);
+doc.setFontSize(10);
+
+let clientName = client.company_name.toUpperCase();
+if (clientName.length > 25) doc.setFontSize(8);
+
+doc.text(clientName, 150, sigY + 5, { align: 'center' });
+
+// Page 3 Footer (Green Bar with Number '3')
+doc.setFillColor(55, 87, 45); // Dark Green
+doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
+doc.setTextColor(255);
+doc.setFontSize(14);
+doc.setFont('helvetica', 'bold');
+doc.text('3', pageWidth / 2, pageHeight - 5, { align: 'center' });
+
+if (action === 'preview') {
+    window.open(doc.output('bloburl'), '_blank');
+} else {
+    doc.save(`Reporte_EcoEq_${client.company_name.trim()}_${periodo}.pdf`);
+}
 };
 
 const addFooter = (doc: jsPDF, pageWidth: number, pageHeight: number) => {

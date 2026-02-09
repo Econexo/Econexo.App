@@ -17,8 +17,10 @@ interface Document {
     waste_details: any;
     generated_by: string;
     periodo?: string;
+    months_count?: number;
     month?: string;
     year?: number;
+    source_document_ids?: string[];
   };
 }
 
@@ -32,7 +34,11 @@ const Documents: React.FC = () => {
   const [currentSection, setCurrentSection] = useState<'root' | 'econexo' | 'gestores'>('root');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [showRangeModal, setShowRangeModal] = useState(false);
+  const [rangeStart, setRangeStart] = useState(0); // January
+  const [rangeEnd, setRangeEnd] = useState(2); // March
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -155,7 +161,8 @@ const Documents: React.FC = () => {
           clientData,
           validItems,
           doc.metadata.periodo || 'Reporte Reciclaje',
-          action
+          action,
+          doc.metadata.months_count // Pass custom months count for correct baseline calculation
         );
       } else if (doc.type === 'CGM') {
         const month = doc.metadata?.month || 'Mes';
@@ -377,6 +384,92 @@ const Documents: React.FC = () => {
     }
   };
 
+  const handleGenerateCustomRange = async () => {
+    if (!userProfile || selectedYear === null) return;
+
+    if (rangeEnd < rangeStart) {
+      alert('El mes de término debe ser posterior o igual al mes de inicio.');
+      return;
+    }
+
+    const startMonthName = monthNames[rangeStart];
+    const endMonthName = monthNames[rangeEnd];
+    const period = `${startMonthName.toUpperCase()} - ${endMonthName.toUpperCase()} ${selectedYear}`;
+
+    // Calculate months count
+    const monthsCount = rangeEnd - rangeStart + 1;
+
+    // Filter documents
+    const docsToReport = documents.filter(doc => {
+      const date = new Date(doc.created_at);
+      const yearMatches = date.getFullYear() === selectedYear;
+      const month = date.getMonth();
+      const monthMatches = month >= rangeStart && month <= rangeEnd;
+
+      const isSourceDoc = (doc.type === 'CR' || doc.type === 'verified');
+      return yearMatches && monthMatches && isSourceDoc && doc.verified;
+    });
+
+    if (docsToReport.length === 0) {
+      alert(`No hay documentos certificados (CR) válidos en el periodo ${period} para generar un reporte.`);
+      return;
+    }
+
+    const reportItems: any[] = [];
+    docsToReport.forEach(doc => {
+      if (doc.metadata?.waste_details) {
+        const details = Array.isArray(doc.metadata.waste_details)
+          ? doc.metadata.waste_details
+          : [doc.metadata.waste_details];
+        reportItems.push(...details);
+      }
+    });
+
+    if (reportItems.length === 0) {
+      alert('No se encontraron detalles de residuos en los documentos seleccionados.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      generateEcoReport(
+        {
+          company_name: userProfile.company_name,
+          rut: userProfile.rut,
+          address: userProfile.address || 'Chile'
+        },
+        reportItems,
+        period,
+        'save',
+        monthsCount
+      );
+
+      // Save record
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('documents').insert([{
+          user_id: user.id,
+          title: `Reporte Rango - ${period}`,
+          type: 'report',
+          verified: true,
+          metadata: {
+            periodo: period,
+            waste_details: reportItems,
+            source_document_ids: docsToReport.map(d => d.id),
+            months_count: monthsCount
+          }
+        }]);
+        fetchDocuments();
+        setShowRangeModal(false);
+      }
+    } catch (err: any) {
+      console.error("Report generation error:", err);
+      alert("Hubo un error al generar el reporte: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBack = () => {
     if (selectedMonth !== null) setSelectedMonth(null);
     else if (selectedYear !== null) setSelectedYear(null);
@@ -503,6 +596,17 @@ const Documents: React.FC = () => {
                         <span className="material-symbols-outlined text-lg">summarize</span>
                         Reporte Anual {year}
                       </button>
+                      </button>
+                    )}
+                    
+                    {selectedFolder === 'reportes' && (
+                        <button
+                            onClick={() => setShowRangeModal(true)}
+                            className="w-full mt-2 py-3 bg-white/40 hover:bg-white/60 text-gray-600 border border-gray-300 border-dashed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
+                        >
+                            <span className="material-symbols-outlined text-lg">date_range</span>
+                            Reporte por Rango Personalizado
+                        </button>
                     )}
                   </div>
                 ))
@@ -662,48 +766,117 @@ const Documents: React.FC = () => {
         <span className="material-symbols-outlined text-3xl">add</span>
       </button>
 
-      {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowSettings(false)}></div>
-          <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-[0_30px_60px_rgba(0,0,0,0.15)] animate-in zoom-in duration-200">
-            <div className="text-center space-y-6">
-              <div className="size-20 rounded-3xl bg-primary/5 text-primary mx-auto flex items-center justify-center border border-primary/10">
-                <span className="material-symbols-outlined text-4xl">add_to_drive</span>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-display font-black text-gray-900">Google Drive</h3>
-                <p className="text-xs text-gray-500 font-bold leading-relaxed">Configura el respaldo automático de tus certificados y reportes en la nube.</p>
-              </div>
+          </div >
+        </div >
+      )}
 
-              <div className="pt-2 space-y-3">
-                <button
-                  onClick={() => { alert('Redirigiendo a Google...'); setShowSettings(false); }}
-                  className="w-full h-14 bg-white/50 hover:bg-white/80 border border-white/60 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors text-gray-700"
-                >
-                  <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" className="size-6" alt="Drive" />
-                  Cambiar Cuenta
-                </button>
-                <button
-                  onClick={() => { setDriveLinked(false); setShowSettings(false); }}
-                  className="w-full h-14 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors"
-                >
-                  Desvincular
-                </button>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="w-full h-10 text-gray-400 text-[10px] font-black uppercase tracking-widest"
-                >
-                  Cerrar
-                </button>
-              </div>
+{/* Range Selection Modal */ }
+{
+  showRangeModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowRangeModal(false)}></div>
+      <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-[0_30px_60px_rgba(0,0,0,0.15)] animate-in zoom-in duration-200">
+        <div className="text-center space-y-6">
+          <div className="size-16 rounded-3xl bg-primary/5 text-primary mx-auto flex items-center justify-center border border-primary/10">
+            <span className="material-symbols-outlined text-3xl">date_range</span>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-display font-black text-gray-900">Reporte Personalizado</h3>
+            <p className="text-xs text-gray-500 font-bold">Selecciona el rango de meses</p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Desde</label>
+              <select
+                value={rangeStart}
+                onChange={(e) => setRangeStart(Number(e.target.value))}
+                className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary"
+              >
+                {monthNames.map((m, i) => (
+                  <option key={i} value={i}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Hasta</label>
+              <select
+                value={rangeEnd}
+                onChange={(e) => setRangeEnd(Number(e.target.value))}
+                className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary"
+              >
+                {monthNames.map((m, i) => (
+                  <option key={i} value={i} disabled={i < rangeStart}>{m}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          <div className="pt-2 space-y-3">
+            <button
+              onClick={handleGenerateCustomRange}
+              className="w-full h-14 bg-primary text-background-dark rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+            >
+              <span className="material-symbols-outlined">assignment_add</span>
+              Generar Reporte
+            </button>
+            <button
+              onClick={() => setShowRangeModal(false)}
+              className="w-full h-10 text-gray-400 text-[10px] font-black uppercase tracking-widest"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    </div>
+  )
+}
+
+{
+  showSettings && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowSettings(false)}></div>
+      <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-[0_30px_60px_rgba(0,0,0,0.15)] animate-in zoom-in duration-200">
+        <div className="text-center space-y-6">
+          <div className="size-20 rounded-3xl bg-primary/5 text-primary mx-auto flex items-center justify-center border border-primary/10">
+            <span className="material-symbols-outlined text-4xl">add_to_drive</span>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-display font-black text-gray-900">Google Drive</h3>
+            <p className="text-xs text-gray-500 font-bold leading-relaxed">Configura el respaldo automático de tus certificados y reportes en la nube.</p>
+          </div>
+
+          <div className="pt-2 space-y-3">
+            <button
+              onClick={() => { alert('Redirigiendo a Google...'); setShowSettings(false); }}
+              className="w-full h-14 bg-white/50 hover:bg-white/80 border border-white/60 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors text-gray-700"
+            >
+              <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" className="size-6" alt="Drive" />
+              Cambiar Cuenta
+            </button>
+            <button
+              onClick={() => { setDriveLinked(false); setShowSettings(false); }}
+              className="w-full h-14 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors"
+            >
+              Desvincular
+            </button>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="w-full h-10 text-gray-400 text-[10px] font-black uppercase tracking-widest"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
       <Navbar />
       <div className="absolute top-20 right-4 text-[10px] text-gray-400 font-bold z-0 pointer-events-none">v1.3</div>
-    </div>
+    </div >
   );
 };
 
