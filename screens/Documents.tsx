@@ -114,6 +114,12 @@ const Documents: React.FC = () => {
   };
 
   const handleDownload = (doc: Document, action: 'save' | 'preview' = 'save') => {
+    // Direct Download for Uploaded Documents (Gestores)
+    if (doc.content_url) {
+      window.open(doc.content_url, '_blank');
+      return;
+    }
+
     if (!doc.metadata || !userProfile) {
       alert("Este documento no tiene metadatos para regeneración o el perfil no ha cargado.");
       return;
