@@ -202,6 +202,23 @@ const Documents: React.FC = () => {
     }
   };
 
+  const handleDelete = async (doc: Document) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar "${doc.title}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('documents').delete().eq('id', doc.id);
+      if (error) throw error;
+
+      // Update local state
+      setDocuments(prev => prev.filter(d => d.id !== doc.id));
+    } catch (err: any) {
+      console.error('Error deleting document:', err);
+      alert('Error al eliminar el documento: ' + err.message);
+    }
+  };
+
   const addTestDocument = async () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -540,6 +557,13 @@ const Documents: React.FC = () => {
                           <span className="material-symbols-outlined text-sm">download</span>
                           Bajar
                         </button>
+                        <button
+                          onClick={() => handleDelete(doc)}
+                          className="size-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
+                          title="Eliminar Reporte"
+                        >
+                          <span className="material-symbols-outlined text-lg">delete</span>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -614,6 +638,13 @@ const Documents: React.FC = () => {
                       >
                         <span className="material-symbols-outlined text-sm">download</span>
                         Bajar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(doc)}
+                        className="size-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
+                        title="Eliminar Documento"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </div>
                   </div>
