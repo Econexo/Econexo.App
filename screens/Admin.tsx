@@ -865,7 +865,10 @@ const Admin: React.FC = () => {
                                 <div className="grid grid-cols-1 gap-3">
                                     {Array.from(new Set(generatedCerts.map(c => c.user_id))).map(userId => {
                                         const userDocs = generatedCerts.filter(c => c.user_id === userId);
-                                        const companyName = userDocs[0]?.profiles?.company_name || 'Desconocido';
+                                        // Try to find name in users list first (more reliable), then fallback to doc profile
+                                        const companyName = users.find(u => u.id === userId)?.company_name
+                                            || userDocs[0]?.profiles?.company_name
+                                            || 'Desconocido';
                                         return (
                                             <button
                                                 key={userId}
