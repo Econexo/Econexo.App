@@ -34,7 +34,7 @@ const Documents: React.FC = () => {
   const [currentSection, setCurrentSection] = useState<'root' | 'econexo' | 'gestores'>('root');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [showRangeModal, setShowRangeModal] = useState(false);
   const [rangeStart, setRangeStart] = useState(0); // January
@@ -596,17 +596,16 @@ const Documents: React.FC = () => {
                         <span className="material-symbols-outlined text-lg">summarize</span>
                         Reporte Anual {year}
                       </button>
-                      </button>
                     )}
-                    
+
                     {selectedFolder === 'reportes' && (
-                        <button
-                            onClick={() => setShowRangeModal(true)}
-                            className="w-full mt-2 py-3 bg-white/40 hover:bg-white/60 text-gray-600 border border-gray-300 border-dashed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
-                        >
-                            <span className="material-symbols-outlined text-lg">date_range</span>
-                            Reporte por Rango Personalizado
-                        </button>
+                      <button
+                        onClick={() => setShowRangeModal(true)}
+                        className="w-full mt-2 py-3 bg-white/40 hover:bg-white/60 text-gray-600 border border-gray-300 border-dashed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
+                      >
+                        <span className="material-symbols-outlined text-lg">date_range</span>
+                        Reporte por Rango Personalizado
+                      </button>
                     )}
                   </div>
                 ))
@@ -766,7 +765,7 @@ const Documents: React.FC = () => {
         <span className="material-symbols-outlined text-3xl">add</span>
       </button>
 
-          </div >
+    </div >
         </div >
       )}
 
