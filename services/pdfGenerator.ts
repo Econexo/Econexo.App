@@ -617,8 +617,9 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         // If "Trimestre", 3 months.
         // Otherwise (default), 1 month.
         let monthsCount = 1;
-        const isAnnual = /^\d{4}$/.test(periodo.trim()) || periodo.toLowerCase().includes('anual');
-        const isQuarter = periodo.toLowerCase().includes('trimestre');
+        const pLower = periodo.toLowerCase();
+        const isAnnual = /^\d{4}$/.test(periodo.trim()) || pLower.includes('anual') || pLower.includes('año') || pLower.includes('ano');
+        const isQuarter = pLower.includes('trimestre');
 
         if (isAnnual) monthsCount = 12;
         else if (isQuarter) monthsCount = 3;
