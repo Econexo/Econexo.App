@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
@@ -17,9 +17,50 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     metaRep: 0,
     arbolesRescatados: 0,
     aguaAhorrada: 0,
-    energiaAhorrada: 0,
     carbonFootprint: 0
   });
+
+  // Animation States
+  const [animatedMeta, setAnimatedMeta] = useState(0);
+  const [animatedCarbon, setAnimatedCarbon] = useState(0);
+
+  // Animation Effect
+  useEffect(() => {
+    const duration = 1500; // ms
+    const steps = 60;
+    const intervalTime = duration / steps;
+
+    let currentStep = 0;
+
+    const startMeta = animatedMeta;
+    const targetMeta = stats.metaRep;
+    const metaIncrement = (targetMeta - startMeta) / steps;
+
+    const startCarbon = animatedCarbon;
+    const targetCarbon = stats.carbonFootprint;
+    const carbonIncrement = (targetCarbon - startCarbon) / steps;
+
+    const timer = setInterval(() => {
+      currentStep++;
+
+      if (currentStep <= steps) {
+        setAnimatedMeta(prev => {
+          const next = startMeta + (metaIncrement * currentStep);
+          return Math.abs(next - targetMeta) < Math.abs(metaIncrement) ? targetMeta : next;
+        });
+        setAnimatedCarbon(prev => {
+          const next = startCarbon + (carbonIncrement * currentStep);
+          return Math.abs(next - targetCarbon) < Math.abs(carbonIncrement) ? targetCarbon : next;
+        });
+      } else {
+        setAnimatedMeta(targetMeta);
+        setAnimatedCarbon(targetCarbon);
+        clearInterval(timer);
+      }
+    }, intervalTime);
+
+    return () => clearInterval(timer);
+  }, [stats]);
 
   useEffect(() => {
     const fetchImpactData = async () => {
@@ -162,7 +203,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
         <section className="flex flex-col items-center justify-center">
           <div className="relative size-72 flex items-center justify-center group cursor-pointer">
             <div className="absolute inset-0 rounded-full bg-primary/5 blur-[60px] group-hover:bg-primary/15 transition-all duration-1000"></div>
-            <div className="absolute inset-0 rounded-full shadow-inner border border-gray-100" style={{ background: `conic-gradient(#326105 ${stats.metaRep}%, #f3f4f6 0)` }}></div>
+            <div className="absolute inset-0 rounded-full shadow-inner border border-gray-100" style={{ background: `conic-gradient(#326105 ${animatedMeta}%, #f3f4f6 0)` }}></div>
             <div className="absolute inset-6 rounded-full bg-white flex flex-col items-center justify-center shadow-xl border border-gray-100 overflow-hidden">
               <div className="absolute top-0 w-full h-1/2 bg-gradient-to-b from-gray-50 to-transparent"></div>
               <span className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400 relative z-10">
@@ -170,12 +211,12 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
               </span>
               <div className="flex items-baseline relative z-10 mt-1">
                 <span className="text-7xl font-display font-black text-gray-900 tracking-tighter">
-                  {isLeyRep ? stats.metaRep : Number(stats.carbonFootprint.toFixed(2))}
+                  {isLeyRep ? Math.round(animatedMeta) : Number(animatedCarbon.toFixed(2))}
                 </span>
                 <span className="text-xl text-gray-400 font-black ml-1">{isLeyRep ? '%' : 'ton'}</span>
               </div>
               <div className="mt-3 px-4 py-1.5 bg-green-50 text-primary text-[11px] font-black rounded-full border border-green-100 relative z-10 uppercase tracking-tight">
-                {isLeyRep ? 'Cumplimiento REP' : 'Evitada este mes'}
+                {isLeyRep ? 'Cumplimiento REP' : 'Resumen Anual'}
               </div>
             </div>
           </div>
