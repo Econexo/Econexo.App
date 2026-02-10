@@ -217,7 +217,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 <span className="text-xl text-gray-400 font-black ml-1">{isLeyRep ? '%' : 'ton'}</span>
               </div>
               <div className="mt-3 px-4 py-1.5 bg-green-50 text-primary text-[11px] font-black rounded-full border border-green-100 relative z-10 uppercase tracking-tight">
-                {isLeyRep ? 'Cumplimiento REP' : 'Resumen Anual'}
+                {isLeyRep ? 'Cumplimiento REP' : 'Resumen del Año'}
               </div>
             </div>
           </div>

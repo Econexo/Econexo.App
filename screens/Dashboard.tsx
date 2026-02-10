@@ -670,7 +670,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           <div className="h-48 w-full">
             {stats.tendencia.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.tendencia}>
+                <AreaChart data={stats.tendencia} margin={{ left: 5, right: 5, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#326105" stopOpacity={0.2} />
