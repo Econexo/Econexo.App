@@ -681,7 +681,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                     content={<CustomTooltip />}
                     cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }}
                   />
-                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={10} tickLine={false} axisLine={false} dy={10} interval={0} />
+                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={9} tickLine={false} axisLine={false} dy={5} interval={0} angle={-45} textAnchor="end" height={50} />
                   <YAxis hide domain={[0, 'auto']} />
                   <Area
                     type="monotone"
