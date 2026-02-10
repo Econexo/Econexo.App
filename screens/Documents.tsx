@@ -600,7 +600,10 @@ const Documents: React.FC = () => {
 
                     {selectedFolder === 'reportes' && (
                       <button
-                        onClick={() => setShowRangeModal(true)}
+                        onClick={() => {
+                          setSelectedYear(year);
+                          setShowRangeModal(true);
+                        }}
                         className="w-full mt-2 py-3 bg-white/40 hover:bg-white/60 text-gray-600 border border-gray-300 border-dashed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
                       >
                         <span className="material-symbols-outlined text-lg">date_range</span>
@@ -868,9 +871,7 @@ const Documents: React.FC = () => {
               </div>
             </div>
           </div>
-          </div>
-  )
-}
+        )}
 
       <Navbar />
       <div className="absolute top-20 right-4 text-[10px] text-gray-400 font-bold z-0 pointer-events-none">v1.3</div>
