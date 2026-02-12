@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from '../components/Navbar';
 import ScheduledWithdrawals from '../components/ScheduledWithdrawals';
+import NotificationBell from '../components/NotificationBell';
 
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
+import { createNotification } from '../services/notificationService';
 
 interface DashboardProps {
   isLeyRep: boolean;
@@ -191,6 +193,15 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         amount: pointsToAward,
         reason: `Generación de Certificado ${certNumber} (Operario)`
       }]);
+
+      // Create notification for client
+      await createNotification({
+        userId: selectedClient.id,
+        title: 'Nuevo Certificado',
+        message: `Se ha generado el certificado ${certNumber}. Has recibido ${pointsToAward} Eco-Puntos.`,
+        type: 'certificate',
+        metadata: { cert_number: certNumber, points: pointsToAward }
+      });
 
       alert(`Retiro registrado exitosamente. Certificado ${certNumber} generado. ¡Se han otorgado ${pointsToAward} Eco-Puntos (2 pts por kg)!`);
       setShowWithdrawalModal(false);
@@ -557,6 +568,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           </div>
         </div>
         <div className="flex gap-3 items-center">
+          <NotificationBell />
           <Link to="/profile" className="size-10 rounded-full overflow-hidden border-2 border-primary/20 shadow-sm hover:border-primary transition-colors">
             <img src={avatarUrl} className="w-full h-full object-cover" alt="Perfil" />
           </Link>

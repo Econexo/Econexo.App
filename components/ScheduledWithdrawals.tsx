@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
+import { createNotification } from '../services/notificationService';
 
 // Define the shape of our scheduled withdrawal
 interface ScheduledWithdrawal {
@@ -152,6 +153,20 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
             ]);
 
             if (error) throw error;
+
+            // Create notification for client
+            const dateFormatted = parseLocalDate(newDate).toLocaleDateString('es-CL', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            await createNotification({
+                userId: selectedClientId,
+                title: 'Retiro Programado',
+                message: `Se ha agendado un retiro de ${newType} para el ${dateFormatted}.`,
+                type: 'withdrawal',
+                metadata: { waste_type: newType, scheduled_date: newDate }
+            });
 
             alert('Retiro programado exitosamente');
             setShowModal(false);

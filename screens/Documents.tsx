@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
+import { createNotification } from '../services/notificationService';
 
 interface Document {
   id: string;
@@ -374,6 +375,16 @@ const Documents: React.FC = () => {
             source_document_ids: docsToReport.map(d => d.id)
           }
         }]);
+
+        // Create notification for user
+        await createNotification({
+          userId: user.id,
+          title: 'Reporte Generado',
+          message: `Tu reporte de impacto para ${period} está listo.`,
+          type: 'report',
+          metadata: { periodo: period }
+        });
+
         fetchDocuments();
       }
     } catch (err: any) {
@@ -459,6 +470,16 @@ const Documents: React.FC = () => {
             months_count: monthsCount
           }
         }]);
+
+        // Create notification for user
+        await createNotification({
+          userId: user.id,
+          title: 'Reporte Generado',
+          message: `Tu reporte personalizado para ${period} está listo.`,
+          type: 'report',
+          metadata: { periodo: period, months_count: monthsCount }
+        });
+
         fetchDocuments();
         setShowRangeModal(false);
       }
