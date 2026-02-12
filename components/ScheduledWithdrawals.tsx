@@ -38,6 +38,19 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
         'Otro'
     ];
 
+    // Helper function to parse date strings as local dates (avoiding timezone issues)
+    const parseLocalDate = (dateString: string): Date => {
+        // Parse YYYY-MM-DD as local date at noon to avoid timezone shifts
+        const [year, month, day] = dateString.split('-').map(Number);
+        return new Date(year, month - 1, day, 12, 0, 0);
+    };
+
+    // Helper function to convert local date to ISO string for storage
+    const toLocalDateString = (dateString: string): string => {
+        const localDate = parseLocalDate(dateString);
+        return localDate.toISOString();
+    };
+
     useEffect(() => {
         fetchWithdrawals();
         if (isAdmin) {
@@ -130,7 +143,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                     type: 'SCHEDULED', // Using existing type convention or new one
                     verified: false,
                     metadata: {
-                        scheduled_date: newDate,
+                        scheduled_date: toLocalDateString(newDate),
                         waste_type: newType,
                         status: 'prográmado',
                         description: newDescription
@@ -195,7 +208,10 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                     ) : (
                         withdrawals.map((item) => {
                             const meta = (item.metadata as any) || {};
-                            const dateObj = new Date(meta.scheduled_date || item.created_at);
+                            // Parse the date correctly to avoid timezone issues
+                            const dateObj = meta.scheduled_date
+                                ? parseLocalDate(meta.scheduled_date.split('T')[0])
+                                : new Date(item.created_at);
 
                             return (
                                 <div key={item.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-sm transition-all group/item">
