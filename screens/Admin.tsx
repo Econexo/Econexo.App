@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase';
 import Navbar from '../components/Navbar';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import DocumentEditor from '../components/DocumentEditor';
+import { createNotification } from '../services/notificationService';
 
 interface UserProfile {
     id: string;
@@ -264,6 +265,14 @@ const Admin: React.FC = () => {
                 amount: pointsToAward,
                 reason: `Generación de Certificado ${certNumber}`
             }]);
+            // Notificar al usuario sobre el nuevo certificado
+            await createNotification({
+                userId: selectedUser.id,
+                title: '🏆 Nuevo Certificado Emitido',
+                message: `Se ha generado el ${certNumber}. Has recibido ${pointsToAward} Eco-Puntos.`,
+                type: 'certificate',
+                metadata: { cert_number: certNumber, points: pointsToAward }
+            });
             setShowCRModal(false);
             setWasteItems([]);
             fetchAdminData();
@@ -379,6 +388,15 @@ const Admin: React.FC = () => {
             });
 
             if (dbError) throw dbError;
+
+            // Notificar al usuario sobre el nuevo documento
+            await createNotification({
+                userId: selectedUser.id,
+                title: '📄 Nuevo Documento Disponible',
+                message: `El administrador ha subido un nuevo documento: "${uploadFile.name}".`,
+                type: 'document',
+                metadata: { file_name: uploadFile.name, document_type: uploadType }
+            });
 
             alert("Documento subido exitosamente.");
             setShowUploadModal(false);
