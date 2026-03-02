@@ -8,6 +8,7 @@ import NotificationBell from '../components/NotificationBell';
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
 import { createNotification } from '../services/notificationService';
+import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 
 interface DashboardProps {
   isLeyRep: boolean;
@@ -101,6 +102,18 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     checkUserRole();
     loadStats();
     fetchClients();
+
+    // Subscribe to Web Push if not already subscribed (non-blocking)
+    const initPush = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const alreadySubscribed = await isPushSubscribed();
+      if (!alreadySubscribed) {
+        // Short delay so the page loads first, then ask permission
+        setTimeout(() => subscribeToPush(user.id), 3000);
+      }
+    };
+    initPush();
   }, [selectedYear]);
 
   const fetchClients = async () => {

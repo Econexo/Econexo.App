@@ -9,7 +9,7 @@ export interface NotificationData {
 }
 
 /**
- * Create a new notification for a user
+ * Create a new notification for a user and trigger a Web Push to their devices
  */
 export const createNotification = async (data: NotificationData) => {
     try {
@@ -27,6 +27,22 @@ export const createNotification = async (data: NotificationData) => {
         if (error) {
             console.error('Error creating notification:', error);
             return { success: false, error };
+        }
+
+        // --- Send Web Push to user's devices ---
+        try {
+            await supabase.functions.invoke('send-push', {
+                body: {
+                    userId: data.userId,
+                    title: data.title,
+                    body: data.message,
+                    url: '/dashboard',
+                    data: data.metadata || {},
+                },
+            });
+        } catch (pushErr) {
+            // Push failure should not block the notification flow
+            console.warn('Web Push delivery failed (non-critical):', pushErr);
         }
 
         return { success: true };
@@ -104,3 +120,4 @@ export const getNotifications = async (userId: string, limit = 20) => {
         return { success: false, error: err, data: [] };
     }
 };
+
