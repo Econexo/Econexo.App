@@ -483,7 +483,8 @@ const Admin: React.FC = () => {
                     title: `Certificado Gestión Mensual - ${monthName} ${selectedYearGen}`,
                     type: 'CGM',
                     verified: false, // Requires admin approval
-                    created_at: new Date().toISOString(),
+                    // Use the 15th of the selected month so the document is stored in the correct period
+                    created_at: new Date(selectedYearGen, selectedMonthGen, 15).toISOString(),
                     metadata: {
                         month: monthName,
                         year: selectedYearGen,
