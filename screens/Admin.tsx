@@ -126,58 +126,61 @@ const Admin: React.FC = () => {
         try {
             setLoading(true);
 
-            // 1. Fetch Profiles
+            // 1. Fetch Profiles (always first so we can join manually)
             const { data: profiles, error: pError } = await supabase.from('profiles').select('*');
             if (pError) console.error('Profiles fetch error:', pError);
+            const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
             // 2. Fetch Pending Docs (unverified)
             const { data: docs, error: dError } = await supabase
                 .from('documents')
-                .select('*, profiles(company_name)')
+                .select('*')
                 .eq('verified', false);
+            if (dError) console.error('Pending docs fetch error:', dError);
 
-            let finalDocs = docs;
-            if (dError) {
-                console.error('Pending docs join error:', dError);
-                const { data: simpleDocs } = await supabase.from('documents').select('*').eq('verified', false);
-                finalDocs = simpleDocs;
-            }
+            // Attach profile info manually
+            const finalDocs = (docs || []).map((doc: any) => ({
+                ...doc,
+                profiles: profileMap.get(doc.user_id) || null,
+            }));
 
             // 3. Fetch Support Tickets
             const { data: tickets, error: tError } = await supabase
                 .from('support_tickets')
-                .select('*, profiles(company_name)')
+                .select('*')
                 .order('created_at', { ascending: false });
             if (tError) console.error('Tickets fetch error:', tError);
 
-            // 4. Fetch Generated Certs (CR) and Reports
+            const finalTickets = (tickets || []).map((t: any) => ({
+                ...t,
+                profiles: profileMap.get(t.user_id) || null,
+            }));
+
+            // 4. Fetch Generated Certs (CR) and Reports — manual join always
             const { data: certs, error: cError } = await supabase
                 .from('documents')
-                .select('*, profiles(company_name, rut, address)')
+                .select('*')
                 .in('type', ['CR', 'report', 'pdf', 'custom', 'CGM'])
                 .order('created_at', { ascending: false });
 
-            let finalCerts = certs;
-            if (cError) {
-                console.error('Certs join experimental error:', cError);
-                // Fallback to simple fetch
-                const { data: simpleCerts } = await supabase
-                    .from('documents')
-                    .select('*')
-                    .in('type', ['CR', 'report', 'pdf', 'custom', 'CGM'])
-                    .order('created_at', { ascending: false });
-                finalCerts = simpleCerts;
-            }
+            if (cError) console.error('Certs fetch error:', cError);
+
+            // Always attach profile via manual join using the profileMap
+            const finalCerts = (certs || []).map((cert: any) => ({
+                ...cert,
+                profiles: profileMap.get(cert.user_id) || null,
+            }));
 
             setUsers(profiles || []);
-            setPendingDocs(finalDocs || []);
-            setSupportTickets(tickets || []);
-            setGeneratedCerts(finalCerts || []);
+            setPendingDocs(finalDocs);
+            setSupportTickets(finalTickets);
+            setGeneratedCerts(finalCerts);
             setLoading(false);
         } catch (err) {
             console.error('Global fetch error:', err);
             setLoading(false);
         }
+
     };
 
     const updateTicketStatus = async (ticketId: string, newStatus: string) => {
