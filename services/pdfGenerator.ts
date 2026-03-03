@@ -1140,7 +1140,18 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     const margin = 22;
     const textBoxWidth = pageWidth - (margin * 2);
-    const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
+
+    // Calculate the last day of the given month/year dynamically
+    const MONTH_NAMES: Record<string, number> = {
+        'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3,
+        'mayo': 4, 'junio': 5, 'julio': 6, 'agosto': 7,
+        'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+    };
+    const monthIndex = MONTH_NAMES[month.toLowerCase()] ?? 0;
+    // new Date(year, monthIndex + 1, 0) gives the last day of monthIndex
+    const lastDayOfMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al ${lastDayOfMonth} de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
 
     const lines = doc.splitTextToSize(plainText, textBoxWidth);
     doc.text(lines, margin, currentY, { align: 'justify', maxWidth: textBoxWidth });
