@@ -1332,8 +1332,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const sigY = pageHeight - 45;
     if (ECONEXO_SIGNATURE) {
         try {
-            // Moved closer to signature line (was sigY - 30)
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 20, 40, 20);
+            // Keep original proportions (40x30), shift Y down slightly vs original sigY-30
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 25, 40, 30);
         } catch (e) { }
     }
     doc.setLineWidth(0.5);
