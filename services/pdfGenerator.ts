@@ -109,11 +109,23 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     doc.text(client.address, 50, 104);
 
     // Waste Table
-    const tableBody = items.map(item => [item.waste_type || (item as any).type, item.description, item.quantity.toString(), item.unit]);
+    // Smart formatter: no trailing zeros, max 2 decimals
+    const fmtQty = (n: number): string => {
+        if (Number.isInteger(n)) return n.toString();
+        const rounded = Math.round(n * 100) / 100;
+        return rounded.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    };
+
+    const tableBody = items.map(item => [
+        item.waste_type || (item as any).type,
+        item.description,
+        fmtQty(Number(item.quantity) || 0),
+        item.unit
+    ]);
     const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
     // Add Total Row
-    tableBody.push(['', 'TOTAL', totalQuantity.toString(), 'Kg']);
+    tableBody.push(['', 'TOTAL', fmtQty(totalQuantity), 'Kg']);
 
     autoTable(doc, {
         startY: 115,
@@ -1231,6 +1243,13 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
     currentY += rowH + gap;
 
+    // Smart number formatter: no trailing zeros, max 2 decimals
+    const formatNum = (n: number): string => {
+        if (Number.isInteger(n)) return n.toString();
+        const rounded = Math.round(n * 100) / 100;
+        return rounded.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    };
+
     const drawRow = (display: string, key: string) => {
         const d = categories[key];
         if (d.qty <= 0) return;
@@ -1241,8 +1260,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
         doc.setFont('helvetica', 'bold');
         doc.text(display, tX + col1 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
+        doc.text(formatNum(d.qty), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
+        doc.text(formatNum(d.pct), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
         currentY += rowH + gap;
     };
 
@@ -1259,7 +1278,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text(totalKg.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
+    doc.text(formatNum(totalKg), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
     doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
 
     const pieX = 175;
@@ -1313,7 +1332,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const sigY = pageHeight - 45;
     if (ECONEXO_SIGNATURE) {
         try {
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 30, 40, 30);
+            // Moved closer to signature line (was sigY - 30)
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 20, 40, 20);
         } catch (e) { }
     }
     doc.setLineWidth(0.5);
