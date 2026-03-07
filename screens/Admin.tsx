@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import DocumentEditor from '../components/DocumentEditor';
 import { createNotification } from '../services/notificationService';
+import ClientOverviewModal from '../components/ClientOverviewModal';
 
 interface UserProfile {
     id: string;
@@ -64,6 +65,10 @@ const Admin: React.FC = () => {
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploadDate, setUploadDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [uploadType, setUploadType] = useState('declaration'); // Default to 'Declaración'
+
+    // Client Overview Modal
+    const [showClientOverview, setShowClientOverview] = useState(false);
+    const [clientOverviewUser, setClientOverviewUser] = useState<UserProfile | null>(null);
 
     // New State for Folder View
     const [adminPath, setAdminPath] = useState<{
@@ -768,9 +773,18 @@ const Admin: React.FC = () => {
                     <div className="space-y-3">
                         {users.map(u => (
                             <div key={u.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center gap-4">
-                                <div className="size-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center font-bold border border-blue-100">{u.company_name?.[0]}</div>
-                                <div className="flex-1 min-w-0"><p className="font-bold text-sm truncate text-gray-900">{u.company_name}</p><p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p></div>
-                                <button onClick={() => { setSelectedUser(u); setShowCRModal(true); }} className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"><span className="material-symbols-outlined text-[20px]">description</span></button>
+                                <div className="size-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center font-bold border border-blue-100 uppercase">{u.company_name?.[0]}</div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-sm truncate text-gray-900">{u.company_name}</p>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p>
+                                </div>
+                                <button
+                                    onClick={() => { setClientOverviewUser(u); setShowClientOverview(true); }}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors text-[10px] font-black uppercase tracking-wide"
+                                >
+                                    <span className="material-symbols-outlined text-base">manage_accounts</span>
+                                    Ver Empresa
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -985,6 +999,16 @@ const Admin: React.FC = () => {
             </main>
             <div className="absolute bottom-2 right-4 text-[10px] text-gray-400 font-bold z-50">v1.4</div>
             <Navbar />
+
+            {/* ── Client Overview Modal ── */}
+            {showClientOverview && clientOverviewUser && (
+                <ClientOverviewModal
+                    user={clientOverviewUser}
+                    onClose={() => { setShowClientOverview(false); setClientOverviewUser(null); }}
+                    onGenerateCR={() => { setSelectedUser(clientOverviewUser); setWasteItems([]); setShowCRModal(true); }}
+                    onGenerateCGM={() => { setSelectedUser(clientOverviewUser); setShowMonthlyGenModal(true); }}
+                />
+            )}
         </div>
     );
 };
