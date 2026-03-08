@@ -2,11 +2,16 @@
     "name": "Econexo - Gestión Ambiental",
     "short_name": "Econexo",
     "description": "Plataforma de gestión ambiental y reciclaje inteligente",
-    "start_url": "/dashboard",
+    "start_url": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
+    "display_override": [
+        "standalone",
+        "minimal-ui",
+        "browser"
+    ],
+    "background_color": "#f0f4f0",
     "theme_color": "#326105",
-    "orientation": "portrait",
+    "orientation": "any",
     "icons": [
         {
             "src": "/logo_econexo_new.png",
