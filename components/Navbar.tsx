@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       {/* ─── MOBILE / TABLET: bottom bar (unchanged) ─── */}
-      <nav className="xl:hidden fixed bottom-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-white/60 dark:border-white/10 pb-6 pt-3 px-6 z-50 flex justify-between items-center max-w-2xl mx-auto left-1/2 -translate-x-1/2 shadow-[0_-4px_20px_rgba(31,38,135,0.05)] transition-colors duration-300">
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-white/60 dark:border-white/10 pb-6 pt-3 px-6 z-50 flex justify-between items-center max-w-2xl mx-auto left-1/2 -translate-x-1/2 shadow-[0_-4px_20px_rgba(31,38,135,0.05)] transition-colors duration-300">
         <ul className="flex justify-between items-center w-full">
           {navItems.map((item) => (
             <li key={item.path} className="flex-1">
@@ -65,7 +65,7 @@ const Navbar: React.FC = () => {
       </nav>
 
       {/* ─── DESKTOP: left sidebar ─── */}
-      <aside className="hidden xl:flex flex-col fixed top-0 left-0 h-full w-64 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-white/60 dark:border-white/10 shadow-xl z-50 py-8 px-4 gap-1">
+      <aside className="hidden lg:flex flex-col fixed top-0 left-0 h-full w-64 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-white/60 dark:border-white/10 shadow-xl z-50 py-8 px-4 gap-1">
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 mb-8">
           <div className="size-9 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/30">

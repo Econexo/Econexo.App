@@ -84,16 +84,16 @@ const AppRoutes: React.FC = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         {/* Authenticated routes — desktop shifts content to accommodate the xl sidebar */}
-        <Route path="/dashboard" element={isAuthenticated ? <div className="xl:ml-64"><Dashboard isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
-        <Route path="/documents" element={isAuthenticated ? <div className="xl:ml-64"><Documents /></div> : <Navigate to="/" />} />
-        <Route path="/news" element={isAuthenticated ? <div className="xl:ml-64"><News /></div> : <Navigate to="/" />} />
-        <Route path="/impact" element={isAuthenticated ? <div className="xl:ml-64"><Impact isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
-        <Route path="/notifications" element={isAuthenticated ? <div className="xl:ml-64"><Notifications /></div> : <Navigate to="/" />} />
-        <Route path="/profile" element={isAuthenticated ? <div className="xl:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
-        <Route path="/analyze" element={isAuthenticated ? <div className="xl:ml-64"><Analyze /></div> : <Navigate to="/" />} />
-        <Route path="/chat" element={isAuthenticated ? <div className="xl:ml-64"><Chat /></div> : <Navigate to="/" />} />
-        <Route path="/admin" element={isAuthenticated ? <div className="xl:ml-64"><Admin /></div> : <Navigate to="/" />} />
-        <Route path="/rewards" element={isAuthenticated ? <div className="xl:ml-64"><Rewards /></div> : <Navigate to="/" />} />
+        <Route path="/dashboard" element={isAuthenticated ? <div className="lg:ml-64"><Dashboard isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
+        <Route path="/documents" element={isAuthenticated ? <div className="lg:ml-64"><Documents /></div> : <Navigate to="/" />} />
+        <Route path="/news" element={isAuthenticated ? <div className="lg:ml-64"><News /></div> : <Navigate to="/" />} />
+        <Route path="/impact" element={isAuthenticated ? <div className="lg:ml-64"><Impact isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
+        <Route path="/notifications" element={isAuthenticated ? <div className="lg:ml-64"><Notifications /></div> : <Navigate to="/" />} />
+        <Route path="/profile" element={isAuthenticated ? <div className="lg:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
+        <Route path="/analyze" element={isAuthenticated ? <div className="lg:ml-64"><Analyze /></div> : <Navigate to="/" />} />
+        <Route path="/chat" element={isAuthenticated ? <div className="lg:ml-64"><Chat /></div> : <Navigate to="/" />} />
+        <Route path="/admin" element={isAuthenticated ? <div className="lg:ml-64"><Admin /></div> : <Navigate to="/" />} />
+        <Route path="/rewards" element={isAuthenticated ? <div className="lg:ml-64"><Rewards /></div> : <Navigate to="/" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>

@@ -39,7 +39,7 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen font-display bg-[#f0f4f0] max-w-md md:max-w-2xl xl:max-w-5xl mx-auto relative overflow-hidden text-slate-900">
+    <div className="flex flex-col h-screen font-display bg-[#f0f4f0] max-w-md md:max-w-2xl lg:max-w-5xl mx-auto relative overflow-hidden text-slate-900">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>

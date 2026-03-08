@@ -428,7 +428,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   ];
 
   return (
-    <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 xl:pb-8 max-w-md md:max-w-2xl xl:max-w-5xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
+    <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 lg:pb-8 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
       {/* Decorative Background Blobs for Glassmorphism */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
