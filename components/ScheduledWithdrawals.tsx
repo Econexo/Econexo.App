@@ -60,8 +60,27 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
     }, [isAdmin]);
 
     const fetchClients = async () => {
-        const { data } = await supabase.from('profiles').select('id, company_name').order('company_name');
-        if (data) setClients(data);
+        // Fetch registered clients
+        const { data: registeredData } = await supabase.from('profiles').select('id, company_name').order('company_name');
+        
+        // Fetch unregistered clients
+        const { data: unregisteredData } = await supabase.from('documents').select('id, metadata').eq('type', 'UNREGISTERED_CLIENT');
+
+        const allClients = [];
+        
+        if (registeredData) {
+            allClients.push(...registeredData.map(c => ({ ...c, is_unregistered: false })));
+        }
+        
+        if (unregisteredData) {
+            allClients.push(...unregisteredData.map(c => ({
+                id: c.id,
+                company_name: `${c.metadata?.company_name} (Manual)`,
+                is_unregistered: true
+            })));
+        }
+
+        setClients(allClients.sort((a, b) => a.company_name.localeCompare(b.company_name)));
     };
 
     const fetchWithdrawals = async () => {
@@ -142,9 +161,13 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                 return;
             }
 
+            const selectedClient = clients.find(c => c.id === selectedClientId);
+            const isUnregistered = selectedClient?.is_unregistered === true;
+            const actualUserId = isUnregistered ? user.id : selectedClientId;
+
             const { error } = await supabase.from('documents').insert([
                 {
-                    user_id: selectedClientId,
+                    user_id: actualUserId,
                     title: `Retiro Programado: ${newType}`,
                     type: 'SCHEDULED', // Using existing type convention or new one
                     verified: false,
@@ -152,26 +175,29 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                         scheduled_date: toLocalDateString(newDate),
                         waste_type: newType,
                         status: 'prográmado',
-                        description: newDescription
+                        description: newDescription,
+                        unregistered_client_id: isUnregistered ? selectedClientId : undefined
                     }
                 }
             ]);
 
             if (error) throw error;
 
-            // Create notification for client
-            const dateFormatted = parseLocalDate(newDate).toLocaleDateString('es-CL', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-            await createNotification({
-                userId: selectedClientId,
-                title: 'Retiro Programado',
-                message: `Se ha agendado un retiro de ${newType} para el ${dateFormatted}.`,
-                type: 'withdrawal',
-                metadata: { waste_type: newType, scheduled_date: newDate }
-            });
+            if (!isUnregistered) {
+                // Create notification only for registered clients
+                const dateFormatted = parseLocalDate(newDate).toLocaleDateString('es-CL', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                await createNotification({
+                    userId: selectedClientId,
+                    title: 'Retiro Programado',
+                    message: `Se ha agendado un retiro de ${newType} para el ${dateFormatted}.`,
+                    type: 'withdrawal',
+                    metadata: { waste_type: newType, scheduled_date: newDate }
+                });
+            }
 
             alert('Retiro programado exitosamente');
             setShowModal(false);

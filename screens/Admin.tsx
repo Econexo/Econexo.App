@@ -6,14 +6,16 @@ import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGener
 import DocumentEditor from '../components/DocumentEditor';
 import { createNotification } from '../services/notificationService';
 import ClientOverviewModal from '../components/ClientOverviewModal';
+import UnregisteredClientsManager, { UnregisteredClient } from '../components/UnregisteredClientsManager';
 
 interface UserProfile {
     id: string;
     company_name: string;
     rut: string;
     address: string;
-    is_admin: boolean;
-    company_email: string;
+    is_admin?: boolean;
+    company_email?: string;
+    is_unregistered?: boolean; // Flag to identify manual clients
 }
 
 interface Document {
@@ -69,6 +71,9 @@ const Admin: React.FC = () => {
     // Client Overview Modal
     const [showClientOverview, setShowClientOverview] = useState(false);
     const [clientOverviewUser, setClientOverviewUser] = useState<UserProfile | null>(null);
+
+    // Unregistered Clients State
+    const [showUnregisteredClients, setShowUnregisteredClients] = useState(false);
 
     // New State for Folder View
     const [adminPath, setAdminPath] = useState<{
@@ -255,32 +260,44 @@ const Admin: React.FC = () => {
             wasteItems, certNumber, 'save', withdrawalDate
         );
 
+        const isUnregistered = selectedUser.is_unregistered === true;
+        const actualUserId = isUnregistered ? (await supabase.auth.getUser()).data.user?.id : selectedUser.id;
+
         const { error } = await supabase.from('documents').insert([{
-            user_id: selectedUser.id,
+            user_id: actualUserId,
             title: docTitle,
             type: 'CR',
             verified: true,
             created_at: withdrawalDate ? new Date(withdrawalDate).toISOString() : new Date().toISOString(),
-            metadata: { cert_number: certNumber, generated_by: 'Admin Panel', waste_details: wasteItems }
+            metadata: { 
+                cert_number: certNumber, 
+                generated_by: 'Admin Panel', 
+                waste_details: wasteItems,
+                unregistered_client_id: isUnregistered ? selectedUser.id : undefined // Store reference to manual client
+            }
         }]);
 
         if (!error) {
             const totalWeight = wasteItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
             const pointsToAward = Math.round(totalWeight * 2);
-            await supabase.rpc('increment_points', { user_id_param: selectedUser.id, amount_param: pointsToAward });
-            await supabase.from('points_transactions').insert([{
-                user_id: selectedUser.id,
-                amount: pointsToAward,
-                reason: `Generación de Certificado ${certNumber}`
-            }]);
-            // Notificar al usuario sobre el nuevo certificado
-            await createNotification({
-                userId: selectedUser.id,
-                title: '🏆 Nuevo Certificado Emitido',
-                message: `Se ha generado el ${certNumber}. Has recibido ${pointsToAward} Eco-Puntos.`,
-                type: 'certificate',
-                metadata: { cert_number: certNumber, points: pointsToAward }
-            });
+
+            if (!isUnregistered) {
+                // Solo asignar puntos y notificar a usuarios reales
+                await supabase.rpc('increment_points', { user_id_param: selectedUser.id, amount_param: pointsToAward });
+                await supabase.from('points_transactions').insert([{
+                    user_id: selectedUser.id,
+                    amount: pointsToAward,
+                    reason: `Generación de Certificado ${certNumber}`
+                }]);
+                
+                await createNotification({
+                    userId: selectedUser.id,
+                    title: '🏆 Nuevo Certificado Emitido',
+                    message: `Se ha generado el ${certNumber}. Has recibido ${pointsToAward} Eco-Puntos.`,
+                    type: 'certificate',
+                    metadata: { cert_number: certNumber, points: pointsToAward }
+                });
+            }
             setShowCRModal(false);
             setWasteItems([]);
             fetchAdminData();
@@ -456,17 +473,21 @@ const Admin: React.FC = () => {
             });
 
             // 2. Group by User (Filter if selectedUser is set)
-            const userGroups: Record<string, { profile: any, items: any[] }> = {};
+            const userGroups: Record<string, { profile: any, items: any[], isUnregistered: boolean }> = {};
 
             crDocs.forEach(doc => {
-                // If we are in "Single User Mode" (selectedUser is set), skip others
-                if (selectedUser && doc.user_id !== selectedUser.id) return;
+                const isUnreg = !!doc.metadata?.unregistered_client_id;
+                const docClientId = isUnreg ? doc.metadata.unregistered_client_id : doc.user_id;
 
-                const uid = doc.user_id;
+                // If we are in "Single User Mode" (selectedUser is set), skip others
+                if (selectedUser && docClientId !== selectedUser.id) return;
+
+                const uid = docClientId;
                 if (!userGroups[uid]) {
                     userGroups[uid] = {
-                        profile: doc.profiles,
-                        items: []
+                        profile: (selectedUser?.id === uid) ? selectedUser : doc.profiles,
+                        items: [],
+                        isUnregistered: isUnreg
                     };
                 }
                 const details = doc.metadata?.waste_details;
@@ -483,8 +504,11 @@ const Admin: React.FC = () => {
             for (const [uid, group] of Object.entries(userGroups)) {
                 // Check if already exists? (Optional, skipping for now to allow re-gen)
 
+                const isUnregistered = group.isUnregistered || group.profile?.is_unregistered === true;
+                const actualUserId = isUnregistered ? (await supabase.auth.getUser()).data.user?.id : uid;
+
                 newDocs.push({
-                    user_id: uid,
+                    user_id: actualUserId,
                     title: `Certificado Gestión Mensual - ${monthName} ${selectedYearGen}`,
                     type: 'CGM',
                     verified: false, // Requires admin approval
@@ -494,7 +518,8 @@ const Admin: React.FC = () => {
                         month: monthName,
                         year: selectedYearGen,
                         waste_details: group.items, // Store all items, generator aggregates them
-                        generated_by: 'Admin Batch Process'
+                        generated_by: 'Admin Batch Process',
+                        unregistered_client_id: isUnregistered ? uid : undefined
                     }
                 });
             }
@@ -767,7 +792,16 @@ const Admin: React.FC = () => {
 
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-2">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Usuarios Registrados</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Usuarios Registrados</h3>
+                            <button
+                                onClick={() => setShowUnregisteredClients(true)}
+                                className="bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-colors flex items-center gap-1"
+                            >
+                                <span className="material-symbols-outlined text-[12px]">engineering</span>
+                                Clientes Manuales
+                            </button>
+                        </div>
                         <span className="bg-white/50 text-gray-600 text-[10px] font-black px-2 py-0.5 rounded-full border border-gray-200">{users.length}</span>
                     </div>
                     <div className="space-y-3">
@@ -999,6 +1033,36 @@ const Admin: React.FC = () => {
             </main>
             <div className="absolute bottom-2 right-4 text-[10px] text-gray-400 font-bold z-50">v1.4</div>
             <Navbar />
+
+            {/* ── Unregistered Clients Modal ── */}
+            {showUnregisteredClients && (
+                <UnregisteredClientsManager
+                    onClose={() => setShowUnregisteredClients(false)}
+                    onGenerateCR={(client) => {
+                        setShowUnregisteredClients(false);
+                        setSelectedUser({
+                            id: client.id,
+                            company_name: client.company_name,
+                            rut: client.rut,
+                            address: client.address,
+                            is_unregistered: true
+                        });
+                        setWasteItems([]);
+                        setShowCRModal(true);
+                    }}
+                    onGenerateCGM={(client) => {
+                        setShowUnregisteredClients(false);
+                        setSelectedUser({
+                            id: client.id,
+                            company_name: client.company_name,
+                            rut: client.rut,
+                            address: client.address,
+                            is_unregistered: true
+                        });
+                        setShowMonthlyGenModal(true);
+                    }}
+                />
+            )}
 
             {/* ── Client Overview Modal ── */}
             {showClientOverview && clientOverviewUser && (
