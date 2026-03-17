@@ -96,10 +96,15 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
             // I will assume for now the Admin logs in and sees their own list or we need to fetch ALL for admin?
             // Keeping it simple: Just hide the button for non-admins.
 
+            const todayLocal = new Date();
+            todayLocal.setHours(0, 0, 0, 0);
+            const todayISO = todayLocal.toISOString();
+
             let query = supabase
                 .from('documents')
                 .select('*')
                 .eq('type', 'SCHEDULED')
+                .gte('metadata->>scheduled_date', todayISO)
                 .order('created_at', { ascending: false })
                 .limit(10);
 
