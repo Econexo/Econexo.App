@@ -15,8 +15,8 @@ self.addEventListener('push', (event) => {
     let payload = {
         title: 'Econexo',
         body: 'Tienes una nueva notificación.',
-        icon: '/logo_econexo_new.png',
-        badge: '/logo_econexo_new.png',
+        icon: '/icon-192x192.png',
+        badge: '/icon-192x192.png',
         data: { url: '/dashboard' },
         tag: 'econexo-notification',
     };
@@ -27,8 +27,8 @@ self.addEventListener('push', (event) => {
             payload = {
                 title: data.title || payload.title,
                 body: data.body || payload.body,
-                icon: '/logo_econexo_new.png',
-                badge: '/logo_econexo_new.png',
+                icon: '/icon-192x192.png',
+                badge: '/icon-192x192.png',
                 data: { url: data.url || '/dashboard', ...data.data },
                 tag: data.tag || 'econexo-notification',
                 vibrate: [200, 100, 200],
