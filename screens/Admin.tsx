@@ -30,8 +30,13 @@ interface Document {
         company_name: string;
         rut: string;
         address: string;
-    }
+    };
+    // Normalized fields for history view (populated in fetchAdminData)
+    _clientId?: string;
+    _companyName?: string;
+    _isUnregistered?: boolean;
 }
+
 
 interface SupportTicket {
     id: string;
@@ -74,6 +79,7 @@ const Admin: React.FC = () => {
 
     // Unregistered Clients State
     const [showUnregisteredClients, setShowUnregisteredClients] = useState(false);
+    const [unregisteredClients, setUnregisteredClients] = useState<{ id: string; company_name: string; rut: string }[]>([]);
 
     // New State for Folder View
     const [adminPath, setAdminPath] = useState<{
@@ -175,12 +181,38 @@ const Admin: React.FC = () => {
 
             if (cError) console.error('Certs fetch error:', cError);
 
-            // Always attach profile via manual join using the profileMap
-            const finalCerts = (certs || []).map((cert: any) => ({
-                ...cert,
-                profiles: profileMap.get(cert.user_id) || null,
-            }));
+            // 5. Fetch Unregistered Clients to resolve names in history
+            const { data: unregDocs } = await supabase
+                .from('documents')
+                .select('id, metadata')
+                .eq('type', 'UNREGISTERED_CLIENT');
 
+            const unregClients = (unregDocs || []).map((d: any) => ({
+                id: d.id,
+                company_name: d.metadata?.company_name || 'Sin Nombre',
+                rut: d.metadata?.rut || '',
+            }));
+            const unregClientMap = new Map(unregClients.map((c: any) => [c.id, c]));
+
+            // Always attach profile via manual join using the profileMap
+            // Also normalize _clientId / _companyName / _isUnregistered for history view
+            const finalCerts = (certs || []).map((cert: any) => {
+                const isUnreg = !!cert.metadata?.unregistered_client_id;
+                const clientId = isUnreg ? cert.metadata.unregistered_client_id : cert.user_id;
+                const unregClient = isUnreg ? unregClientMap.get(clientId) : null;
+                const companyName = isUnreg
+                    ? (unregClient?.company_name || 'Cliente Manual')
+                    : (profileMap.get(cert.user_id)?.company_name || 'Desconocido');
+                return {
+                    ...cert,
+                    profiles: profileMap.get(cert.user_id) || null,
+                    _clientId: clientId,
+                    _companyName: companyName,
+                    _isUnregistered: isUnreg,
+                };
+            });
+
+            setUnregisteredClients(unregClients);
             setUsers(profiles || []);
             setPendingDocs(finalDocs);
             setSupportTickets(finalTickets);
@@ -305,14 +337,28 @@ const Admin: React.FC = () => {
         }
     };
 
-    const handleViewCertificate = async (doc: Document, action: 'preview' | 'save' = 'preview') => {
-        let profileData = doc.profiles;
-        if (!profileData) {
-            const { data: profile } = await supabase.from('profiles').select('company_name, rut, address').eq('id', doc.user_id).single();
-            if (!profile) return;
-            profileData = profile;
-        }
+    const handleViewCertificate = async (doc: any, action: 'preview' | 'save' = 'preview') => {
         if (!doc.metadata?.waste_details) return;
+
+        // For manual (unregistered) clients, use metadata directly instead of profile lookup
+        let profileData: { company_name: string; rut: string; address: string };
+        if (doc._isUnregistered || doc.metadata?.unregistered_client_id) {
+            // Find client info from unregisteredClients state or fall back to metadata stored on cert
+            const unregId = doc.metadata.unregistered_client_id;
+            const unregEntry = unregisteredClients.find(c => c.id === unregId);
+            profileData = {
+                company_name: doc._companyName || unregEntry?.company_name || 'Cliente Manual',
+                rut: unregEntry?.rut || doc.metadata?.rut || '',
+                address: doc.metadata?.address || 'Chile',
+            };
+        } else {
+            profileData = doc.profiles;
+            if (!profileData) {
+                const { data: profile } = await supabase.from('profiles').select('company_name, rut, address').eq('id', doc.user_id).single();
+                if (!profile) return;
+                profileData = profile;
+            }
+        }
 
         if (doc.type === 'pdf' || doc.type === 'report') {
             generateEcoReport(
@@ -933,24 +979,26 @@ const Admin: React.FC = () => {
                             {/* LEVEL: HISTORIAL COMPANIES */}
                             {adminPath.level === 'history_companies' && (
                                 <div className="grid grid-cols-1 gap-3">
-                                    {Array.from(new Set(generatedCerts.map(c => c.user_id))).map(userId => {
-                                        const userDocs = generatedCerts.filter(c => c.user_id === userId);
-                                        // Try to find name in users list first (more reliable), then fallback to doc profile
-                                        const companyName = users.find(u => u.id === userId)?.company_name
-                                            || userDocs[0]?.profiles?.company_name
-                                            || 'Desconocido';
+                                    {Array.from(new Map(generatedCerts.map(c => [c._clientId, c])).values()).map(first => {
+                                        const clientId = first._clientId;
+                                        const companyName = first._companyName;
+                                        const isUnreg = first._isUnregistered;
+                                        const count = generatedCerts.filter(c => c._clientId === clientId).length;
                                         return (
                                             <button
-                                                key={userId}
-                                                onClick={() => setAdminPath({ ...adminPath, level: 'history_years', companyId: userId, companyName })}
+                                                key={clientId}
+                                                onClick={() => setAdminPath({ ...adminPath, level: 'history_years', companyId: clientId, companyName })}
                                                 className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-sm flex items-center gap-4 hover:scale-[1.01] transition-transform"
                                             >
-                                                <div className="size-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
-                                                    <span className="material-symbols-outlined">domain</span>
+                                                <div className={`size-10 rounded-xl flex items-center justify-center ${isUnreg ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}>
+                                                    <span className="material-symbols-outlined">{isUnreg ? 'engineering' : 'domain'}</span>
                                                 </div>
                                                 <div className="flex-1 text-left">
-                                                    <p className="font-bold text-sm text-gray-900">{companyName}</p>
-                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">{userDocs.length} documentos</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-sm text-gray-900">{companyName}</p>
+                                                        {isUnreg && <span className="text-[8px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full font-black uppercase">Manual</span>}
+                                                    </div>
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase">{count} documentos</p>
                                                 </div>
                                                 <span className="material-symbols-outlined text-gray-400">chevron_right</span>
                                             </button>
@@ -962,7 +1010,7 @@ const Admin: React.FC = () => {
                             {/* LEVEL: HISTORIAL YEARS */}
                             {adminPath.level === 'history_years' && adminPath.companyId && (
                                 <div className="grid grid-cols-1 gap-3">
-                                    {Array.from(new Set(generatedCerts.filter(c => c.user_id === adminPath.companyId).map(c => new Date(c.created_at).getFullYear()))).sort((a, b) => b - a).map(year => (
+                                    {Array.from(new Set(generatedCerts.filter(c => c._clientId === adminPath.companyId).map(c => new Date(c.created_at).getFullYear()))).sort((a, b) => b - a).map(year => (
                                         <button
                                             key={year}
                                             onClick={() => setAdminPath({ ...adminPath, level: 'history_months', year })}
@@ -984,7 +1032,7 @@ const Admin: React.FC = () => {
                             {/* LEVEL: HISTORIAL MONTHS */}
                             {adminPath.level === 'history_months' && adminPath.year !== undefined && (
                                 <div className="grid grid-cols-1 gap-3">
-                                    {Array.from(new Set(generatedCerts.filter(c => c.user_id === adminPath.companyId && new Date(c.created_at).getFullYear() === adminPath.year).map(c => new Date(c.created_at).getMonth()))).sort((a, b) => b - a).map(month => (
+                                    {Array.from(new Set(generatedCerts.filter(c => c._clientId === adminPath.companyId && new Date(c.created_at).getFullYear() === adminPath.year).map(c => new Date(c.created_at).getMonth()))).sort((a, b) => b - a).map(month => (
                                         <button
                                             key={month}
                                             onClick={() => setAdminPath({ ...adminPath, level: 'history_files', month })}
@@ -1007,7 +1055,7 @@ const Admin: React.FC = () => {
                             {adminPath.level === 'history_files' && adminPath.month !== undefined && (
                                 <div className="space-y-3">
                                     {generatedCerts
-                                        .filter(c => c.user_id === adminPath.companyId && new Date(c.created_at).getFullYear() === adminPath.year && new Date(c.created_at).getMonth() === adminPath.month)
+                                        .filter(c => c._clientId === adminPath.companyId && new Date(c.created_at).getFullYear() === adminPath.year && new Date(c.created_at).getMonth() === adminPath.month)
                                         .map(cert => (
                                             <div key={cert.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center justify-between gap-4 text-xs">
                                                 <div className="flex-1 min-w-0">
@@ -1015,7 +1063,7 @@ const Admin: React.FC = () => {
                                                         <p className="font-bold text-gray-900 truncate">{cert.title}</p>
                                                         <span className="text-[8px] bg-gray-100 px-1.5 py-0.5 rounded-full font-black uppercase text-gray-400">{cert.type}</span>
                                                     </div>
-                                                    <p className="text-[10px] text-primary font-black uppercase mt-1">{cert.profiles?.company_name}</p>
+                                                    <p className="text-[10px] text-primary font-black uppercase mt-1">{cert._companyName}</p>
                                                     <p className="text-[8px] text-gray-400 font-bold mt-0.5">{new Date(cert.created_at).toLocaleDateString()}</p>
                                                 </div>
                                                 <div className="flex items-center gap-2">
