@@ -124,14 +124,6 @@ const Admin: React.FC = () => {
             return;
         }
 
-        if (user.email === 'econexo.hub@gmail.com') {
-            const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
-            if (!profile?.is_admin) {
-                await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
-            }
-            return;
-        }
-
         const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
         if (!profile?.is_admin) {
             navigate('/dashboard');

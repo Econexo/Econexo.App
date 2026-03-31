@@ -17,6 +17,7 @@ import { supabase } from './services/supabase';
 
 const AppRoutes: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLeyRepUser, setIsLeyRepUser] = useState(true);
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -44,14 +45,28 @@ const AppRoutes: React.FC = () => {
     // Comprobar sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
+      if (session?.user) {
+        checkAdmin(session.user.id);
+      }
       if (session?.user.user_metadata.ley_rep_declared !== undefined) {
         setIsLeyRepUser(session.user.user_metadata.ley_rep_declared);
       }
     });
 
+    // Check admin status
+    const checkAdmin = async (userId: string) => {
+      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', userId).single();
+      setIsAdmin(!!profile?.is_admin);
+    };
+
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setIsAuthenticated(!!session);
+      if (session?.user) {
+        checkAdmin(session.user.id);
+      } else {
+        setIsAdmin(false);
+      }
       if (session?.user.user_metadata.ley_rep_declared !== undefined) {
         setIsLeyRepUser(session.user.user_metadata.ley_rep_declared);
       }
@@ -92,7 +107,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/profile" element={isAuthenticated ? <div className="lg:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
         <Route path="/analyze" element={isAuthenticated ? <div className="lg:ml-64"><Analyze /></div> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <div className="lg:ml-64"><Chat /></div> : <Navigate to="/" />} />
-        <Route path="/admin" element={isAuthenticated ? <div className="lg:ml-64"><Admin /></div> : <Navigate to="/" />} />
+        <Route path="/admin" element={isAuthenticated && isAdmin ? <div className="lg:ml-64"><Admin /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
         <Route path="/rewards" element={isAuthenticated ? <div className="lg:ml-64"><Rewards /></div> : <Navigate to="/" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

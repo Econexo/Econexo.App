@@ -102,9 +102,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
                 let currentHTML = contentRef.current.innerHTML;
 
                 // Replace placeholders with specific user data
-                currentHTML = currentHTML.replace(/\[RAZON_SOCIAL\]/g, user.company_name || '_________');
-                currentHTML = currentHTML.replace(/\[RUT_CLIENTE\]/g, user.rut || '_________');
-                currentHTML = currentHTML.replace(/\[DIRECCION_CLIENTE\]/g, user.address || '_________');
+                // Sanitize user data before injecting into HTML to prevent XSS
+                const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                currentHTML = currentHTML.replace(/\[RAZON_SOCIAL\]/g, escapeHtml(user.company_name || '_________'));
+                currentHTML = currentHTML.replace(/\[RUT_CLIENTE\]/g, escapeHtml(user.rut || '_________'));
+                currentHTML = currentHTML.replace(/\[DIRECCION_CLIENTE\]/g, escapeHtml(user.address || '_________'));
 
                 // Update state and ref
                 setContent(currentHTML);
@@ -213,7 +215,6 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
             onClose();
 
         } catch (err: any) {
-            console.error('Error saving document:', err);
             alert('Error al guardar: ' + err.message);
         } finally {
             setLoading(false);

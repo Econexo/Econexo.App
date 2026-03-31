@@ -25,9 +25,12 @@ export const fetchNews = async (): Promise<Article[]> => {
                 const imageMatch = item.description.match(/<img[^>]+src="([^">]+)"/);
                 const image = imageMatch ? imageMatch[1] : `https://picsum.photos/seed/${item.guid}/400/300`;
 
+                // Strip any HTML tags from title to prevent XSS
+                const cleanTitle = item.title?.replace(/<[^>]*>/g, '') || '';
+
                 return {
                     id: item.guid,
-                    title: item.title,
+                    title: cleanTitle,
                     category: 'Noticias', // RSS doesn't always give clean categories
                     image: image,
                     time: new Date(item.pubDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
@@ -37,11 +40,9 @@ export const fetchNews = async (): Promise<Article[]> => {
                 };
             });
         } else {
-            console.error("Error fetching news:", data.message);
             return [];
         }
     } catch (error) {
-        console.error("News fetch error:", error);
         return [];
     }
 };

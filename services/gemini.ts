@@ -7,7 +7,6 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 export const getGeminiResponse = async (prompt: string, history: Message[] = []) => {
   if (!API_KEY) {
-    console.error("Falta la API Key de Gemini. Configura VITE_GEMINI_API_KEY en tu archivo .env");
     return "Error de configuración: Contacta al administrador.";
   }
 
@@ -40,7 +39,6 @@ export const getGeminiResponse = async (prompt: string, history: Message[] = [])
     const text = response.text();
     return text;
   } catch (e: any) {
-    console.error("Gemini API Error:", e);
     return `Error: ${e.message || "Problema de conexión con IA"}`;
   }
 };
@@ -62,7 +60,6 @@ export const analyzeImage = async (base64Image: string, prompt: string) => {
 
     return result.response.text();
   } catch (e: any) {
-    console.error("Gemini Vision Error:", e);
     return `Error al analizar imagen: ${e.message}`;
   }
 };

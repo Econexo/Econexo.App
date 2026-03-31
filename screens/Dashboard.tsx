@@ -86,16 +86,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           setAvatarUrl(profile.avatar_url);
         }
 
-        // Handle super admin
-        if (user.email === 'econexo.hub@gmail.com') {
-          if (!profile?.is_admin) {
-            await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
-          }
-          setIsAdmin(true);
-          return;
-        }
-
-        // Handle regular users
         setIsAdmin(!!profile?.is_admin);
       }
     };
@@ -122,7 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
     // Check if user is admin again just to be safe for this request
     const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
-    const isActuallyAdmin = user.email === 'econexo.hub@gmail.com' || !!profile?.is_admin;
+    const isActuallyAdmin = !!profile?.is_admin;
 
     if (isActuallyAdmin) {
       const { data } = await supabase.from('profiles').select('*').order('company_name');
@@ -266,7 +256,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         .single();
 
       const currentPoints = profile?.eco_points || 0;
-      const isUserAdmin = profile?.is_admin || user.email === 'econexo.hub@gmail.com';
+      const isUserAdmin = !!profile?.is_admin;
 
       // If NOT admin, filter by own user ID. If Admin, fetch ALL.
       if (!isUserAdmin) {

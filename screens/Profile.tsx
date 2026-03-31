@@ -636,26 +636,6 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
           </div>
         </section>
 
-        {userData.email === 'econexo.hub@gmail.com' && (
-          <button
-            onClick={async () => {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                const { error } = await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
-                if (!error) {
-                  setIsAdmin(true);
-                  alert('¡Modo Administrador Activado! Ahora verás el panel en el menú.');
-                  window.location.reload();
-                } else {
-                  alert('Error al activar: ' + error.message);
-                }
-              }
-            }}
-            className="w-full py-4 rounded-2xl border border-primary/30 text-primary font-display font-black text-xs uppercase tracking-[0.25em] bg-primary/10 hover:bg-primary/20 transition-all active:scale-[0.98] mt-4"
-          >
-            Activar Modo Administrador (SuperAdmin Only)
-          </button>
-        )}
 
         <button
           onClick={async () => {

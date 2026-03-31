@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { supabase } from '../services/supabase';
+import { validateRut, formatRut, validatePassword, validateEmail, validatePhone } from '../utils/validation';
 
 interface LoginProps {
   onLogin: () => void;
@@ -55,9 +56,24 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
     e.preventDefault();
     setError(null);
 
-    if (isRegistering && registrationStep < 4) {
-      setRegistrationStep(prev => prev + 1);
-      return;
+    // Validate per step before advancing
+    if (isRegistering) {
+      if (registrationStep === 1) {
+        if (!fullName.trim()) { setError('El nombre es obligatorio.'); return; }
+        if (!validateEmail(email)) { setError('Formato de email inválido.'); return; }
+        const pwCheck = validatePassword(password);
+        if (!pwCheck.valid) { setError(`Contraseña débil: ${pwCheck.errors.join(', ')}.`); return; }
+      }
+      if (registrationStep === 2) {
+        if (!companyName.trim()) { setError('La razón social es obligatoria.'); return; }
+        if (!validateRut(rut)) { setError('RUT inválido. Formato: 12.345.678-9'); return; }
+        if (companyEmail && !validateEmail(companyEmail)) { setError('Email de contacto inválido.'); return; }
+        if (phone && !validatePhone(phone)) { setError('Teléfono inválido. Formato: +56 9 XXXX XXXX'); return; }
+      }
+      if (registrationStep < 4) {
+        setRegistrationStep(prev => prev + 1);
+        return;
+      }
     }
 
     setLoading(true);
@@ -105,7 +121,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
           });
 
           if (profileError) {
-            console.error("Profile creation error:", profileError);
+            // Profile creation failed silently - user can update later
           }
 
           await supabase.auth.updateUser({
@@ -133,7 +149,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
         navigate('/dashboard');
       }
     } catch (err: any) {
-      console.error("Auth error:", err);
       let friendlyMessage = err.message || 'Error en la autenticación';
 
       if (err.message?.includes('confirmation email')) {
@@ -266,7 +281,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
                     <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">RUT Empresa</label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">fingerprint</span>
-                      <input type="text" value={rut} onChange={e => setRut(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="12.345.678-9" required />
+                      <input type="text" value={rut} onChange={e => setRut(formatRut(e.target.value))} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="12.345.678-9" maxLength={12} required />
                     </div>
                   </div>
                   <div className="flex flex-col group">

@@ -144,7 +144,7 @@ const News: React.FC = () => {
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
                       <span className="text-[10px] font-black text-primary uppercase tracking-wider">{a.category}</span>
-                      <h4 className="font-display font-bold text-sm text-gray-900 leading-snug line-clamp-2 mt-1" dangerouslySetInnerHTML={{ __html: a.title }}></h4>
+                      <h4 className="font-display font-bold text-sm text-gray-900 leading-snug line-clamp-2 mt-1">{a.title}</h4>
                     </div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{a.time}</span>
                   </div>
