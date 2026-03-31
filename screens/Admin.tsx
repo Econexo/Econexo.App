@@ -17,6 +17,7 @@ import PendingDocsList from '../components/admin/PendingDocsList';
 import SupportTicketsList from '../components/admin/SupportTicketsList';
 import UsersList from '../components/admin/UsersList';
 import DocumentsHistory from '../components/admin/DocumentsHistory';
+import FixCertificatesModal from '../components/admin/FixCertificatesModal';
 import { AdminUserProfile, AdminDocument, SupportTicket, WasteItem, AdminPath } from '../components/admin/types';
 
 const Admin: React.FC = () => {
@@ -36,6 +37,7 @@ const Admin: React.FC = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showClientOverview, setShowClientOverview] = useState(false);
     const [showUnregisteredClients, setShowUnregisteredClients] = useState(false);
+    const [showFixCerts, setShowFixCerts] = useState(false);
     const [clientOverviewUser, setClientOverviewUser] = useState<AdminUserProfile | null>(null);
 
     // CR modal state
@@ -53,7 +55,7 @@ const Admin: React.FC = () => {
     const [uploadType, setUploadType] = useState('declaration');
 
     // Unregistered clients
-    const [unregisteredClients, setUnregisteredClients] = useState<{ id: string; company_name: string; rut: string }[]>([]);
+    const [unregisteredClients, setUnregisteredClients] = useState<{ id: string; company_name: string; rut: string; address: string }[]>([]);
 
     // Folder navigation
     const [adminPath, setAdminPath] = useState<AdminPath>({ level: 'home' });
@@ -90,6 +92,7 @@ const Admin: React.FC = () => {
                 id: d.id,
                 company_name: d.metadata?.company_name || 'Sin Nombre',
                 rut: d.metadata?.rut || '',
+                address: d.metadata?.address || '',
             }));
             const unregClientMap = new Map(unregClients.map((c: any) => [c.id, c]));
 
@@ -179,12 +182,14 @@ const Admin: React.FC = () => {
             title: docTitle,
             type: 'CR',
             verified: true,
-            created_at: withdrawalDate ? new Date(withdrawalDate).toISOString() : new Date().toISOString(),
+            created_at: withdrawalDate ? new Date(withdrawalDate + 'T12:00:00').toISOString() : new Date().toISOString(),
             metadata: {
                 cert_number: certNumber,
                 generated_by: 'Admin Panel',
                 waste_details: wasteItems,
-                unregistered_client_id: isUnregistered ? selectedUser.id : undefined
+                withdrawal_date: withdrawalDate,
+                unregistered_client_id: isUnregistered ? selectedUser.id : undefined,
+                address: isUnregistered ? (selectedUser.address || '') : undefined
             }
         }]);
 
@@ -211,7 +216,16 @@ const Admin: React.FC = () => {
         if (doc._isUnregistered || doc.metadata?.unregistered_client_id) {
             const unregId = doc.metadata.unregistered_client_id;
             const unregEntry = unregisteredClients.find(c => c.id === unregId);
-            profileData = { company_name: doc._companyName || unregEntry?.company_name || 'Cliente Manual', rut: unregEntry?.rut || doc.metadata?.rut || '', address: doc.metadata?.address || 'Chile' };
+            // Try getting address from: 1) CR metadata, 2) in-memory unregistered client map, 3) fetch from DB
+            let clientAddress = doc.metadata?.address || '';
+            if (!clientAddress && unregEntry?.address) {
+                clientAddress = unregEntry.address;
+            }
+            if (!clientAddress && unregId) {
+                const { data: unregDoc } = await supabase.from('documents').select('metadata').eq('id', unregId).single();
+                clientAddress = unregDoc?.metadata?.address || '';
+            }
+            profileData = { company_name: doc._companyName || unregEntry?.company_name || 'Cliente Manual', rut: unregEntry?.rut || doc.metadata?.rut || '', address: clientAddress || 'Chile' };
         } else {
             profileData = doc.profiles as { company_name: string; rut: string; address: string };
             if (!profileData) {
@@ -226,7 +240,7 @@ const Admin: React.FC = () => {
         } else if (doc.type === 'CGM') {
             generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action);
         } else {
-            generateCR({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, action);
+            generateCR({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
         }
     };
 
@@ -424,6 +438,10 @@ const Admin: React.FC = () => {
                         <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 border border-blue-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">cloud_upload</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento</span>
                     </button>
+                    <button onClick={() => setShowFixCerts(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
+                        <div className="size-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 border border-orange-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">build</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-500 transition-colors">Corregir Fechas / Direcciones</span>
+                    </button>
                 </section>
 
                 {/* Sections */}
@@ -485,6 +503,14 @@ const Admin: React.FC = () => {
                     onClose={() => { setShowClientOverview(false); setClientOverviewUser(null); }}
                     onGenerateCR={() => { setSelectedUser(clientOverviewUser); setWasteItems([]); setShowCRModal(true); }}
                     onGenerateCGM={() => { setSelectedUser(clientOverviewUser); setShowMonthlyGenModal(true); }}
+                />
+            )}
+
+            {/* Fix Certificates Tool */}
+            {showFixCerts && (
+                <FixCertificatesModal
+                    onClose={() => setShowFixCerts(false)}
+                    onDataFixed={fetchAdminData}
                 />
             )}
         </div>

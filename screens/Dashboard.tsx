@@ -175,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       title: docTitle,
       type: 'CR',
       verified: true,
-      created_at: withdrawalDate ? new Date(withdrawalDate).toISOString() : new Date().toISOString(), // Use custom date for DB
+      created_at: withdrawalDate ? new Date(withdrawalDate + 'T12:00:00').toISOString() : new Date().toISOString(), // Use custom date for DB (T12:00:00 prevents timezone shift)
       metadata: {
         cert_number: certNumber,
         generated_by: 'Dashboard Operator',
