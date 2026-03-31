@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import { createNotification } from '../services/notificationService';
+import { useToast } from '../components/ui/Toast';
 
 interface Document {
   id: string;
@@ -27,6 +28,7 @@ interface Document {
 
 const Documents: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [showSettings, setShowSettings] = useState(false);
   const [driveLinked, setDriveLinked] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -128,14 +130,14 @@ const Documents: React.FC = () => {
     }
 
     if (!doc.metadata || !userProfile) {
-      alert("Este documento no tiene metadatos para regeneración o el perfil no ha cargado.");
+      toast.warning("Este documento no tiene metadatos para regeneración.");
       return;
     }
 
     try {
       const details = doc.metadata.waste_details;
       if (!details) {
-        alert("El documento no contiene detalles de residuos.");
+        toast.warning("El documento no contiene detalles de residuos.");
         return;
       }
 
@@ -145,7 +147,7 @@ const Documents: React.FC = () => {
       const validItems = items.filter(item => item && (item.quantity !== undefined || item.weight !== undefined));
 
       if (validItems.length === 0) {
-        alert("No hay ítems válidos para procesar en este documento.");
+        toast.warning("No hay ítems válidos para procesar en este documento.");
         return;
       }
 
@@ -185,7 +187,7 @@ const Documents: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Download error:", error);
-      alert("Error al procesar el archivo: " + (error.message || "Error desconocido"));
+      toast.error("Error al procesar: " + (error.message || "Error desconocido"));
     }
   };
 
@@ -223,7 +225,7 @@ const Documents: React.FC = () => {
       setDocuments(prev => prev.filter(d => d.id !== doc.id));
     } catch (err: any) {
       console.error('Error deleting document:', err);
-      alert('Error al eliminar el documento: ' + err.message);
+      toast.error('Error al eliminar el documento: ' + err.message);
     }
   };
 
@@ -260,7 +262,7 @@ const Documents: React.FC = () => {
 
       if (error) throw error;
       fetchDocuments();
-      alert(`¡Certificado creado para ${testDate.toLocaleDateString()}! Ahora ya puedes generar el reporte.`);
+      toast.success(`Certificado creado para ${testDate.toLocaleDateString()}. Ya puedes generar el reporte.`);
     } catch (err) {
       console.error('Error adding document:', err);
     }
@@ -330,7 +332,7 @@ const Documents: React.FC = () => {
     });
 
     if (docsToReport.length === 0) {
-      alert(`No hay documentos certificados (CR) válidos en ${period.toLowerCase()} para generar un reporte.`);
+      toast.warning(`No hay documentos certificados (CR) válidos en ${period.toLowerCase()} para generar un reporte.`);
       return;
     }
 
@@ -345,7 +347,7 @@ const Documents: React.FC = () => {
     });
 
     if (reportItems.length === 0) {
-      alert('No se encontraron detalles de residuos en los documentos seleccionados.');
+      toast.warning('No se encontraron detalles de residuos en los documentos seleccionados.');
       return;
     }
 
@@ -389,7 +391,7 @@ const Documents: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Report generation error:", err);
-      alert("Hubo un error al generar el reporte: " + err.message);
+      toast.error("Error al generar el reporte: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -399,7 +401,7 @@ const Documents: React.FC = () => {
     if (!userProfile || selectedYear === null) return;
 
     if (rangeEnd < rangeStart) {
-      alert('El mes de término debe ser posterior o igual al mes de inicio.');
+      toast.warning('El mes de término debe ser posterior o igual al mes de inicio.');
       return;
     }
 
@@ -422,7 +424,7 @@ const Documents: React.FC = () => {
     });
 
     if (docsToReport.length === 0) {
-      alert(`No hay documentos certificados (CR) válidos en el periodo ${period} para generar un reporte.`);
+      toast.warning(`No hay documentos certificados (CR) válidos en el periodo ${period}.`);
       return;
     }
 
@@ -437,7 +439,7 @@ const Documents: React.FC = () => {
     });
 
     if (reportItems.length === 0) {
-      alert('No se encontraron detalles de residuos en los documentos seleccionados.');
+      toast.warning('No se encontraron detalles de residuos en los documentos seleccionados.');
       return;
     }
 
@@ -485,7 +487,7 @@ const Documents: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Report generation error:", err);
-      alert("Hubo un error al generar el reporte: " + err.message);
+      toast.error("Error al generar el reporte: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -870,7 +872,7 @@ const Documents: React.FC = () => {
 
                 <div className="pt-2 space-y-3">
                   <button
-                    onClick={() => { alert('Redirigiendo a Google...'); setShowSettings(false); }}
+                    onClick={() => { toast.info('Redirigiendo a Google...'); setShowSettings(false); }}
                     className="w-full h-14 bg-white/50 hover:bg-white/80 border border-white/60 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors text-gray-700"
                   >
                     <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" className="size-6" alt="Drive" />

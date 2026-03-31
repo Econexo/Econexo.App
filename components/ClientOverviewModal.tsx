@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
+import { useToast } from '../components/ui/Toast';
 
 interface UserProfile {
     id: string;
@@ -23,6 +24,7 @@ const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose, onGenerateCR, onGenerateCGM }) => {
+    const toast = useToast();
     const [loading, setLoading] = useState(true);
     const [documents, setDocuments] = useState<any[]>([]);
     const [ecoPoints, setEcoPoints] = useState(0);
@@ -122,7 +124,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         );
 
         if (crDocs.length === 0) {
-            alert('No hay CRs en el período seleccionado para generar el reporte.');
+            toast.warning('No hay CRs en el período seleccionado para generar el reporte.');
             return;
         }
 
@@ -150,7 +152,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
     const handleViewDoc = (doc: any) => {
         const client = { company_name: user.company_name, rut: user.rut, address: user.address || 'Chile' };
         if (!doc.metadata?.waste_details) {
-            alert('Este documento no tiene detalles de residuos para previsualizar.');
+            toast.warning('Este documento no tiene detalles de residuos para previsualizar.');
             return;
         }
         if (doc.type === 'CGM') {

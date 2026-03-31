@@ -8,6 +8,7 @@ import NotificationBell from '../components/NotificationBell';
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
 import { createNotification } from '../services/notificationService';
+import { useToast } from '../components/ui/Toast';
 import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 
 interface DashboardProps {
@@ -27,6 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   });
 
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
@@ -138,7 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
   const handleGenerateCR = async () => {
     if (!selectedClient || wasteItems.length === 0) {
-      alert("Debes agregar al menos un ítem a la lista.");
+      toast.warning("Debes agregar al menos un ítem a la lista.");
       return;
     }
 
@@ -206,13 +208,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         metadata: { cert_number: certNumber, points: pointsToAward }
       });
 
-      alert(`Retiro registrado exitosamente. Certificado ${certNumber} generado. ¡Se han otorgado ${pointsToAward} Eco-Puntos (2 pts por kg)!`);
+      toast.success(`Retiro registrado. Certificado ${certNumber} generado. ${pointsToAward} Eco-Puntos otorgados.`);
       setShowWithdrawalModal(false);
       setWasteItems([]);
       setSelectedClient(null);
       loadStats();
     } else {
-      alert('Error al guardar registro: ' + error.message);
+      toast.error('Error al guardar registro: ' + error.message);
     }
   };
 

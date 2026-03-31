@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
 import { createNotification } from '../services/notificationService';
+import { useToast } from '../components/ui/Toast';
 
 // Define the shape of our scheduled withdrawal
 interface ScheduledWithdrawal {
@@ -19,6 +20,7 @@ interface ScheduledWithdrawalsProps {
 }
 
 const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) => {
+    const toast = useToast();
     const [withdrawals, setWithdrawals] = useState<ScheduledWithdrawal[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -156,7 +158,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
             if (!user) throw new Error('No user logged in');
 
             if (!selectedClientId) {
-                alert('Debes seleccionar un cliente.');
+                toast.warning('Debes seleccionar un cliente.');
                 setSubmitting(false);
                 return;
             }
@@ -199,7 +201,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                 });
             }
 
-            alert('Retiro programado exitosamente');
+            toast.success('Retiro programado exitosamente');
             setShowModal(false);
             setNewDate('');
             setNewType('');
@@ -207,7 +209,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
             fetchWithdrawals();
 
         } catch (err: any) {
-            alert('Error al agendar: ' + err.message);
+            toast.error('Error al agendar: ' + err.message);
         } finally {
             setSubmitting(false);
         }

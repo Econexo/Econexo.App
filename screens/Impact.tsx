@@ -4,12 +4,14 @@ import Navbar from '../components/Navbar';
 
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
+import { useToast } from '../components/ui/Toast';
 
 interface ImpactProps {
   isLeyRep: boolean;
 }
 
 const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [showHelp, setShowHelp] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -333,7 +335,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 url: window.location.href,
               }).catch(console.error);
             } else {
-              alert('¡Enlace copiado al portapapeles!');
+              toast.success('Enlace copiado al portapapeles');
             }
           }}
           className="w-full h-16 bg-primary text-background-dark rounded-[22px] font-display font-black text-sm uppercase tracking-[0.25em] flex items-center justify-center gap-3 transform active:scale-95 transition-all shadow-[0_15px_30px_rgba(15,240,146,0.25)]"

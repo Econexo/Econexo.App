@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import { useToast } from '../components/ui/Toast';
 import Navbar from '../components/Navbar';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import DocumentEditor from '../components/DocumentEditor';
@@ -20,6 +21,7 @@ import { AdminUserProfile, AdminDocument, SupportTicket, WasteItem, AdminPath } 
 
 const Admin: React.FC = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [users, setUsers] = useState<AdminUserProfile[]>([]);
     const [pendingDocs, setPendingDocs] = useState<AdminDocument[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
@@ -120,7 +122,7 @@ const Admin: React.FC = () => {
             fetchAdminData();
         } catch (err: any) {
             console.error('Error updating ticket:', err);
-            alert(`Error: ${err.message}`);
+            toast.error(err.message);
         }
     };
 
@@ -130,10 +132,10 @@ const Admin: React.FC = () => {
             const { error } = await supabase.from('documents').update({ verified: true }).eq('id', docId);
             if (error) { await fetchAdminData(); throw error; }
             fetchAdminData();
-            alert('✅ Documento validado y publicado exitosamente.');
+            toast.success('Documento validado y publicado exitosamente.');
         } catch (err: any) {
             console.error('Error validating document:', err);
-            alert(`Error: ${err.message}`);
+            toast.error(err.message);
             fetchAdminData();
         }
     };
@@ -149,7 +151,7 @@ const Admin: React.FC = () => {
     };
 
     const handleGenerateCR = async () => {
-        if (!selectedUser || wasteItems.length === 0) { alert('Debes agregar al menos un ítem.'); return; }
+        if (!selectedUser || wasteItems.length === 0) { toast.warning('Debes agregar al menos un ítem.'); return; }
 
         const { data: allCRs } = await supabase.from('documents').select('metadata, title').eq('type', 'CR');
         let nextNum = 1;
@@ -198,7 +200,7 @@ const Admin: React.FC = () => {
             setShowCRModal(false);
             setWasteItems([]);
             fetchAdminData();
-            alert(`Certificado generado y ${pointsToAward} Eco-Puntos otorgados.`);
+            toast.success(`Certificado generado y ${pointsToAward} Eco-Puntos otorgados.`);
         }
     };
 
@@ -242,12 +244,12 @@ const Admin: React.FC = () => {
             fetchAdminData();
         } catch (err: any) {
             console.error('Error deleting document:', err);
-            alert('Error al eliminar: ' + err.message);
+            toast.error('Error al eliminar: ' + err.message);
         }
     };
 
     const handleUploadDocument = async () => {
-        if (!uploadFile || !selectedUser || !uploadDate) { alert('Por favor completa todos los campos y selecciona un archivo.'); return; }
+        if (!uploadFile || !selectedUser || !uploadDate) { toast.warning('Por favor completa todos los campos y selecciona un archivo.'); return; }
         setLoading(true);
         try {
             const timestamp = Date.now();
@@ -271,14 +273,14 @@ const Admin: React.FC = () => {
 
             await createNotification({ userId: selectedUser.id, title: '📄 Nuevo Documento Disponible', message: `El administrador ha subido un nuevo documento: "${uploadFile.name}".`, type: 'document', metadata: { file_name: uploadFile.name, document_type: uploadType } });
 
-            alert('Documento subido exitosamente.');
+            toast.success('Documento subido exitosamente.');
             setShowUploadModal(false);
             setUploadFile(null);
             setUploadDate(new Date().toISOString().split('T')[0]);
             setSelectedUser(null);
             fetchAdminData();
         } catch (err: any) {
-            alert('Error al subir el documento: ' + (err.message || 'Error desconocido'));
+            toast.error('Error al subir el documento: ' + (err.message || 'Error desconocido'));
         } finally {
             setLoading(false);
         }
@@ -292,7 +294,7 @@ const Admin: React.FC = () => {
 
             const { data: crDocs, error } = await supabase.from('documents').select('*').eq('type', 'CR').gte('created_at', startDate).lte('created_at', endDate);
             if (error) throw error;
-            if (!crDocs || crDocs.length === 0) { alert('No se encontraron Certificados de Recepción (CR) para este período.'); setLoading(false); return; }
+            if (!crDocs || crDocs.length === 0) { toast.warning('No se encontraron Certificados de Recepción (CR) para este período.'); setLoading(false); return; }
 
             const userIds = Array.from(new Set(crDocs.map(d => d.user_id)));
             const { data: profiles } = await supabase.from('profiles').select('*').in('id', userIds);
@@ -329,14 +331,14 @@ const Admin: React.FC = () => {
             if (newDocs.length > 0) {
                 const { error: insError } = await supabase.from('documents').insert(newDocs);
                 if (insError) throw insError;
-                alert(`Se han generado ${newDocs.length} borradores de certificados mensuales. Revísalos en "Pendientes".`);
+                toast.success(`Se han generado ${newDocs.length} borradores de certificados mensuales. Revísalos en "Pendientes".`);
             }
 
             setShowMonthlyGenModal(false);
             fetchAdminData();
         } catch (err: any) {
             console.error(err);
-            alert('Error: ' + err.message);
+            toast.error(err.message);
         } finally {
             setLoading(false);
         }

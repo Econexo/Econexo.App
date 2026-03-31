@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
+import { useToast } from '../components/ui/Toast';
 
 export interface UnregisteredClient {
     id: string; // The ID of the document storing the metadata
@@ -18,6 +19,7 @@ interface Props {
 }
 
 const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, onGenerateCGM }) => {
+    const toast = useToast();
     const [clients, setClients] = useState<UnregisteredClient[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -91,12 +93,12 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
 
             if (error) throw error;
 
-            alert('Cliente guardado exitosamente');
+            toast.success('Cliente guardado exitosamente');
             setFormData({ company_name: '', rut: '', address: '', email: '' });
             setShowForm(false);
             fetchClients();
         } catch (err: any) {
-            alert('Error al guardar cliente: ' + err.message);
+            toast.error('Error al guardar cliente: ' + err.message);
         }
     };
 
@@ -108,7 +110,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
             if (error) throw error;
             fetchClients();
         } catch (err: any) {
-            alert('Error eliminando: ' + err.message);
+            toast.error('Error eliminando: ' + err.message);
         }
     };
 
@@ -143,13 +145,13 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
             // 3. Delete the manual client document
             await supabase.from('documents').delete().eq('id', linkingClient.id);
 
-            alert('Cuenta vinculada correctamente. El historial ha sido migrado.');
+            toast.success('Cuenta vinculada correctamente. El historial ha sido migrado.');
             setLinkingClient(null);
             setSelectedUserIdToLink('');
             fetchClients();
 
         } catch (err: any) {
-            alert('Error al vincular: ' + err.message);
+            toast.error('Error al vincular: ' + err.message);
         } finally {
             setLinking(false);
         }

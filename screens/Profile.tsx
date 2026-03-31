@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { UserProfile, CompanyProfile } from '../types';
 import { supabase } from '../services/supabase';
+import { useToast } from '../components/ui/Toast';
 
 // Profile subcomponents
 import ProfileHeader from '../components/profile/ProfileHeader';
@@ -23,6 +24,7 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode, toggleTheme }) => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -93,7 +95,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
         waste_types: companyData.wasteTypes, certifications: companyData.certifications,
       });
       if (!error) setIsEditingUser(false);
-      else { console.error("Error saving user:", error); alert('Error al guardar: ' + error.message); }
+      else { console.error("Error saving user:", error); toast.error('Error al guardar: ' + error.message); }
     }
     setLoading(false);
   };
@@ -110,7 +112,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
         certifications: companyData.certifications,
       });
       if (!error) setIsEditingCompany(false);
-      else { console.error("Error saving company:", error); alert('Error al guardar datos de empresa: ' + error.message); }
+      else { console.error("Error saving company:", error); toast.error('Error al guardar datos de empresa: ' + error.message); }
     }
     setLoading(false);
   };
@@ -135,14 +137,14 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
         if (updateError) throw updateError;
 
         setProfileImage(publicUrl);
-        alert('Imagen de perfil actualizada con éxito.');
+        toast.success('Imagen de perfil actualizada con éxito.');
         window.location.reload();
       } catch (err: any) {
         console.error('Error uploading image:', err);
         if (err.message?.includes('Bucket not found')) {
-          alert('Error: No se encontró el bucket "avatars".\n\nPor favor, ve a tu Dashboard de Supabase -> Storage y crea un bucket público llamado "avatars".');
+          toast.error('No se encontró el bucket "avatars". Crea un bucket público llamado "avatars" en Supabase Dashboard > Storage.');
         } else {
-          alert('Error al subir imagen: ' + err.message);
+          toast.error('Error al subir imagen: ' + err.message);
         }
       } finally {
         setLoading(false);
@@ -151,19 +153,19 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
   };
 
   const handleSubmitTicket = async () => {
-    if (!supportTicket.subject || !supportTicket.description) { alert('Por favor completa todos los campos.'); return; }
+    if (!supportTicket.subject || !supportTicket.description) { toast.warning('Por favor completa todos los campos.'); return; }
     setSubmittingTicket(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No session');
       const { error } = await supabase.from('support_tickets').insert([{ user_id: user.id, subject: supportTicket.subject, description: supportTicket.description }]);
       if (error) throw error;
-      alert('Tu reporte ha sido enviado al administrador. Nos contactaremos pronto.');
+      toast.success('Tu reporte ha sido enviado al administrador. Nos contactaremos pronto.');
       setSupportTicket({ subject: '', description: '' });
       setShowSupportModal(false);
     } catch (err: any) {
       console.error('Error submitting ticket:', err);
-      alert('Error al enviar el reporte: ' + err.message);
+      toast.error('Error al enviar el reporte: ' + err.message);
     } finally {
       setSubmittingTicket(false);
     }
@@ -171,37 +173,37 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
 
   const handleUpdateEmail = async () => {
     if (!newEmail) return;
-    if (newEmail === userData.email) { alert('El nuevo correo es igual al actual.'); return; }
+    if (newEmail === userData.email) { toast.warning('El nuevo correo es igual al actual.'); return; }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ email: newEmail });
       if (error) throw error;
-      alert('Se ha enviado un correo de confirmación a tu nueva dirección. Por favor verifica para completar el cambio.');
+      toast.success('Se ha enviado un correo de confirmación a tu nueva dirección.');
       setShowEmailModal(false);
       setNewEmail('');
     } catch (err: any) {
       console.error('Error updating email:', err);
-      alert('Error al actualizar correo: ' + err.message);
+      toast.error('Error al actualizar correo: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleChangePassword = async () => {
-    if (!newPassword || !confirmPassword) { alert('Por favor ingresa la nueva contraseña y confírmala.'); return; }
-    if (newPassword.length < 6) { alert('La contraseña debe tener al menos 6 caracteres.'); return; }
-    if (newPassword !== confirmPassword) { alert('Las contraseñas no coinciden.'); return; }
+    if (!newPassword || !confirmPassword) { toast.warning('Por favor ingresa la nueva contraseña y confírmala.'); return; }
+    if (newPassword.length < 6) { toast.warning('La contraseña debe tener al menos 6 caracteres.'); return; }
+    if (newPassword !== confirmPassword) { toast.warning('Las contraseñas no coinciden.'); return; }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      alert('Contraseña actualizada correctamente.');
+      toast.success('Contraseña actualizada correctamente.');
       setShowPasswordModal(false);
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
       console.error('Error updating password:', err);
-      alert('Error al actualizar contraseña: ' + err.message);
+      toast.error('Error al actualizar contraseña: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -216,12 +218,12 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
           await supabase.from('profiles').delete().eq('id', user.id);
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
-          alert('Cuenta eliminada con éxito.');
+          toast.success('Cuenta eliminada con éxito.');
           navigate('/');
         }
       } catch (err: any) {
         console.error('Error deleting account:', err);
-        alert('Error al eliminar la cuenta: ' + err.message);
+        toast.error('Error al eliminar la cuenta: ' + err.message);
       } finally {
         setLoading(false);
       }

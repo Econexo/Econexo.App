@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 import { generateCustomDoc } from '../services/pdfGenerator';
 import { CompanyProfile } from '../types';
 import { ECONEXO_SIGNATURE } from '../services/constants';
+import { useToast } from '../components/ui/Toast';
 
 interface DocumentEditorProps {
     users: any[];
@@ -73,6 +74,7 @@ const CR_TEMPLATE = `
 `;
 
 const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSuccess }) => {
+    const toast = useToast();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [selectedUserId, setSelectedUserId] = useState('');
@@ -167,7 +169,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
 
     const handleSave = async () => {
         if (!title || !selectedUserId) {
-            alert('Por favor completa el título y selecciona un destinatario.');
+            toast.warning('Por favor completa el título y selecciona un destinatario.');
             return;
         }
 
@@ -210,12 +212,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
 
             if (error) throw error;
 
-            alert('Documento generado y guardado exitosamente.');
+            toast.success('Documento generado y guardado exitosamente.');
             onSuccess();
             onClose();
 
         } catch (err: any) {
-            alert('Error al guardar: ' + err.message);
+            toast.error('Error al guardar: ' + err.message);
         } finally {
             setLoading(false);
         }
