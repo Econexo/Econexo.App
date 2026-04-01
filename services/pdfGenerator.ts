@@ -1,9 +1,7 @@
-import jsPDF from 'jspdf'; // Force redeploy v2
+import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2 } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
-
-import { PHONE_ICON_BASE64 } from './phoneIconBase64';
 
 interface CompanyData {
     company_name: string;
@@ -22,64 +20,66 @@ interface WasteItem {
 
 export const generateCR = (client: CompanyData, items: WasteItem[], certificateNumber: string, action: 'save' | 'preview' = 'save', customDate?: string) => {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const pageWidth  = doc.internal.pageSize.getWidth();  // 210mm
-    const pageHeight = doc.internal.pageSize.getHeight(); // 297mm
-    const ml = 15;        // margin left
-    const mr = pageWidth - 15; // margin right = 195mm
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const ml = 15;
+    const mr = pageWidth - 15;
 
-    // ── WATERMARK ──────────────────────────────────────────────
+    // ── FECHA ──
+    const emissionDate = customDate ? new Date(customDate + 'T12:00:00') : new Date();
+    const dd = String(emissionDate.getDate()).padStart(2, '0');
+    const mm = String(emissionDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(emissionDate.getFullYear());
+
+    // ── WATERMARK (669×1024 → ratio 0.653) ──
     if (ECONEXO_WATERMARK) {
         try {
             doc.saveGraphicsState();
-            doc.setGState(new (doc as any).GState({ opacity: 0.07 }));
-            const wmW = 130, wmH = 130;
-            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmW) / 2, (pageHeight - wmH) / 2 - 10, wmW, wmH);
+            doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
+            const wmW = 85;
+            const wmH = wmW / 0.653; // ~130mm - correct aspect ratio
+            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmW) / 2, (pageHeight - wmH) / 2 + 10, wmW, wmH);
             doc.restoreGraphicsState();
-        } catch (_) {}
+        } catch (e) { /* watermark optional */ }
     }
 
-    // ── LOGO (top-left) ────────────────────────────────────────
-    if (ECONEXO_LOGO) {
+    // ── LOGO top-left (978×200 → ratio 4.89) ──
+    const logoToUse = ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
+    if (logoToUse) {
         try {
-            doc.addImage(ECONEXO_LOGO, 'PNG', ml, 8, 58, 20);
-        } catch (_) {
-            doc.setFontSize(18);
+            const logoW = 58;
+            const logoH = logoW / 4.89; // ~11.9mm - correct aspect ratio
+            doc.addImage(logoToUse, 'PNG', ml, 6, logoW, logoH);
+        } catch (e) {
+            doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(22, 163, 74);
-            doc.text('EcoNexo', ml, 20);
+            doc.text('EcoNexo', ml, 14);
         }
     }
 
-    // ── DATE BOX (top-right, 3 cells: Día | Mes | Año) ────────
-    const emissionDate = customDate ? new Date(customDate + 'T12:00:00') : new Date();
-    const dd   = String(emissionDate.getDate()).padStart(2, '0');
-    const mmN  = String(emissionDate.getMonth() + 1).padStart(2, '0');
-    const yyyy = String(emissionDate.getFullYear());
-
+    // ── DATE BOXES top-right ──
     const cellW = 15, cellH = 7;
-    const dbX = mr - cellW * 3; // date-box origin X
+    const dbX = mr - cellW * 3;
     const dbY = 8;
-
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.3);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
 
-    // Header row
     ['Día', 'Mes', 'Año'].forEach((label, i) => {
         doc.rect(dbX + i * cellW, dbY, cellW, cellH);
         doc.text(label, dbX + i * cellW + cellW / 2, dbY + 4.5, { align: 'center' });
     });
-    // Value row
-    [dd, mmN, yyyy].forEach((val, i) => {
+    [dd, mm, yyyy].forEach((val, i) => {
         doc.rect(dbX + i * cellW, dbY + cellH, cellW, cellH);
         doc.setFont('helvetica', 'normal');
-        doc.text(val, dbX + i * cellW + cellW / 2, dbY + cellH + 4.5, { align: 'center' });
+        doc.text(String(val), dbX + i * cellW + cellW / 2, dbY + cellH + 4.5, { align: 'center' });
         doc.setFont('helvetica', 'bold');
     });
 
-    // ── ECONEXO INFO BLOCK ────────────────────────────────────
+    // ── ECONEXO INFO ──
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(50, 50, 50);
@@ -90,66 +90,61 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
         '14 de Febrero #2534',
         '+569 35626886',
     ];
-    ecoLines.forEach((line, i) => doc.text(line, ml, 36 + i * 4.5));
+    ecoLines.forEach((line, i) => doc.text(line, ml, 24 + i * 4.5));
 
-    // ── CLIENT INFO TABLE ─────────────────────────────────────
-    const clientTableY = 62;
+    // ── Certificate Number ──
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.text(certificateNumber, mr, 28, { align: 'right' });
+
+    // ── CLIENT TABLE ──
+    const clientTableY = 50;
     const labelW = 28;
     const valueW = mr - ml - labelW;
-    const rowH   = 7;
-    const clientRows = [
-        { label: 'Señor(es):', value: client.company_name || '' },
-        { label: 'Rut:',       value: client.rut || '' },
-        { label: 'Dirección:', value: client.address || '' },
-        { label: 'Contacto:',  value: (client as any).contact_name || '' },
-        { label: 'Correo:',    value: (client as any).contact_email || '' },
+    const rowH = 7;
+    const clientRows: { label: string; value: string }[] = [
+        { label: 'Señor(es):', value: client.company_name },
+        { label: 'Rut:', value: client.rut },
+        { label: 'Dirección:', value: client.address },
     ];
+    if (client.contact_name) clientRows.push({ label: 'Contacto:', value: client.contact_name });
+    if (client.contact_email) clientRows.push({ label: 'Correo:', value: client.contact_email });
 
     doc.setLineWidth(0.3);
     doc.setDrawColor(0, 0, 0);
     clientRows.forEach((row, i) => {
         const y = clientTableY + i * rowH;
-        // Label cell
         doc.rect(ml, y, labelW, rowH);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(0, 0, 0);
         doc.text(row.label, ml + 2, y + 4.6);
-        // Value cell
         doc.rect(ml + labelW, y, valueW, rowH);
         doc.setFont('helvetica', 'normal');
-        doc.text(String(row.value), ml + labelW + 3, y + 4.6);
+        doc.text(String(row.value).substring(0, 55), ml + labelW + 3, y + 4.6);
     });
 
-    // ── TITLE ─────────────────────────────────────────────────
+    // ── TITLE ──
     const titleY = clientTableY + clientRows.length * rowH + 12;
-    const titleText = 'CERTIFICADO DE RECEPCIÓN DE MATERIAL';
+    const titleText = 'CERTIFICADO DE TRANSPORTE Y RECEPCION DE MATERIAL';
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
     doc.text(titleText, pageWidth / 2, titleY, { align: 'center' });
-    // Underline
     const tw = doc.getTextWidth(titleText);
     doc.setLineWidth(0.4);
     doc.line((pageWidth - tw) / 2, titleY + 1, (pageWidth + tw) / 2, titleY + 1);
 
-    // ── MATERIALS TABLE ───────────────────────────────────────
+    // ── MATERIALS TABLE ──
     const tableStartY = titleY + 8;
-
-    const fmtQty = (n: number): string => {
-        if (Number.isInteger(n)) return n.toString();
-        return (Math.round(n * 100) / 100).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-    };
-
+    const fmtQty = (n: number) => Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    const receptionStr = `${dd}-${mm}-${yyyy}`;
 
-    const receptionStr = emissionDate
-        .toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        .replace(/\//g, '-');
-
-    const tableBody: string[][] = items.map((item, idx) => [
+    const tableBody = items.map((item, idx) => [
         String(idx + 1),
-        (item.waste_type || (item as any).type || '').toUpperCase(),
+        (item.waste_type || (item as any).type || item.description || '').toUpperCase(),
         idx === 0 ? receptionStr : '',
         fmtQty(Number(item.quantity) || 0),
     ]);
@@ -160,41 +155,15 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
         head: [['ITEM', 'MATERIAL', 'RECEPCIÓN', 'CANTIDAD (Kg)']],
         body: tableBody,
         theme: 'grid',
-        headStyles: {
-            fillColor: [255, 255, 255],
-            textColor: [0, 0, 0],
-            fontStyle: 'bold',
-            fontSize: 9,
-            halign: 'center',
-            lineWidth: 0.3,
-            lineColor: [0, 0, 0],
-        },
-        bodyStyles: {
-            fontSize: 9,
-            textColor: [0, 0, 0],
-            halign: 'center',
-            lineWidth: 0.3,
-            lineColor: [0, 0, 0],
-            fillColor: [255, 255, 255],
-        },
-        columnStyles: {
-            0: { cellWidth: 20 },
-            1: { cellWidth: 72, halign: 'center' },
-            2: { cellWidth: 38 },
-            3: { cellWidth: 40 },
-        },
+        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0] },
+        bodyStyles: { fontSize: 9, textColor: [0, 0, 0], halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0], fillColor: [255, 255, 255] },
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 72, halign: 'center' }, 2: { cellWidth: 38 }, 3: { cellWidth: 40 } },
         margin: { left: ml, right: 15 },
-        alternateRowStyles: { fillColor: [255, 255, 255] },
-        didParseCell: (data) => {
-            if (data.row.index === tableBody.length - 1) {
-                data.cell.styles.fontStyle = 'bold';
-            }
-        },
     });
 
     const finalY = (doc as any).lastAutoTable.finalY;
 
-    // ── LEGAL TEXT ────────────────────────────────────────────
+    // ── LEGAL TEXT ──
     const legalStartY = finalY + 10;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -205,82 +174,51 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     const splitLegal = doc.splitTextToSize(legalBody, mr - ml);
     doc.text(splitLegal, ml, legalStartY + 5.5);
 
-    // ── TRANSPORT AUTHORIZATION ───────────────────────────────
-    const transportY = legalStartY + 5.5 + splitLegal.length * 4.5 + 6;
+    // ── TRANSPORT (close to legal text) ──
+    const transportY = legalStartY + 5.5 + splitLegal.length * 4 + 3;
     doc.setFont('helvetica', 'normal');
     doc.text('Transporte Autorizado por Ministerio de Salud', ml, transportY);
     doc.setFont('helvetica', 'bold');
     doc.text('RESOLUCIÓN N° : 2402341155', ml, transportY + 5);
 
-    // ── SIGNATURES ────────────────────────────────────────────
+    // ── SIGNATURES ──
     const sigY = transportY + 28;
 
-    // Left: Sebastián Frías with signature image
+    // Signature image (376×341 → ratio 1.103)
     if (ECONEXO_SIGNATURE) {
         try {
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml, sigY - 22, 52, 20);
-        } catch (_) {}
+            const sigW = 40;
+            const sigH = sigW / 1.103; // ~36mm - correct aspect ratio
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml + 35 - sigW / 2, sigY - sigH + 2, sigW, sigH);
+        } catch (e) { /* signature optional */ }
     }
-    doc.setDrawColor(0, 0, 0);
+
     doc.setLineWidth(0.3);
+    doc.setDrawColor(0, 0, 0);
     doc.line(ml, sigY, ml + 70, sigY);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
     doc.text('SEBASTIAN FRIAS THOMPSON', ml + 35, sigY + 5, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.text('GERENTE ECONEXO', ml + 35, sigY + 9, { align: 'center' });
 
-    // Right: client signature line
     const sigRX = mr - 70;
     doc.line(sigRX, sigY, mr, sigY);
     doc.setFont('helvetica', 'bold');
     doc.text('FIRMA CLIENTE', sigRX + 35, sigY + 5, { align: 'center' });
 
-    // ── OUTPUT ────────────────────────────────────────────────
+    // ── ACTION ──
     if (action === 'preview') {
         window.open(doc.output('bloburl'), '_blank');
     } else {
-        doc.save(`CR_${client.company_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\\/]/g, '_')}.pdf`);
+        doc.save(`CR_${client.company_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\/]/g, '_')}.pdf`);
     }
 };
 
-export const generateEcoReport = (client: CompanyData, items: WasteItem[], periodo: string, action: 'save' | 'preview' = 'save', customMonthsCount?: number) => {
+export const generateEcoReport = (client: CompanyData, items: WasteItem[], periodo: string, action: 'save' | 'preview' = 'save') => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    // ... (rest of function body until logic update)
-
-    // ... inside logic ...
-    // Determine Months Count based on Periodo string OR custom parameter
-    // If it's just a year (e.g. "2025") or contains "Anual", it's 12 months.
-    // If "Trimestre", 3 months.
-    // Otherwise (default), 1 month.
-    let monthsCount = customMonthsCount || 1;
-    const pLower = periodo.toLowerCase();
-    const isAnnual = !customMonthsCount && (/^\d{4}$/.test(periodo.trim()) || pLower.includes('anual') || pLower.includes('año') || pLower.includes('ano'));
-    const isQuarter = !customMonthsCount && pLower.includes('trimestre');
-
-    if (isAnnual) monthsCount = 12;
-    else if (isQuarter) monthsCount = 3;
-
-    const baselineMin = 72 * monthsCount;
-    const baselineMax = 80 * monthsCount;
-
-    const b1 = `En las oficinas de ${client.company_name} se estima una generación típica de 4 bolsas de residuos por semana, con un peso entre 4,5 y 5 kg por bolsa.`;
-    const splitB1 = doc.splitTextToSize(b1, pageWidth - 50);
-    doc.circle(24, currentY + 1.5, 1, 'F');
-    doc.text(splitB1, 28, currentY + 2);
-    currentY += (splitB1.length * 4.5) + 2;
-
-    let b2 = "";
-    if (customMonthsCount && customMonthsCount > 1 && customMonthsCount < 12) {
-        b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en el periodo seleccionado (${monthsCount} meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
-    } else if (isAnnual || (customMonthsCount === 12)) {
-        b2 = `Esto equivale a un peso anual estimado entre ${baselineMin} y ${baselineMax} kg (proyección de 12 meses).`;
-    } else if (isQuarter) {
-        b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en un trimestre (3 meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
-    } else {
-        b2 = `Esto equivale a un peso mensual estimado entre ${baselineMin} y ${baselineMax} kg.`;
-    }
     const pageHeight = doc.internal.pageSize.getHeight();
 
     // --- Data Processing & Calculation ---
@@ -681,13 +619,11 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
     doc.text(splitP1, 20, currentY);
     currentY += (splitP1.length * 4.5) + 4;
 
-    // Paragraph 2 (Static Context) - Conditional for Electroram 2025 ONLY
-    if (client.company_name.toLowerCase().includes('electroram') && periodo.includes('2025')) {
-        const p2 = "Es importante señalar que las operaciones principales de la empresa se realizaron fuera de la ciudad durante este periodo, lo que influyó directamente en una menor generación de residuos en las instalaciones habituales.";
-        const splitP2 = doc.splitTextToSize(p2, pageWidth - 40);
-        doc.text(splitP2, 20, currentY);
-        currentY += (splitP2.length * 4.5) + 4;
-    }
+    // Paragraph 2 (Static Context)
+    const p2 = "Es importante señalar que las operaciones principales de la empresa se realizaron fuera de la ciudad durante este periodo, lo que influyó directamente en una menor generación de residuos en las instalaciones habituales.";
+    const splitP2 = doc.splitTextToSize(p2, pageWidth - 40);
+    doc.text(splitP2, 20, currentY);
+    currentY += (splitP2.length * 4.5) + 4;
 
     // Paragraph 3 (Baseline Context) - EXCLUSIVE FOR ELECTRORAM
     if (client.company_name.toLowerCase().includes('electroram')) {
@@ -696,16 +632,9 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         doc.text(splitP3, 20, currentY);
         currentY += (splitP3.length * 4.5) + 2;
 
-        // Determine Months Count based on Periodo string OR custom parameter
-        let monthsCount = customMonthsCount || 1;
-        const pLower = periodo.toLowerCase();
-        // Updated regex to include 'año' explicitly for correct detection
-        const isAnnual = !customMonthsCount && (/^\d{4}$/.test(periodo.trim()) || pLower.includes('anual') || pLower.includes('año') || pLower.includes('ano'));
-        const isQuarter = !customMonthsCount && pLower.includes('trimestre');
-
-        if (isAnnual) monthsCount = 12;
-        else if (isQuarter) monthsCount = 3;
-
+        // Bullets (Baseline)
+        const isRange = periodo.includes('-') || periodo.toLowerCase().includes('trimestre');
+        const monthsCount = isRange ? 3 : 1;
         const baselineMin = 72 * monthsCount;
         const baselineMax = 80 * monthsCount;
 
@@ -716,11 +645,7 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         currentY += (splitB1.length * 4.5) + 2;
 
         let b2 = "";
-        if (customMonthsCount && customMonthsCount > 1 && customMonthsCount < 12) {
-            b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en el periodo seleccionado (${monthsCount} meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
-        } else if (isAnnual || (customMonthsCount === 12)) {
-            b2 = `Esto equivale a un peso anual estimado entre ${baselineMin} y ${baselineMax} kg (proyección de 12 meses).`;
-        } else if (isQuarter) {
+        if (isRange) {
             b2 = `Esto equivale a un peso mensual entre 72 y 80 kg, y en un trimestre (3 meses) a un total estimado entre ${baselineMin} y ${baselineMax} kg.`;
         } else {
             b2 = `Esto equivale a un peso mensual estimado entre ${baselineMin} y ${baselineMax} kg.`;
@@ -753,7 +678,7 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         doc.text(`respecto al escenario de mayor generación (${baselineMax} kg).`, 40, currentY + 2);
         currentY += 8;
 
-        // Analysis
+        // Analysis - Dependent on the percentages above
         const p5 = "Estos porcentajes reflejan un avance significativo en la gestión de residuos, especialmente considerando el contexto operativo atípico del período.";
         const splitP5 = doc.splitTextToSize(p5, pageWidth - 40);
         doc.text(splitP5, 20, currentY);
@@ -1134,9 +1059,9 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // --- COLORS ---
     const HEADER_GREY = [40, 40, 40];
     const HEADER_GREEN = [45, 106, 79];
-    const TABLE_YELLOW = [255, 200, 0];
-    const TABLE_BLUE = [0, 70, 160];
-    const TABLE_GREY = [100, 100, 100];
+    const TABLE_YELLOW = [255, 225, 100];
+    const TABLE_BLUE = [0, 85, 165];
+    const TABLE_GREY = [160, 160, 160];
     const TABLE_LIGHT_GREY = [235, 235, 235];
 
     // --- 1. HEADER ---
@@ -1190,33 +1115,17 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     const margin = 22;
     const textBoxWidth = pageWidth - (margin * 2);
-
-    // Calculate the last day of the given month/year dynamically
-    const MONTH_NAMES: Record<string, number> = {
-        'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3,
-        'mayo': 4, 'junio': 5, 'julio': 6, 'agosto': 7,
-        'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
-    };
-    const monthIndex = MONTH_NAMES[month.toLowerCase()] ?? 0;
-    // new Date(year, monthIndex + 1, 0) gives the last day of monthIndex
-    const lastDayOfMonth = new Date(year, monthIndex + 1, 0).getDate();
-
-    const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al ${lastDayOfMonth} de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
+    const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
 
     const lines = doc.splitTextToSize(plainText, textBoxWidth);
     doc.text(lines, margin, currentY, { align: 'justify', maxWidth: textBoxWidth });
     currentY += (lines.length * 6) + 2;
 
     // --- 3. CLIENT INFO ---
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    const txt1 = "Provenientes de la empresa:";
-    doc.text(txt1, margin, currentY);
-    const txt1W = doc.getTextWidth(txt1);
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(0);
-    doc.line(margin, currentY + 1, margin + txt1W, currentY + 1);
-    currentY += 6;
+    doc.text("Provenientes de la empresa:", margin, currentY);
+    currentY += 5;
 
     const drawLabelVal = (lbl: string, val: string) => {
         doc.setFont('helvetica', 'bold');
@@ -1233,20 +1142,16 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // --- 4. DATA SECTION ---
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    const txt2 = "De los cuales, se gestionó un total de:";
-    doc.text(txt2, margin, currentY);
-    const txt2W = doc.getTextWidth(txt2);
-    doc.line(margin, currentY + 1, margin + txt2W, currentY + 1);
+    doc.text("De los cuales, se gestionó un total de:", margin, currentY);
     currentY += 8;
 
     const categories: any = {
         'Plásticos': { color: TABLE_YELLOW, textMain: [0, 0, 0], qty: 0, pct: 0 },
         'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Aluminio': { color: [70, 70, 70], textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Metales': { color: [70, 70, 70], textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Vidrio': { color: [45, 106, 79], textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Otros': { color: [150, 150, 150], textMain: [0, 0, 0], qty: 0, pct: 0 }
+        'Aluminio': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Metales': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
+        'Vidrio': { color: [100, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 },
+        'Otros': { color: [200, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 }
     };
 
     let totalKg = 0;
@@ -1281,13 +1186,6 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
     currentY += rowH + gap;
 
-    // Smart number formatter: no trailing zeros, max 2 decimals
-    const formatNum = (n: number): string => {
-        if (Number.isInteger(n)) return n.toString();
-        const rounded = Math.round(n * 100) / 100;
-        return rounded.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-    };
-
     const drawRow = (display: string, key: string) => {
         const d = categories[key];
         if (d.qty <= 0) return;
@@ -1298,8 +1196,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
         doc.setFont('helvetica', 'bold');
         doc.text(display, tX + col1 / 2, currentY + 7, { align: 'center' });
-        doc.text(formatNum(d.qty), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-        doc.text(formatNum(d.pct), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
+        doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
+        doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
         currentY += rowH + gap;
     };
 
@@ -1316,7 +1214,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text(formatNum(totalKg), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
+    doc.text(totalKg.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
     doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
 
     const pieX = 175;
@@ -1350,10 +1248,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    const destTxt = "DESTINO AUTORIZADO:";
-    doc.text(destTxt, margin, currentY);
-    const destTxtW = doc.getTextWidth(destTxt);
-    doc.line(margin, currentY + 1, margin + destTxtW, currentY + 1);
+    doc.text("DESTINO AUTORIZADO:", margin, currentY);
     currentY += 5;
     doc.setFont('helvetica', 'normal');
     const destinations = [
@@ -1370,8 +1265,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const sigY = pageHeight - 45;
     if (ECONEXO_SIGNATURE) {
         try {
-            // Keep original proportions (40x30), shift Y down slightly vs original sigY-30
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 25, 40, 30);
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 30, 40, 30);
         } catch (e) { }
     }
     doc.setLineWidth(0.5);
@@ -1395,92 +1289,35 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const startX = (pageWidth - (spacing * 2)) / 2 - 12;
 
     doc.setDrawColor(255);
-    doc.setLineWidth(0.6); // Thicker outline for icons
+    doc.setLineWidth(0.4);
 
-    // --- ICONS & TEXT ---
-    // Y position centering
-    const iconY = footerMidY;
-
-    // 1. Email: Outline Circle + Outline Envelope
-    // Text: Econexo.huh@gmail.com (Matching reference, even if 'hub' is standard)
+    // 1. Email Icon (Envelope)
     const icon1X = startX - 5;
+    doc.rect(icon1X, footerMidY - 2, 6, 4);
+    doc.line(icon1X, footerMidY - 2, icon1X + 3, footerMidY);
+    doc.line(icon1X + 6, footerMidY - 2, icon1X + 3, footerMidY);
+    doc.text("Econexo.huh@gmail.com", startX + 3, footerMidY, { baseline: 'middle' });
 
-    // Circle Outline
-    doc.setDrawColor(255);
-    doc.setLineWidth(0.5);
-    doc.circle(icon1X + 2.5, iconY, 3.5, 'S');
-
-    // Envelope
-    doc.setLineWidth(0.3);
-    const envW = 4;
-    const envH = 2.5;
-    const envX = icon1X + 2.5 - (envW / 2);
-    const envY = iconY - (envH / 2);
-    doc.rect(envX, envY, envW, envH, 'S');
-    doc.line(envX, envY, envX + envW / 2, envY + envH / 2 + 0.2); // V-shape down
-    doc.line(envX + envW, envY, envX + envW / 2, envY + envH / 2 + 0.2); // V-shape up
-
-    // Text: Closer to icon (2mm gap)
-    doc.text("Econexo.huh@gmail.com", startX + 2.5, iconY, { baseline: 'middle' });
-
-    // 2. Phone: Solid White Circle + Green Receiver
+    // 2. Phone Slot (+569) - Globe Icon (Swapped here)
     const phoneX = startX + spacing + 10;
     const icon2X = phoneX - 5;
-    const cx2 = icon2X + 2.5;
-    const cy2 = iconY;
+    doc.circle(icon2X + 2.5, footerMidY, 2.5, 'S');
+    doc.line(icon2X, footerMidY, icon2X + 5, footerMidY);
+    doc.line(icon2X + 2.5, footerMidY - 2.5, icon2X + 2.5, footerMidY + 2.5);
+    doc.text("+569 35626886", phoneX + 2, footerMidY, { baseline: 'middle' });
 
-    // Solid Green Circle (Inverted for visibility of white icon)
-    // Large radius (5.0) to exceed text height
-    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.circle(cx2, cy2, 5.0, 'F');
-
-    // Phone Icon (PNG Asset)
-    // Replaces vector drawing to match user reference
-    try {
-        // Maximize size to fill large circle
-        // Circle Radius = 5.0 -> Diameter = 10.0
-        // Image Size = 10.0 (Full fill, assuming padding)
-        doc.addImage(PHONE_ICON_BASE64, 'PNG', cx2 - 5.0, cy2 - 5.0, 10.0, 10.0);
-    } catch (e) {
-        console.warn("Failed to add phone icon png", e);
-    }
-
-
-
-    // Reset
-    doc.setLineCap('butt');
-    doc.setDrawColor(255);
-    doc.setTextColor(255);
-
-    doc.text("+569 35626886", phoneX + 1.5, iconY, { baseline: 'middle' });
-
-    // 3. Web: Solid White Circle + Green Globe Icon
-    // Text: econexo.cl
+    // 3. Web Slot (econexo.cl) - Phone Icon V2 (Swapped here & Enlarged)
     const webX = phoneX + spacing - 10;
     const icon3X = webX - 7;
-    const cx = icon3X + 2.5;
-    const cy = iconY;
+    const iconRef = PHONE_ICON_V2 || PHONE_ICON;
 
-    // Solid White Circle Background
-    doc.setFillColor(255, 255, 255);
-    doc.circle(cx, cy, 3.5, 'F');
-
-    // Green Globe Icon
-    doc.setDrawColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-    doc.setLineWidth(0.4); // Thinner lines for detailed icon
-
-    const r = 2.2;
-    // Outer Rim
-    doc.circle(cx, cy, r, 'S');
-    // Cross
-    doc.line(cx, cy - r, cx, cy + r); // Vertical
-    doc.line(cx - r, cy, cx + r, cy); // Horizontal
-    // Meridians/Latitudes (Ellipses)
-    doc.ellipse(cx, cy, 1.1, r, 'S'); // Vertical Ellipse
-    doc.ellipse(cx, cy, r, 1.1, 'S'); // Horizontal Ellipse
-
-    doc.setTextColor(255); // Reset text to white
-    doc.text("econexo.cl", webX + 0.5, iconY, { baseline: 'middle' });
+    if (iconRef) {
+        try {
+            const pSize = 13; // 13mm size
+            doc.addImage(iconRef, 'PNG', icon3X - 2, footerMidY - (pSize / 2), pSize, pSize);
+        } catch (e) { }
+    }
+    doc.text("econexo.cl", webX + 4, footerMidY, { baseline: 'middle' });
 
     if (ECONEXO_WATERMARK) {
         try {
