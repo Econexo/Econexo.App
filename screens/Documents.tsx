@@ -6,6 +6,7 @@ import { supabase } from '../services/supabase';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import { createNotification } from '../services/notificationService';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 interface Document {
   id: string;
@@ -29,6 +30,7 @@ interface Document {
 const Documents: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const confirm = useConfirm();
   const [showSettings, setShowSettings] = useState(false);
   const [driveLinked, setDriveLinked] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -213,9 +215,13 @@ const Documents: React.FC = () => {
   };
 
   const handleDelete = async (doc: Document) => {
-    if (!window.confirm(`¿Estás seguro de que quieres eliminar "${doc.title}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Eliminar documento',
+      message: `¿Estás seguro de que quieres eliminar "${doc.title}"? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Sí, eliminar',
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const { error } = await supabase.from('documents').delete().eq('id', doc.id);

@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import { UserProfile, CompanyProfile } from '../types';
 import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 // Profile subcomponents
 import ProfileHeader from '../components/profile/ProfileHeader';
@@ -25,6 +26,7 @@ interface ProfileProps {
 const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode, toggleTheme }) => {
   const navigate = useNavigate();
   const toast = useToast();
+  const confirm = useConfirm();
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -210,23 +212,28 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
   };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar permanentemente tu cuenta? Esta acción no se puede deshacer.')) {
-      setLoading(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('profiles').delete().eq('id', user.id);
-          const { error } = await supabase.auth.signOut();
-          if (error) throw error;
-          toast.success('Cuenta eliminada con éxito.');
-          navigate('/');
-        }
-      } catch (err: any) {
-        console.error('Error deleting account:', err);
-        toast.error('Error al eliminar la cuenta: ' + err.message);
-      } finally {
-        setLoading(false);
+    const ok = await confirm({
+      title: 'Eliminar cuenta',
+      message: '¿Estás seguro de que deseas eliminar permanentemente tu cuenta? Esta acción no se puede deshacer.',
+      confirmLabel: 'Sí, eliminar',
+      danger: true,
+    });
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').delete().eq('id', user.id);
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        toast.success('Cuenta eliminada con éxito.');
+        navigate('/');
       }
+    } catch (err: any) {
+      toast.error('Error al eliminar la cuenta: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 

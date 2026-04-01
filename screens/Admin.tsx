@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 import Navbar from '../components/Navbar';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import DocumentEditor from '../components/DocumentEditor';
@@ -23,6 +24,7 @@ import { AdminUserProfile, AdminDocument, SupportTicket, WasteItem, AdminPath } 
 const Admin: React.FC = () => {
     const navigate = useNavigate();
     const toast = useToast();
+    const confirm = useConfirm();
     const [users, setUsers] = useState<AdminUserProfile[]>([]);
     const [pendingDocs, setPendingDocs] = useState<AdminDocument[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
@@ -245,7 +247,13 @@ const Admin: React.FC = () => {
     };
 
     const handleDeleteDocument = async (doc: AdminDocument) => {
-        if (!window.confirm('¿Estás seguro de que deseas eliminar este documento? Esta acción es irreversible.')) return;
+        const ok = await confirm({
+            title: 'Eliminar documento',
+            message: '¿Estás seguro de que deseas eliminar este documento? Esta acción es irreversible.',
+            confirmLabel: 'Sí, eliminar',
+            danger: true,
+        });
+        if (!ok) return;
         try {
             if (doc.type === 'CR' && doc.metadata?.waste_details) {
                 const totalWeight = doc.metadata.waste_details.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0);

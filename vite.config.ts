@@ -16,6 +16,14 @@ export default defineConfig(({ mode }) => {
         }
       },
       build: {
+        // Strip console.log/warn/error in production builds
+        minify: 'terser',
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+          },
+        },
         rollupOptions: {
           output: {
             manualChunks: {

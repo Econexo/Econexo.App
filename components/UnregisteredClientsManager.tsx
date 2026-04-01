@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 export interface UnregisteredClient {
     id: string; // The ID of the document storing the metadata
@@ -20,6 +21,7 @@ interface Props {
 
 const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, onGenerateCGM }) => {
     const toast = useToast();
+    const confirm = useConfirm();
     const [clients, setClients] = useState<UnregisteredClient[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -103,7 +105,13 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('¿Seguro que deseas eliminar este cliente manual? Se perderá el acceso rápido a la generación de sus documentos, pero los documentos ya emitidos no se eliminarán.')) return;
+        const ok = await confirm({
+            title: 'Eliminar cliente manual',
+            message: '¿Seguro que deseas eliminar este cliente? Se perderá el acceso rápido a la generación de sus documentos, pero los documentos ya emitidos no se eliminarán.',
+            confirmLabel: 'Sí, eliminar',
+            danger: true,
+        });
+        if (!ok) return;
         
         try {
             const { error } = await supabase.from('documents').delete().eq('id', id);
@@ -116,7 +124,12 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
 
     const handleLinkAccount = async () => {
         if (!linkingClient || !selectedUserIdToLink) return;
-        if (!window.confirm('¿Estás seguro de vincular todo el historial de este cliente manual a la cuenta registrada seleccionada? Esta acción no se puede deshacer.')) return;
+        const ok2 = await confirm({
+            title: 'Vincular historial',
+            message: '¿Estás seguro de vincular todo el historial de este cliente manual a la cuenta registrada seleccionada? Esta acción no se puede deshacer.',
+            confirmLabel: 'Sí, vincular',
+        });
+        if (!ok2) return;
 
         setLinking(true);
         try {

@@ -1,19 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { ToastProvider } from './components/ui/Toast';
+import { ConfirmProvider } from './components/ui/ConfirmDialog';
+import { supabase } from './services/supabase';
+
+// Eager-loaded (needed immediately on first render)
 import Login from './screens/Login';
 import ForgotPassword from './screens/ForgotPassword';
 import ResetPassword from './screens/ResetPassword';
-import Dashboard from './screens/Dashboard';
-import Documents from './screens/Documents';
-import News from './screens/News';
-import Impact from './screens/Impact';
-import Notifications from './screens/Notifications';
-import Profile from './screens/Profile';
-import Analyze from './screens/Analyze';
-import Chat from './screens/Chat';
-import Admin from './screens/Admin';
-import Rewards from './screens/Rewards';
-import { supabase } from './services/supabase';
+
+// Lazy-loaded (only loaded when the user navigates to that route)
+const Dashboard    = lazy(() => import('./screens/Dashboard'));
+const Documents    = lazy(() => import('./screens/Documents'));
+const News         = lazy(() => import('./screens/News'));
+const Impact       = lazy(() => import('./screens/Impact'));
+const Notifications = lazy(() => import('./screens/Notifications'));
+const Profile      = lazy(() => import('./screens/Profile'));
+const Analyze      = lazy(() => import('./screens/Analyze'));
+const Chat         = lazy(() => import('./screens/Chat'));
+const Admin        = lazy(() => import('./screens/Admin'));
+const Rewards      = lazy(() => import('./screens/Rewards'));
+
+const PageLoader = () => (
+  <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950 flex items-center justify-center">
+    <span className="animate-spin material-symbols-outlined text-primary text-5xl">progress_activity</span>
+  </div>
+);
 
 const AppRoutes: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -42,7 +54,6 @@ const AppRoutes: React.FC = () => {
   };
 
   useEffect(() => {
-    // Comprobar sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
       if (session?.user) {
@@ -53,13 +64,11 @@ const AppRoutes: React.FC = () => {
       }
     });
 
-    // Check admin status
     const checkAdmin = async (userId: string) => {
       const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', userId).single();
       setIsAdmin(!!profile?.is_admin);
     };
 
-    // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setIsAuthenticated(!!session);
       if (session?.user) {
@@ -71,7 +80,6 @@ const AppRoutes: React.FC = () => {
         setIsLeyRepUser(session.user.user_metadata.ley_rep_declared);
       }
 
-      // Si el evento es recuperación de contraseña, redirigimos ESPECÍFICAMENTE a reset-password
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
       }
@@ -85,32 +93,29 @@ const AppRoutes: React.FC = () => {
   };
 
   if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-background-dark flex items-center justify-center">
-        <span className="animate-spin material-symbols-outlined text-primary text-5xl">progress_activity</span>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden transition-colors duration-300">
-      <Routes>
-        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLogin={() => setIsAuthenticated(true)} onLeyRepChange={handleToggleLeyRep} currentLeyRep={isLeyRepUser} />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        {/* Authenticated routes — desktop shifts content to accommodate the xl sidebar */}
-        <Route path="/dashboard" element={isAuthenticated ? <div className="lg:ml-64"><Dashboard isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
-        <Route path="/documents" element={isAuthenticated ? <div className="lg:ml-64"><Documents /></div> : <Navigate to="/" />} />
-        <Route path="/news" element={isAuthenticated ? <div className="lg:ml-64"><News /></div> : <Navigate to="/" />} />
-        <Route path="/impact" element={isAuthenticated ? <div className="lg:ml-64"><Impact isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
-        <Route path="/notifications" element={isAuthenticated ? <div className="lg:ml-64"><Notifications /></div> : <Navigate to="/" />} />
-        <Route path="/profile" element={isAuthenticated ? <div className="lg:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
-        <Route path="/analyze" element={isAuthenticated ? <div className="lg:ml-64"><Analyze /></div> : <Navigate to="/" />} />
-        <Route path="/chat" element={isAuthenticated ? <div className="lg:ml-64"><Chat /></div> : <Navigate to="/" />} />
-        <Route path="/admin" element={isAuthenticated && isAdmin ? <div className="lg:ml-64"><Admin /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
-        <Route path="/rewards" element={isAuthenticated ? <div className="lg:ml-64"><Rewards /></div> : <Navigate to="/" />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLogin={() => setIsAuthenticated(true)} onLeyRepChange={handleToggleLeyRep} currentLeyRep={isLeyRepUser} />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/dashboard"     element={isAuthenticated ? <div className="lg:ml-64"><Dashboard isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
+          <Route path="/documents"     element={isAuthenticated ? <div className="lg:ml-64"><Documents /></div> : <Navigate to="/" />} />
+          <Route path="/news"          element={isAuthenticated ? <div className="lg:ml-64"><News /></div> : <Navigate to="/" />} />
+          <Route path="/impact"        element={isAuthenticated ? <div className="lg:ml-64"><Impact isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
+          <Route path="/notifications" element={isAuthenticated ? <div className="lg:ml-64"><Notifications /></div> : <Navigate to="/" />} />
+          <Route path="/profile"       element={isAuthenticated ? <div className="lg:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
+          <Route path="/analyze"       element={isAuthenticated ? <div className="lg:ml-64"><Analyze /></div> : <Navigate to="/" />} />
+          <Route path="/chat"          element={isAuthenticated ? <div className="lg:ml-64"><Chat /></div> : <Navigate to="/" />} />
+          <Route path="/admin"         element={isAuthenticated && isAdmin ? <div className="lg:ml-64"><Admin /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
+          <Route path="/rewards"       element={isAuthenticated ? <div className="lg:ml-64"><Rewards /></div> : <Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 };
@@ -118,11 +123,13 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <AppRoutes />
+      <ToastProvider>
+        <ConfirmProvider>
+          <AppRoutes />
+        </ConfirmProvider>
+      </ToastProvider>
     </Router>
   );
 };
-
-// Force Rebuild 2026-02-09
 
 export default App;
