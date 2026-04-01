@@ -1345,3 +1345,222 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         doc.save(`CGM_${client.company_name.replace(/\s+/g, '_')}_${month}_${year}.pdf`);
     }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// generateCommunityCR — Certificado de Retiro Comunitario
+// ─────────────────────────────────────────────────────────────────────────────
+interface CommunityData {
+    community_name: string;
+    sector: string;
+    participants_count?: number;
+}
+
+export const generateCommunityCR = (
+    community: CommunityData,
+    items: WasteItem[],
+    certificateNumber: string,
+    action: 'save' | 'preview' = 'save',
+    customDate?: string
+) => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const ml = 15;
+    const mr = pageWidth - 15;
+
+    // ── FECHA ──
+    const emissionDate = customDate ? new Date(customDate + 'T12:00:00') : new Date();
+    const dd = String(emissionDate.getDate()).padStart(2, '0');
+    const mm = String(emissionDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(emissionDate.getFullYear());
+
+    // ── WATERMARK ──
+    if (ECONEXO_WATERMARK) {
+        try {
+            doc.saveGraphicsState();
+            doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
+            const wmW = 85;
+            const wmH = wmW / 0.653;
+            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmW) / 2, (pageHeight - wmH) / 2 + 10, wmW, wmH);
+            doc.restoreGraphicsState();
+        } catch (e) { }
+    }
+
+    // ── LOGO top-left ──
+    const logoToUse = ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
+    if (logoToUse) {
+        try {
+            const logoW = 58;
+            const logoH = logoW / 4.89;
+            doc.addImage(logoToUse, 'PNG', ml, 6, logoW, logoH);
+        } catch (e) {
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(22, 163, 74);
+            doc.text('EcoNexo', ml, 14);
+        }
+    }
+
+    // ── DATE BOXES top-right ──
+    const cellW = 15, cellH = 7;
+    const dbX = mr - cellW * 3;
+    const dbY = 8;
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+
+    ['Día', 'Mes', 'Año'].forEach((label, i) => {
+        doc.rect(dbX + i * cellW, dbY, cellW, cellH);
+        doc.text(label, dbX + i * cellW + cellW / 2, dbY + 4.5, { align: 'center' });
+    });
+    [dd, mm, yyyy].forEach((val, i) => {
+        doc.rect(dbX + i * cellW, dbY + cellH, cellW, cellH);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(val), dbX + i * cellW + cellW / 2, dbY + cellH + 4.5, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+    });
+
+    // ── ECONEXO INFO ──
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(50, 50, 50);
+    const ecoLines = [
+        'EcoNexo SpA',
+        '77.855.394-5',
+        'Servicios Ambientales, consultorías en gestión de residuos y capacitaciones',
+        '14 de Febrero #2534',
+        '+569 35626886',
+    ];
+    ecoLines.forEach((line, i) => doc.text(line, ml, 24 + i * 4.5));
+
+    // ── Certificate Number ──
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.text(certificateNumber, mr, 28, { align: 'right' });
+
+    // ── COMMUNITY INFO TABLE ──
+    const clientTableY = 50;
+    const labelW = 35;
+    const valueW = mr - ml - labelW;
+    const rowH = 7;
+    const communityRows: { label: string; value: string }[] = [
+        { label: 'Comunidad/Barrio:', value: community.community_name },
+        { label: 'Sector/Ubicación:', value: community.sector },
+    ];
+    if (community.participants_count && community.participants_count > 0) {
+        communityRows.push({ label: 'N° Participantes:', value: String(community.participants_count) });
+    }
+
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(0, 0, 0);
+    communityRows.forEach((row, i) => {
+        const y = clientTableY + i * rowH;
+        doc.rect(ml, y, labelW, rowH);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text(row.label, ml + 2, y + 4.6);
+        doc.rect(ml + labelW, y, valueW, rowH);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(row.value).substring(0, 55), ml + labelW + 3, y + 4.6);
+    });
+
+    // ── TITLE ──
+    const titleY = clientTableY + communityRows.length * rowH + 12;
+    const titleText = 'CERTIFICADO DE RETIRO COMUNITARIO';
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(titleText, pageWidth / 2, titleY, { align: 'center' });
+    const tw = doc.getTextWidth(titleText);
+    doc.setLineWidth(0.4);
+    doc.line((pageWidth - tw) / 2, titleY + 1, (pageWidth + tw) / 2, titleY + 1);
+
+    // ── MATERIALS TABLE ──
+    const tableStartY = titleY + 8;
+    const fmtQty = (n: number) => Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    const receptionStr = `${dd}-${mm}-${yyyy}`;
+
+    const tableBody = items.map((item, idx) => {
+        const type = (item.waste_type || (item as any).type || '').trim();
+        const desc = (item.description || '').trim();
+        const materialText = (type && desc && type.toLowerCase() !== desc.toLowerCase())
+            ? `${type} - ${desc}`
+            : (type || desc);
+        return [
+            String(idx + 1),
+            materialText.toUpperCase(),
+            idx === 0 ? receptionStr : '',
+            fmtQty(Number(item.quantity) || 0),
+        ];
+    });
+    tableBody.push(['', '', 'Total', fmtQty(totalQty)]);
+
+    autoTable(doc, {
+        startY: tableStartY,
+        head: [['ITEM', 'MATERIAL', 'RECEPCIÓN', 'CANTIDAD (Kg)']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [180, 220, 185], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0] },
+        bodyStyles: { fontSize: 9, textColor: [0, 0, 0], halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0], fillColor: [255, 255, 255] },
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 72, halign: 'left' }, 2: { cellWidth: 38 }, 3: { cellWidth: 40 } },
+        margin: { left: ml, right: 15 },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY;
+
+    // ── LEGAL TEXT ──
+    const legalStartY = finalY + 10;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    doc.text('Se establece que:', ml, legalStartY);
+
+    const legalBody = '-El material recolectado por EcoNexo, abarcando tanto residuos de origen domiciliario como no domiciliario, es cuidadosamente entregado a puntos de acopio gestionados por operadores autorizados. Este proceso asegura un traslado responsable hacia Santiago, donde el material es sometido a procesos de tratamiento y reciclaje adecuados.';
+    const splitLegal = doc.splitTextToSize(legalBody, mr - ml);
+    doc.text(splitLegal, ml, legalStartY + 5.5);
+
+    // ── TRANSPORT ──
+    const transportY = legalStartY + 5.5 + splitLegal.length * 4 + 3;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Transporte Autorizado por Ministerio de Salud', ml, transportY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESOLUCIÓN N° : 2402341155', ml, transportY + 5);
+
+    // ── SIGNATURES ──
+    const sigY = transportY + 68;
+
+    if (ECONEXO_SIGNATURE) {
+        try {
+            const sigW = 60;
+            const sigH = sigW / 1.103;
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml + 35 - sigW / 2, sigY - sigH, sigW, sigH);
+        } catch (e) { }
+    }
+
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(0, 0, 0);
+    doc.line(ml, sigY, ml + 70, sigY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text('SEBASTIAN FRIAS THOMPSON', ml + 35, sigY + 5, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text('GERENTE ECONEXO', ml + 35, sigY + 9, { align: 'center' });
+
+    const sigRX = mr - 70;
+    doc.line(sigRX, sigY, mr, sigY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPRESENTANTE COMUNIDAD', sigRX + 35, sigY + 5, { align: 'center' });
+
+    // ── ACTION ──
+    if (action === 'preview') {
+        window.open(doc.output('bloburl'), '_blank');
+    } else {
+        doc.save(`CRC_${community.community_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\/]/g, '_')}.pdf`);
+    }
+};

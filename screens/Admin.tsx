@@ -5,6 +5,7 @@ import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import Navbar from '../components/Navbar';
 import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
+import CommunityWithdrawalsManager from '../components/CommunityWithdrawalsManager';
 import DocumentEditor from '../components/DocumentEditor';
 import { createNotification } from '../services/notificationService';
 import ClientOverviewModal from '../components/ClientOverviewModal';
@@ -40,6 +41,7 @@ const Admin: React.FC = () => {
     const [showClientOverview, setShowClientOverview] = useState(false);
     const [showUnregisteredClients, setShowUnregisteredClients] = useState(false);
     const [showFixCerts, setShowFixCerts] = useState(false);
+    const [showCommunityManager, setShowCommunityManager] = useState(false);
     const [clientOverviewUser, setClientOverviewUser] = useState<AdminUserProfile | null>(null);
 
     // CR modal state
@@ -452,6 +454,10 @@ const Admin: React.FC = () => {
                         <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 border border-blue-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">cloud_upload</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento</span>
                     </button>
+                    <button onClick={() => setShowCommunityManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
+                        <div className="size-10 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">nature_people</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-green-600 transition-colors">Retiros Comunitarios</span>
+                    </button>
                     <button onClick={() => setShowFixCerts(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
                         <div className="size-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 border border-orange-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">build</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-500 transition-colors">Corregir Fechas / Direcciones</span>
@@ -525,6 +531,13 @@ const Admin: React.FC = () => {
                 <FixCertificatesModal
                     onClose={() => setShowFixCerts(false)}
                     onDataFixed={fetchAdminData}
+                />
+            )}
+
+            {/* Community Withdrawals Manager */}
+            {showCommunityManager && (
+                <CommunityWithdrawalsManager
+                    onClose={() => setShowCommunityManager(false)}
                 />
             )}
         </div>
