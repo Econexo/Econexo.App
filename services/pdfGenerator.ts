@@ -191,7 +191,7 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     doc.text('RESOLUCIÓN N° : 2402341155', ml, transportY + 5);
 
     // ── SIGNATURES ──
-    const sigY = transportY + 40; // moved down for breathing room
+    const sigY = transportY + 68; // enough space so 54mm-tall signature sits fully above line
 
     // Signature image (376×341 → ratio 1.103) — larger, tight above line
     if (ECONEXO_SIGNATURE) {
