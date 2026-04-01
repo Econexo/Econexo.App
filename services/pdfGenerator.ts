@@ -142,22 +142,31 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
     const receptionStr = `${dd}-${mm}-${yyyy}`;
 
-    const tableBody = items.map((item, idx) => [
-        String(idx + 1),
-        (item.waste_type || (item as any).type || item.description || '').toUpperCase(),
-        idx === 0 ? receptionStr : '',
-        fmtQty(Number(item.quantity) || 0),
-    ]);
+    const tableBody = items.map((item, idx) => {
+        const type = (item.waste_type || (item as any).type || '').trim();
+        const desc = (item.description || '').trim();
+        // Show type + description together, avoid duplicating if they're the same
+        const materialText = (type && desc && type.toLowerCase() !== desc.toLowerCase())
+            ? `${type} - ${desc}`
+            : (type || desc);
+        return [
+            String(idx + 1),
+            materialText.toUpperCase(),
+            idx === 0 ? receptionStr : '',
+            fmtQty(Number(item.quantity) || 0),
+        ];
+    });
     tableBody.push(['', '', 'Total', fmtQty(totalQty)]);
 
+    // Light green header: approximates EcoNexo logo green palette
     autoTable(doc, {
         startY: tableStartY,
         head: [['ITEM', 'MATERIAL', 'RECEPCIÓN', 'CANTIDAD (Kg)']],
         body: tableBody,
         theme: 'grid',
-        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0] },
+        headStyles: { fillColor: [180, 220, 185], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0] },
         bodyStyles: { fontSize: 9, textColor: [0, 0, 0], halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0], fillColor: [255, 255, 255] },
-        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 72, halign: 'center' }, 2: { cellWidth: 38 }, 3: { cellWidth: 40 } },
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 72, halign: 'left' }, 2: { cellWidth: 38 }, 3: { cellWidth: 40 } },
         margin: { left: ml, right: 15 },
     });
 
@@ -182,14 +191,15 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     doc.text('RESOLUCIÓN N° : 2402341155', ml, transportY + 5);
 
     // ── SIGNATURES ──
-    const sigY = transportY + 28;
+    const sigY = transportY + 38; // moved down for breathing room
 
-    // Signature image (376×341 → ratio 1.103)
+    // Signature image (376×341 → ratio 1.103) — small, tight above line
     if (ECONEXO_SIGNATURE) {
         try {
-            const sigW = 40;
-            const sigH = sigW / 1.103; // ~36mm - correct aspect ratio
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml + 35 - sigW / 2, sigY - sigH + 2, sigW, sigH);
+            const sigW = 30;
+            const sigH = sigW / 1.103; // ~27mm
+            // Position bottom edge 1mm above the signature line
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml + 35 - sigW / 2, sigY - sigH - 1, sigW, sigH);
         } catch (e) { /* signature optional */ }
     }
 
