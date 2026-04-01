@@ -191,15 +191,15 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     doc.text('RESOLUCIÓN N° : 2402341155', ml, transportY + 5);
 
     // ── SIGNATURES ──
-    const sigY = transportY + 38; // moved down for breathing room
+    const sigY = transportY + 40; // moved down for breathing room
 
-    // Signature image (376×341 → ratio 1.103) — small, tight above line
+    // Signature image (376×341 → ratio 1.103) — larger, tight above line
     if (ECONEXO_SIGNATURE) {
         try {
-            const sigW = 30;
-            const sigH = sigW / 1.103; // ~27mm
-            // Position bottom edge 1mm above the signature line
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml + 35 - sigW / 2, sigY - sigH - 1, sigW, sigH);
+            const sigW = 60; // doubled from 30mm
+            const sigH = sigW / 1.103; // ~54mm
+            // Position bottom edge touching the signature line
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml + 35 - sigW / 2, sigY - sigH, sigW, sigH);
         } catch (e) { /* signature optional */ }
     }
 
