@@ -9,6 +9,8 @@ interface CompanyData {
     company_name: string;
     rut: string;
     address: string;
+    contact_name?: string;
+    contact_email?: string;
 }
 
 interface WasteItem {
@@ -19,190 +21,226 @@ interface WasteItem {
 }
 
 export const generateCR = (client: CompanyData, items: WasteItem[], certificateNumber: string, action: 'save' | 'preview' = 'save', customDate?: string) => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth  = doc.internal.pageSize.getWidth();  // 210mm
+    const pageHeight = doc.internal.pageSize.getHeight(); // 297mm
+    const ml = 15;        // margin left
+    const mr = pageWidth - 15; // margin right = 195mm
 
-    // Add Faded Watermark
+    // ── WATERMARK ──────────────────────────────────────────────
     if (ECONEXO_WATERMARK) {
         try {
             doc.saveGraphicsState();
-            doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
-            // Increased size by 50% (from 80x100 to 120x150)
-            const imgWidth = 120;
-            const imgHeight = 150;
-            const x = (pageWidth - imgWidth) / 2;
-            const y = (pageHeight - imgHeight) / 2 + 10;
-            doc.addImage(ECONEXO_WATERMARK, 'PNG', x, y, imgWidth, imgHeight);
+            doc.setGState(new (doc as any).GState({ opacity: 0.07 }));
+            const wmW = 130, wmH = 130;
+            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmW) / 2, (pageHeight - wmH) / 2 - 10, wmW, wmH);
             doc.restoreGraphicsState();
-        } catch (e) {
-            console.error("Watermark error:", e);
-        }
+        } catch (_) {}
     }
 
-    // Header - Econexo Branding
-    doc.setFillColor(16, 185, 129);
-    doc.rect(0, 0, pageWidth, 45, 'F');
-
-    // Set text to white and bold for the entire header
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-
-    // Add Logo
+    // ── LOGO (top-left) ────────────────────────────────────────
     if (ECONEXO_LOGO) {
         try {
-            // Restore original proportions and slightly higher position
-            doc.addImage(ECONEXO_LOGO, 'PNG', 14, 5, 48, 13);
-        } catch (e) {
-            console.error("Logo error:", e);
-            doc.setFontSize(22);
-            doc.text('ECONEXO', 14, 22);
+            doc.addImage(ECONEXO_LOGO, 'PNG', ml, 8, 58, 20);
+        } catch (_) {
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(22, 163, 74);
+            doc.text('EcoNexo', ml, 20);
         }
-    } else {
-        doc.setFontSize(22);
-        doc.text('ECONEXO', 14, 22);
     }
 
+    // ── DATE BOX (top-right, 3 cells: Día | Mes | Año) ────────
+    const emissionDate = customDate ? new Date(customDate + 'T12:00:00') : new Date();
+    const dd   = String(emissionDate.getDate()).padStart(2, '0');
+    const mmN  = String(emissionDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(emissionDate.getFullYear());
+
+    const cellW = 15, cellH = 7;
+    const dbX = mr - cellW * 3; // date-box origin X
+    const dbY = 8;
+
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    // Move text up to maintain distance from logo and clear bottom space
-    doc.text('EcoNexo SpA | RUT: 77.855.394-5', 14, 22);
-    doc.text('Servicios Ambientales, consultorías en gestión de residuos y capacitaciones', 14, 27);
-    doc.text('14 de Febrero #2534, Antofagasta | +569 35626886', 14, 32);
-    doc.text('econexo.hub@gmail.com', 14, 37);
+    doc.setTextColor(0, 0, 0);
 
-    doc.setFontSize(12);
-    // Display only the number passed from admin (e.g. "CR N°:001")
-    doc.text(certificateNumber, pageWidth - 14, 22, { align: 'right' });
+    // Header row
+    ['Día', 'Mes', 'Año'].forEach((label, i) => {
+        doc.rect(dbX + i * cellW, dbY, cellW, cellH);
+        doc.text(label, dbX + i * cellW + cellW / 2, dbY + 4.5, { align: 'center' });
+    });
+    // Value row
+    [dd, mmN, yyyy].forEach((val, i) => {
+        doc.rect(dbX + i * cellW, dbY + cellH, cellW, cellH);
+        doc.setFont('helvetica', 'normal');
+        doc.text(val, dbX + i * cellW + cellW / 2, dbY + cellH + 4.5, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+    });
 
-    doc.setFontSize(9);
-    const emissionDate = customDate ? new Date(customDate + 'T12:00:00') : new Date(); // Add time to avoid timezone shift
-    doc.text(`Fecha Emisión: ${emissionDate.toLocaleDateString()}`, pageWidth - 14, 30, { align: 'right' });
+    // ── ECONEXO INFO BLOCK ────────────────────────────────────
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(50, 50, 50);
+    const ecoLines = [
+        'EcoNexo SpA',
+        '77.855.394-5',
+        'Servicios Ambientales, consultorías en gestión de residuos y capacitaciones',
+        '14 de Febrero #2534',
+        '+569 35626886',
+    ];
+    ecoLines.forEach((line, i) => doc.text(line, ml, 36 + i * 4.5));
 
-    // Certificate Title
-    doc.setTextColor(31, 41, 55);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Certificado de Recepción de Residuos', pageWidth / 2, 60, { align: 'center' });
+    // ── CLIENT INFO TABLE ─────────────────────────────────────
+    const clientTableY = 62;
+    const labelW = 28;
+    const valueW = mr - ml - labelW;
+    const rowH   = 7;
+    const clientRows = [
+        { label: 'Señor(es):', value: client.company_name || '' },
+        { label: 'Rut:',       value: client.rut || '' },
+        { label: 'Dirección:', value: client.address || '' },
+        { label: 'Contacto:',  value: (client as any).contact_name || '' },
+        { label: 'Correo:',    value: (client as any).contact_email || '' },
+    ];
 
-    // Client Info Section
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(0, 0, 0);
+    clientRows.forEach((row, i) => {
+        const y = clientTableY + i * rowH;
+        // Label cell
+        doc.rect(ml, y, labelW, rowH);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text(row.label, ml + 2, y + 4.6);
+        // Value cell
+        doc.rect(ml + labelW, y, valueW, rowH);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(row.value), ml + labelW + 3, y + 4.6);
+    });
+
+    // ── TITLE ─────────────────────────────────────────────────
+    const titleY = clientTableY + clientRows.length * rowH + 12;
+    const titleText = 'CERTIFICADO DE RECEPCIÓN DE MATERIAL';
     doc.setFontSize(11);
-    doc.setTextColor(75, 85, 99);
-    doc.text('DATOS DEL CLIENTE', 14, 75);
-
-    doc.setDrawColor(229, 231, 235);
-    doc.line(14, 78, pageWidth - 14, 78);
-
-    doc.setTextColor(31, 41, 55);
     doc.setFont('helvetica', 'bold');
-    doc.text('Razón Social:', 14, 88);
-    doc.setFont('helvetica', 'normal');
-    doc.text(client.company_name, 50, 88);
+    doc.setTextColor(0, 0, 0);
+    doc.text(titleText, pageWidth / 2, titleY, { align: 'center' });
+    // Underline
+    const tw = doc.getTextWidth(titleText);
+    doc.setLineWidth(0.4);
+    doc.line((pageWidth - tw) / 2, titleY + 1, (pageWidth + tw) / 2, titleY + 1);
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('RUT:', 14, 96);
-    doc.setFont('helvetica', 'normal');
-    doc.text(client.rut, 50, 96);
+    // ── MATERIALS TABLE ───────────────────────────────────────
+    const tableStartY = titleY + 8;
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('Dirección:', 14, 104);
-    doc.setFont('helvetica', 'normal');
-    doc.text(client.address, 50, 104);
-
-    // Waste Table
-    // Smart formatter: no trailing zeros, max 2 decimals
     const fmtQty = (n: number): string => {
         if (Number.isInteger(n)) return n.toString();
-        const rounded = Math.round(n * 100) / 100;
-        return rounded.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        return (Math.round(n * 100) / 100).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     };
 
-    const tableBody = items.map(item => [
-        item.waste_type || (item as any).type,
-        item.description,
-        fmtQty(Number(item.quantity) || 0),
-        item.unit
-    ]);
-    const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
-    // Add Total Row
-    tableBody.push(['', 'TOTAL', fmtQty(totalQuantity), 'Kg']);
+    const receptionStr = emissionDate
+        .toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        .replace(/\//g, '-');
+
+    const tableBody: string[][] = items.map((item, idx) => [
+        String(idx + 1),
+        (item.waste_type || (item as any).type || '').toUpperCase(),
+        idx === 0 ? receptionStr : '',
+        fmtQty(Number(item.quantity) || 0),
+    ]);
+    tableBody.push(['', '', 'Total', fmtQty(totalQty)]);
 
     autoTable(doc, {
-        startY: 115,
-        head: [['Tipo de Residuo', 'Descripción', 'Cantidad', 'Unidad']],
+        startY: tableStartY,
+        head: [['ITEM', 'MATERIAL', 'RECEPCIÓN', 'CANTIDAD (Kg)']],
         body: tableBody,
+        theme: 'grid',
         headStyles: {
-            fillColor: [16, 185, 129],
-            textColor: [255, 255, 255],
-            fontSize: 10,
-            fontStyle: 'bold'
+            fillColor: [255, 255, 255],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold',
+            fontSize: 9,
+            halign: 'center',
+            lineWidth: 0.3,
+            lineColor: [0, 0, 0],
         },
         bodyStyles: {
             fontSize: 9,
-            textColor: [31, 41, 55]
+            textColor: [0, 0, 0],
+            halign: 'center',
+            lineWidth: 0.3,
+            lineColor: [0, 0, 0],
+            fillColor: [255, 255, 255],
         },
-        footStyles: {
-            fillColor: [243, 244, 246],
-            textColor: [31, 41, 55],
-            fontStyle: 'bold'
+        columnStyles: {
+            0: { cellWidth: 20 },
+            1: { cellWidth: 72, halign: 'center' },
+            2: { cellWidth: 38 },
+            3: { cellWidth: 40 },
         },
-        alternateRowStyles: {
-            fillColor: [249, 250, 251]
-        },
-        margin: { left: 14, right: 14 },
+        margin: { left: ml, right: 15 },
+        alternateRowStyles: { fillColor: [255, 255, 255] },
         didParseCell: (data) => {
             if (data.row.index === tableBody.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
-                if (data.column.index >= 1) {
-                    data.cell.styles.fillColor = [229, 231, 235];
-                }
             }
-        }
+        },
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 20;
+    const finalY = (doc as any).lastAutoTable.finalY;
 
-    // Declarations
+    // ── LEGAL TEXT ────────────────────────────────────────────
+    const legalStartY = finalY + 10;
     doc.setFontSize(9);
-    doc.setTextColor(107, 114, 128);
-    const msg = 'Econexo certifica que los residuos anteriormente detallados han sido recibidos de acuerdo a la normativa ambiental vigente y serán procesados para su correcta valorización o disposición final.';
-    const splitMsg = doc.splitTextToSize(msg, pageWidth - 28);
-    doc.text(splitMsg, 14, finalY);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    doc.text('Se establece que:', ml, legalStartY);
 
-    const msg2 = 'Se establece que:\nEl material recolectado por EcoNexo, abarcando tanto residuos de origen domiciliario como no domiciliario, es cuidadosamente entregado a puntos de acopio gestionados por operadores autorizados. Este proceso asegura un traslado responsable hacia Santiago, donde el material es sometido a procesos de tratamiento y reciclaje adecuados.';
-    const splitMsg2 = doc.splitTextToSize(msg2, pageWidth - 28);
-    doc.text(splitMsg2, 14, finalY + (splitMsg.length * 5) + 2);
+    const legalBody = '-El material recolectado por EcoNexo, abarcando tanto residuos de origen domiciliario como no domiciliario, es cuidadosamente entregado a puntos de acopio gestionados por operadores autorizados. Este proceso asegura un traslado responsable hacia Santiago, donde el material es sometido a procesos de tratamiento y reciclaje adecuados.';
+    const splitLegal = doc.splitTextToSize(legalBody, mr - ml);
+    doc.text(splitLegal, ml, legalStartY + 5.5);
 
-    // Signatures
-    const sigY = finalY + (splitMsg.length * 5) + (splitMsg2.length * 5) + 35;
+    // ── TRANSPORT AUTHORIZATION ───────────────────────────────
+    const transportY = legalStartY + 5.5 + splitLegal.length * 4.5 + 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Transporte Autorizado por Ministerio de Salud', ml, transportY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESOLUCIÓN N° : 2402341155', ml, transportY + 5);
 
-    // Add EcoNexo Signature Image
+    // ── SIGNATURES ────────────────────────────────────────────
+    const sigY = transportY + 28;
+
+    // Left: Sebastián Frías with signature image
     if (ECONEXO_SIGNATURE) {
         try {
-            // Centered over the first signature line (x=50)
-            // Width 50 centered at x=50 means starting at x=25
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', 25, sigY - 35, 50, 40);
-        } catch (e) {
-            console.error("PDF signature error:", e);
-        }
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', ml, sigY - 22, 52, 20);
+        } catch (_) {}
     }
-
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, sigY, 80, sigY);
-    doc.line(pageWidth - 80, sigY, pageWidth - 20, sigY);
-
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.line(ml, sigY, ml + 70, sigY);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.text('Firma Responsable Econexo', 50, sigY + 5, { align: 'center' });
-    doc.text('Firma Recepción Cliente', pageWidth - 50, sigY + 5, { align: 'center' });
+    doc.text('SEBASTIAN FRIAS THOMPSON', ml + 35, sigY + 5, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text('GERENTE ECONEXO', ml + 35, sigY + 9, { align: 'center' });
 
-    // Footer
-    addFooter(doc, pageWidth, pageHeight);
+    // Right: client signature line
+    const sigRX = mr - 70;
+    doc.line(sigRX, sigY, mr, sigY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FIRMA CLIENTE', sigRX + 35, sigY + 5, { align: 'center' });
 
-    // Action
+    // ── OUTPUT ────────────────────────────────────────────────
     if (action === 'preview') {
         window.open(doc.output('bloburl'), '_blank');
     } else {
-        doc.save(`CR_${client.company_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\/]/g, '_')}.pdf`);
+        doc.save(`CR_${client.company_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\\/]/g, '_')}.pdf`);
     }
 };
 

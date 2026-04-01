@@ -172,7 +172,13 @@ const Admin: React.FC = () => {
         const docTitle = `Certificado de Recepción ${certNumber}`;
 
         generateCR(
-            { company_name: selectedUser.company_name, rut: selectedUser.rut, address: selectedUser.address || 'Chile' },
+            {
+                company_name: selectedUser.company_name,
+                rut: selectedUser.rut,
+                address: selectedUser.address || 'Chile',
+                contact_name: (selectedUser as any).full_name || '',
+                contact_email: (selectedUser as any).company_email || '',
+            },
             wasteItems, certNumber, 'save', withdrawalDate
         );
 
