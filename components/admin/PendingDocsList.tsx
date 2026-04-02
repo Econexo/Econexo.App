@@ -28,26 +28,27 @@ const PendingDocsList: React.FC<PendingDocsListProps> = ({ docs, onValidate, onP
                                 <p className="font-bold text-sm truncate text-gray-900">{doc.title}</p>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">ID: {doc.user_id.slice(0, 8)}...</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="shrink-0 flex gap-1.5">
                                 <button
                                     onClick={() => onPreview(doc)}
-                                    className="size-9 bg-blue-50 text-blue-500 hover:bg-blue-100 rounded-xl flex items-center justify-center border border-blue-100 transition-colors"
+                                    className="size-8 bg-blue-50 text-blue-500 hover:bg-blue-100 rounded-xl flex items-center justify-center border border-blue-100 transition-colors"
                                     title="Previsualizar"
                                 >
-                                    <span className="material-symbols-outlined text-lg">visibility</span>
+                                    <span className="material-symbols-outlined text-base">visibility</span>
                                 </button>
                                 <button
                                     onClick={() => onValidate(doc.id)}
-                                    className="px-3 py-2 bg-primary text-background-dark rounded-xl text-[10px] font-black uppercase tracking-widest shadow-glow hover:brightness-110 transition-all"
+                                    className="size-8 bg-primary text-white rounded-xl flex items-center justify-center shadow-glow hover:brightness-110 transition-all"
+                                    title="Validar"
                                 >
-                                    Validar
+                                    <span className="material-symbols-outlined text-base">check_circle</span>
                                 </button>
                                 <button
                                     onClick={() => onDelete(doc)}
-                                    className="size-9 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
+                                    className="size-8 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
                                     title="Eliminar"
                                 >
-                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                    <span className="material-symbols-outlined text-base">delete</span>
                                 </button>
                             </div>
                         </div>

@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       {/* ─── MOBILE / TABLET: bottom bar (unchanged) ─── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-white/60 dark:border-white/10 pb-6 pt-3 px-6 z-50 flex justify-between items-center max-w-2xl mx-auto left-1/2 -translate-x-1/2 shadow-[0_-4px_20px_rgba(31,38,135,0.05)] transition-colors duration-300">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-white/60 dark:border-white/10 pb-6 pt-3 px-4 z-50 shadow-[0_-4px_20px_rgba(31,38,135,0.05)] transition-colors duration-300">
         <ul className="flex justify-between items-center w-full">
           {navItems.map((item) => (
             <li key={item.path} className="flex-1">

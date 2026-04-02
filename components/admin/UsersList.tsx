@@ -36,10 +36,10 @@ const UsersList: React.FC<UsersListProps> = ({ users, onViewClient, onShowUnregi
                         </div>
                         <button
                             onClick={() => onViewClient(u)}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors text-[10px] font-black uppercase tracking-wide"
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors text-[10px] font-black uppercase tracking-wide"
                         >
                             <span className="material-symbols-outlined text-base">manage_accounts</span>
-                            Ver Empresa
+                            <span className="hidden sm:inline">Ver Empresa</span>
                         </button>
                     </div>
                 ))}
