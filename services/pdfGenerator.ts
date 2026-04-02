@@ -1200,14 +1200,27 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     underlineText("De los cuales, se gestionó un total de:", margin, currentY);
     currentY += 8;
 
-    const categories: any = {
-        'Plásticos': { color: TABLE_YELLOW, textMain: [0, 0, 0], qty: 0, pct: 0 },
-        'Papel/Cartón': { color: TABLE_BLUE, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Aluminio': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Metales': { color: TABLE_GREY, textMain: [255, 255, 255], qty: 0, pct: 0 },
-        'Vidrio': { color: [100, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 },
-        'Otros': { color: [200, 200, 200], textMain: [0, 0, 0], qty: 0, pct: 0 }
-    };
+    // ── Complete material catalogue: color + text contrast + display label ──
+    // Order defines rendering priority in the table
+    const MATERIAL_DEFS: { key: string; label: string; color: number[]; textMain: number[] }[] = [
+        { key: 'Plásticos',    label: 'PLÁSTICOS',     color: [255, 225, 100], textMain: [0,   0,   0  ] }, // amarillo
+        { key: 'Papel/Cartón', label: 'PAPEL/CARTÓN',  color: [0,   85,  165], textMain: [255, 255, 255] }, // azul
+        { key: 'Vidrio',       label: 'VIDRIO',         color: [56,  142,  60], textMain: [255, 255, 255] }, // verde
+        { key: 'Metales',      label: 'METALES',        color: [120, 120, 120], textMain: [255, 255, 255] }, // gris
+        { key: 'Aluminio',     label: 'ALUMINIO',       color: [190, 190, 190], textMain: [0,   0,   0  ] }, // gris claro
+        { key: 'Madera',       label: 'MADERA',         color: [139,  90,  43], textMain: [255, 255, 255] }, // café
+        { key: 'Orgánicos',    label: 'ORGÁNICOS',      color: [ 93,  64,  55], textMain: [255, 255, 255] }, // café oscuro
+        { key: 'Neumáticos',   label: 'NEUMÁTICOS',     color: [ 33,  33,  33], textMain: [255, 255, 255] }, // negro
+        { key: 'Electrónicos', label: 'ELECTRÓNICOS',   color: [ 21, 101, 192], textMain: [255, 255, 255] }, // azul tech
+        { key: 'Peligrosos',   label: 'PELIGROSOS',     color: [198,  40,  40], textMain: [255, 255, 255] }, // rojo
+        { key: 'Aceites',      label: 'ACEITES',        color: [245, 127,  23], textMain: [0,   0,   0  ] }, // ámbar
+        { key: 'Textiles',     label: 'TEXTILES',       color: [106,  27, 154], textMain: [255, 255, 255] }, // morado
+        { key: 'Otros',        label: 'OTROS',          color: [200, 200, 200], textMain: [0,   0,   0  ] }, // gris claro
+    ];
+
+    // Build dynamic categories map
+    const categories: any = {};
+    MATERIAL_DEFS.forEach(d => { categories[d.key] = { ...d, qty: 0, pct: 0 }; });
 
     let totalKg = 0;
     items.forEach(i => {
@@ -1218,8 +1231,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         else categories['Otros'].qty += q;
     });
     if (totalKg === 0) totalKg = 1;
-    Object.keys(categories).forEach(k => {
-        categories[k].pct = (categories[k].qty / totalKg) * 100;
+    MATERIAL_DEFS.forEach(d => {
+        categories[d.key].pct = (categories[d.key].qty / totalKg) * 100;
     });
 
     const tX = margin;
@@ -1229,6 +1242,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const rowH = 10;
     const gap = 2;
 
+    // Table header
     doc.setFillColor(220, 220, 220);
     doc.rect(tX, currentY, col1, rowH, 'F');
     doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
@@ -1241,26 +1255,23 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
     currentY += rowH + gap;
 
-    const drawRow = (display: string, key: string) => {
-        const d = categories[key];
-        if (d.qty <= 0) return;
+    const drawRow = (def: typeof MATERIAL_DEFS[0]) => {
+        const d = categories[def.key];
+        if (!d || d.qty <= 0) return;
         doc.setFillColor(d.color[0], d.color[1], d.color[2]);
         doc.rect(tX, currentY, col1, rowH, 'F');
         doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
         doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
         doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
         doc.setFont('helvetica', 'bold');
-        doc.text(display, tX + col1 / 2, currentY + 7, { align: 'center' });
+        doc.text(def.label, tX + col1 / 2, currentY + 7, { align: 'center' });
         doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
         doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
         currentY += rowH + gap;
     };
 
-    drawRow("PLÁSTICOS", "Plásticos");
-    drawRow("CARTÓN/PAPEL", "Papel/Cartón");
-    drawRow("ALUMINIO", "Aluminio");
-    drawRow("METALES", "Metales");
-    if (categories['Vidrio'].qty > 0) drawRow("VIDRIO", "Vidrio");
+    // Render ALL materials that have qty > 0, in defined order
+    MATERIAL_DEFS.forEach(def => drawRow(def));
 
     doc.setFillColor(TABLE_LIGHT_GREY[0], TABLE_LIGHT_GREY[1], TABLE_LIGHT_GREY[2]);
     doc.rect(tX, currentY, col1, rowH, 'F');
@@ -1276,7 +1287,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const pieY = currentY - (rowH * 2) + 5;
     const radius = 18;
     let startAngle = -Math.PI / 2;
-    const activeCats = Object.keys(categories).filter(k => categories[k].pct > 0);
+    // Pie uses MATERIAL_DEFS order for consistent segment layout
+    const activeCats = MATERIAL_DEFS.map(d => d.key).filter(k => categories[k]?.pct > 0);
     if (activeCats.length === 0) {
         doc.setDrawColor(200);
         doc.circle(pieX, pieY, radius, 'S');
