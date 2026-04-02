@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2, ECONEXO_LOGO_CGM } from './constants';
+import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2, ECONEXO_LOGO_CGM, CGM_FOOTER_BAR } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
 interface CompanyData {
@@ -1339,49 +1339,23 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
     doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
 
-    // --- 7. FOOTER BAR ---
-    doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+    // --- 7. FOOTER BAR (reference image — exact match) ---
     const footerH = 14;
-    doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
-
-    doc.setTextColor(255);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-
-    const footerMidY = pageHeight - (footerH / 2);
-    const spacing = 65;
-    const startX = (pageWidth - (spacing * 2)) / 2 - 12;
-
-    doc.setDrawColor(255);
-    doc.setLineWidth(0.4);
-
-    // 1. Email Icon (Envelope)
-    const icon1X = startX - 5;
-    doc.rect(icon1X, footerMidY - 2, 6, 4);
-    doc.line(icon1X, footerMidY - 2, icon1X + 3, footerMidY);
-    doc.line(icon1X + 6, footerMidY - 2, icon1X + 3, footerMidY);
-    doc.text("Econexo.huh@gmail.com", startX + 3, footerMidY, { baseline: 'middle' });
-
-    // 2. Phone Slot (+569) - Globe Icon (Swapped here)
-    const phoneX = startX + spacing + 10;
-    const icon2X = phoneX - 5;
-    doc.circle(icon2X + 2.5, footerMidY, 2.5, 'S');
-    doc.line(icon2X, footerMidY, icon2X + 5, footerMidY);
-    doc.line(icon2X + 2.5, footerMidY - 2.5, icon2X + 2.5, footerMidY + 2.5);
-    doc.text("+569 35626886", phoneX + 2, footerMidY, { baseline: 'middle' });
-
-    // 3. Web Slot (econexo.cl) - Phone Icon V2 (Swapped here & Enlarged)
-    const webX = phoneX + spacing - 10;
-    const icon3X = webX - 7;
-    const iconRef = PHONE_ICON_V2 || PHONE_ICON;
-
-    if (iconRef) {
+    if (CGM_FOOTER_BAR) {
         try {
-            const pSize = 13; // 13mm size
-            doc.addImage(iconRef, 'PNG', icon3X - 2, footerMidY - (pSize / 2), pSize, pSize);
-        } catch (e) { }
+            // Image ratio: 1822×98 ≈ 18.59 — render full page width, proportional height
+            const imgH = pageWidth / (1822 / 98); // ~11.3mm
+            const imgY = pageHeight - imgH;
+            doc.addImage(CGM_FOOTER_BAR, 'PNG', 0, imgY, pageWidth, imgH);
+        } catch (e) {
+            // Fallback: plain green bar
+            doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+            doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
+        }
+    } else {
+        doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+        doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
     }
-    doc.text("econexo.cl", webX + 4, footerMidY, { baseline: 'middle' });
 
     if (ECONEXO_WATERMARK) {
         try {
