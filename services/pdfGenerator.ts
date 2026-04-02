@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2 } from './constants';
+import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2, ECONEXO_LOGO_CGM } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
 interface CompanyData {
@@ -1078,12 +1078,13 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setFillColor(HEADER_GREY[0], HEADER_GREY[1], HEADER_GREY[2]);
     doc.rect(0, 0, pageWidth, 35, 'F');
 
-    const logoToUse = ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
-    if (logoToUse) {
+    // CGM uses the white/light logo version (designed for dark backgrounds)
+    const cgmLogo = ECONEXO_LOGO_CGM || ECONEXO_FULL_LOGO_V2 || ECONEXO_FULL_LOGO || ECONEXO_LOGO;
+    if (cgmLogo) {
         try {
             const logoH = 24;
             const logoW = 108;
-            doc.addImage(logoToUse, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
+            doc.addImage(cgmLogo, 'PNG', (pageWidth - logoW) / 2, (35 - logoH) / 2, logoW, logoH);
         } catch (e) {
             doc.setTextColor(255);
             doc.setFontSize(24);
@@ -1117,24 +1118,68 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setFont('helvetica', 'bold');
     doc.text("CERTIFICADO GESTION MENSUAL DE RESIDUOS", pageWidth / 2, 46, { align: 'center' });
 
-    // --- 2. LEGAL TEXT ---
+    // --- 2. LEGAL TEXT (with bold date and inline rendering) ---
     let currentY = 65;
     doc.setTextColor(0);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-
     const margin = 22;
     const textBoxWidth = pageWidth - (margin * 2);
-    const plainText = `EcoNexo SpA, certificamos que, en el período comprendido entre el 01 al 31 de ${month} de ${year}, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
 
-    const lines = doc.splitTextToSize(plainText, textBoxWidth);
-    doc.text(lines, margin, currentY, { align: 'justify', maxWidth: textBoxWidth });
-    currentY += (lines.length * 6) + 2;
+    // Render text with the date period in bold
+    const beforeDate = `EcoNexo SpA, certificamos que, en el período comprendido entre el `;
+    const datePeriod  = `01 al 31 de ${month} de ${year}`;
+    const afterDate   = `, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
+
+    // Build wrapped lines manually to apply bold mid-sentence
+    const fullText = beforeDate + datePeriod + afterDate;
+    const allLines = doc.splitTextToSize(fullText, textBoxWidth);
+
+    // Draw line by line, detecting where the bold date falls
+    const boldStart = beforeDate.length;
+    const boldEnd   = boldStart + datePeriod.length;
+    let charOffset  = 0;
+
+    allLines.forEach((line: string) => {
+        const lineStart = charOffset;
+        const lineEnd   = charOffset + line.length;
+
+        if (lineEnd <= boldStart || lineStart >= boldEnd) {
+            // Entirely normal
+            doc.setFont('helvetica', 'normal');
+            doc.text(line, margin, currentY);
+        } else if (lineStart >= boldStart && lineEnd <= boldEnd) {
+            // Entirely bold
+            doc.setFont('helvetica', 'bold');
+            doc.text(line, margin, currentY);
+        } else {
+            // Mixed line — split and render segments
+            let x = margin;
+            const relBoldStart = Math.max(0, boldStart - lineStart);
+            const relBoldEnd   = Math.min(line.length, boldEnd - lineStart);
+            const pre  = line.slice(0, relBoldStart);
+            const bold = line.slice(relBoldStart, relBoldEnd);
+            const post = line.slice(relBoldEnd);
+            if (pre)  { doc.setFont('helvetica', 'normal'); doc.text(pre, x, currentY); x += doc.getTextWidth(pre); }
+            if (bold) { doc.setFont('helvetica', 'bold');   doc.text(bold, x, currentY); x += doc.getTextWidth(bold); }
+            if (post) { doc.setFont('helvetica', 'normal'); doc.text(post, x, currentY); }
+        }
+        currentY += 6;
+        charOffset += line.length + 1; // +1 for the space/newline
+    });
+    currentY += 2;
 
     // --- 3. CLIENT INFO ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text("Provenientes de la empresa:", margin, currentY);
+    // Underline helper
+    const underlineText = (text: string, x: number, y: number) => {
+        doc.text(text, x, y);
+        const tw = doc.getTextWidth(text);
+        doc.setLineWidth(0.3);
+        doc.setDrawColor(0);
+        doc.line(x, y + 1, x + tw, y + 1);
+    };
+    underlineText("Provenientes de la empresa:", margin, currentY);
     currentY += 5;
 
     const drawLabelVal = (lbl: string, val: string) => {
@@ -1152,7 +1197,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
 
     // --- 4. DATA SECTION ---
     doc.setFont('helvetica', 'bold');
-    doc.text("De los cuales, se gestionó un total de:", margin, currentY);
+    underlineText("De los cuales, se gestionó un total de:", margin, currentY);
     currentY += 8;
 
     const categories: any = {
@@ -1258,8 +1303,8 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text("DESTINO AUTORIZADO:", margin, currentY);
-    currentY += 5;
+    underlineText("DESTINO AUTORIZADO:", margin, currentY);
+    currentY += 6;
     doc.setFont('helvetica', 'normal');
     const destinations = [
         ["SOREPA SPA., RUT: 86.359.300-K", "Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA"],
@@ -1271,6 +1316,15 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         doc.text(d[1], margin, currentY);
         currentY += 8;
     });
+
+    // --- TRANSPORTE AUTORIZADO (below destinos) ---
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text("Transporte Autorizado por Ministerio de Salud", margin, currentY);
+    currentY += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.text("RESOLUCIÓN N° : 2402341155  —  SEREMI DE ANTOFAGASTA", margin, currentY);
+    currentY += 8;
 
     const sigY = pageHeight - 45;
     if (ECONEXO_SIGNATURE) {
