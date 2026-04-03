@@ -142,19 +142,23 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
     const receptionStr = `${dd}-${mm}-${yyyy}`;
 
-    const tableBody = items.map((item, idx) => {
+    const tableBody: any[] = items.map((item, idx) => {
         const type = (item.waste_type || (item as any).type || '').trim();
         const desc = (item.description || '').trim();
         // Show type + description together, avoid duplicating if they're the same
         const materialText = (type && desc && type.toLowerCase() !== desc.toLowerCase())
             ? `${type} - ${desc}`
             : (type || desc);
-        return [
+        const row: any[] = [
             String(idx + 1),
             materialText.toUpperCase(),
-            idx === 0 ? receptionStr : '',
-            fmtQty(Number(item.quantity) || 0),
         ];
+        if (idx === 0) {
+            // Span the date cell across all item rows, vertically centered
+            row.push({ content: receptionStr, rowSpan: items.length, styles: { valign: 'middle', halign: 'center' } });
+        }
+        row.push(fmtQty(Number(item.quantity) || 0));
+        return row;
     });
     tableBody.push(['', '', 'Total', fmtQty(totalQty)]);
 
@@ -1525,18 +1529,21 @@ export const generateCommunityCR = (
     const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
     const receptionStr = `${dd}-${mm}-${yyyy}`;
 
-    const tableBody = items.map((item, idx) => {
+    const tableBody: any[] = items.map((item, idx) => {
         const type = (item.waste_type || (item as any).type || '').trim();
         const desc = (item.description || '').trim();
         const materialText = (type && desc && type.toLowerCase() !== desc.toLowerCase())
             ? `${type} - ${desc}`
             : (type || desc);
-        return [
+        const row: any[] = [
             String(idx + 1),
             materialText.toUpperCase(),
-            idx === 0 ? receptionStr : '',
-            fmtQty(Number(item.quantity) || 0),
         ];
+        if (idx === 0) {
+            row.push({ content: receptionStr, rowSpan: items.length, styles: { valign: 'middle', halign: 'center' } });
+        }
+        row.push(fmtQty(Number(item.quantity) || 0));
+        return row;
     });
     tableBody.push(['', '', 'Total', fmtQty(totalQty)]);
 
