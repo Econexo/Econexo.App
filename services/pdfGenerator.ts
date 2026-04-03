@@ -1061,7 +1061,7 @@ export const generateCustomDoc = (client: CompanyData, title: string, contentHtm
 
 
 
-export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save') => {
+export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save', docNumber?: number | string) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -1101,7 +1101,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(255);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    const numText = "Nº60";
+    const numText = docNumber != null ? `Nº${docNumber}` : "Nº--";
     const numX = pageWidth - 20;
     const numY = 22;
     doc.text(numText, numX, numY, { align: 'right' });
@@ -1125,47 +1125,20 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const margin = 22;
     const textBoxWidth = pageWidth - (margin * 2);
 
-    // Render text with the date period in bold
-    const beforeDate = `EcoNexo SpA, certificamos que, en el período comprendido entre el `;
-    const datePeriod  = `01 al 31 de ${month} de ${year}`;
-    const afterDate   = `, hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
+    // Render paragraph: intro (normal) / bold date on its own line / continuation (normal)
+    doc.setFont('helvetica', 'normal');
+    const introText = `EcoNexo SpA, certificamos que, en el período comprendido entre el`;
+    const introLines = doc.splitTextToSize(introText, textBoxWidth);
+    introLines.forEach((line: string) => { doc.text(line, margin, currentY); currentY += 6; });
 
-    // Build wrapped lines manually to apply bold mid-sentence
-    const fullText = beforeDate + datePeriod + afterDate;
-    const allLines = doc.splitTextToSize(fullText, textBoxWidth);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`01 al 31 de ${month} de ${year},`, margin, currentY);
+    currentY += 6;
 
-    // Draw line by line, detecting where the bold date falls
-    const boldStart = beforeDate.length;
-    const boldEnd   = boldStart + datePeriod.length;
-    let charOffset  = 0;
-
-    allLines.forEach((line: string) => {
-        const lineStart = charOffset;
-        const lineEnd   = charOffset + line.length;
-
-        if (lineEnd <= boldStart || lineStart >= boldEnd) {
-            // Entirely normal
-            doc.setFont('helvetica', 'normal');
-            doc.text(line, margin, currentY);
-        } else if (lineStart >= boldStart && lineEnd <= boldEnd) {
-            // Entirely bold
-            doc.setFont('helvetica', 'bold');
-            doc.text(line, margin, currentY);
-        } else {
-            // Mixed line — split and render segments
-            let x = margin;
-            const relBoldStart = Math.max(0, boldStart - lineStart);
-            const relBoldEnd   = Math.min(line.length, boldEnd - lineStart);
-            const pre  = line.slice(0, relBoldStart);
-            const bold = line.slice(relBoldStart, relBoldEnd);
-            const post = line.slice(relBoldEnd);
-            if (pre)  { doc.setFont('helvetica', 'normal'); doc.text(pre, x, currentY); x += doc.getTextWidth(pre); }
-            if (bold) { doc.setFont('helvetica', 'bold');   doc.text(bold, x, currentY); x += doc.getTextWidth(bold); }
-            if (post) { doc.setFont('helvetica', 'normal'); doc.text(post, x, currentY); }
-        }
-        currentY += 6;
-        charOffset += line.length + 1; // +1 for the space/newline
-    });
+    doc.setFont('helvetica', 'normal');
+    const afterText = `hemos llevado a cabo el transporte y entrega de los residuos a gestores locales autorizados en la región de Antofagasta, donde se ha dispuesto de manera adecuada para su posterior reciclaje y/o disposición final, cumpliendo con la normativa legal vigente.`;
+    const afterLines = doc.splitTextToSize(afterText, textBoxWidth);
+    afterLines.forEach((line: string) => { doc.text(line, margin, currentY); currentY += 6; });
     currentY += 2;
 
     // --- 3. CLIENT INFO ---
@@ -1242,6 +1215,16 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     const rowH = 10;
     const gap = 2;
 
+    // Disable stroke for solid colors
+    doc.setLineWidth(0);
+
+    // Smart number formatter — removes unnecessary decimals (590,00 → 590, 12,60 → 12,6)
+    const formatKg = (n: number): string => {
+        const r = Math.round(n * 100) / 100;
+        if (r % 1 === 0) return r.toFixed(0);
+        return r.toFixed(2).replace('.', ',').replace(/0+$/, '');
+    };
+
     // Table header
     doc.setFillColor(220, 220, 220);
     doc.rect(tX, currentY, col1, rowH, 'F');
@@ -1259,13 +1242,14 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         const d = categories[def.key];
         if (!d || d.qty <= 0) return;
         doc.setFillColor(d.color[0], d.color[1], d.color[2]);
+        doc.setLineWidth(0);
         doc.rect(tX, currentY, col1, rowH, 'F');
         doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
         doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
         doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
         doc.setFont('helvetica', 'bold');
         doc.text(def.label, tX + col1 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.qty.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
+        doc.text(formatKg(d.qty), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
         doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
         currentY += rowH + gap;
     };
@@ -1280,7 +1264,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text(totalKg.toFixed(2).replace('.', ','), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
+    doc.text(formatKg(totalKg), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
     doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
 
     const pieX = 175;
@@ -1301,12 +1285,28 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
             const cat = categories[k];
             const sliceAngle = (cat.pct / 100) * (2 * Math.PI);
             const endAngle = startAngle + sliceAngle;
-            doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
-            for (let i = startAngle; i < endAngle; i += 0.04) {
-                const a1 = i;
-                const a2 = Math.min(i + 0.05, endAngle);
-                doc.triangle(pieX, pieY, pieX + radius * Math.cos(a1), pieY + radius * Math.sin(a1), pieX + radius * Math.cos(a2), pieY + radius * Math.sin(a2), 'F');
+
+            // Draw each segment as a single filled polygon (no gaps between triangles)
+            const steps = Math.max(48, Math.ceil(Math.abs(sliceAngle) * radius * 1.5));
+            const arcPts: [number, number][] = [];
+            for (let s = 0; s <= steps; s++) {
+                const angle = startAngle + (sliceAngle * s / steps);
+                arcPts.push([
+                    pieX + radius * Math.cos(angle),
+                    pieY + radius * Math.sin(angle)
+                ]);
             }
+            // Build relative path: center → arc → close back to center
+            const relLines: number[][] = [];
+            relLines.push([arcPts[0][0] - pieX, arcPts[0][1] - pieY]);
+            for (let i = 1; i < arcPts.length; i++) {
+                relLines.push([arcPts[i][0] - arcPts[i - 1][0], arcPts[i][1] - arcPts[i - 1][1]]);
+            }
+            doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
+            doc.setDrawColor(cat.color[0], cat.color[1], cat.color[2]);
+            doc.setLineWidth(0);
+            (doc as any).lines(relLines, pieX, pieY, [1, 1], 'F', true);
+
             startAngle += sliceAngle;
         });
     }
@@ -1330,12 +1330,12 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     });
 
     // --- TRANSPORTE AUTORIZADO (below destinos) ---
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text("Transporte Autorizado por Ministerio de Salud", margin, currentY);
-    currentY += 5;
     doc.setFont('helvetica', 'bold');
-    doc.text("RESOLUCIÓN N° : 2402341155  —  SEREMI DE ANTOFAGASTA", margin, currentY);
+    doc.setFontSize(10);
+    underlineText("Transporte Autorizado:", margin, currentY);
+    currentY += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.text("RESOLUCIÓN N° : 2402341155,  SEREMI DE SALUD ANTOFAGASTA", margin, currentY);
     currentY += 8;
 
     const sigY = pageHeight - 45;

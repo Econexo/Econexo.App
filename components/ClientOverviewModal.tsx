@@ -156,7 +156,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
             return;
         }
         if (doc.type === 'CGM') {
-            generateCGM(client, doc.metadata.waste_details, doc.metadata.month || 'Mes', doc.metadata.year || new Date().getFullYear(), 'preview');
+            generateCGM(client, doc.metadata.waste_details, doc.metadata.month || 'Mes', doc.metadata.year || new Date().getFullYear(), 'preview', doc.metadata?.cgm_number);
         } else if (doc.type === 'pdf' || doc.type === 'report') {
             generateEcoReport(client, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte', 'preview');
         } else {

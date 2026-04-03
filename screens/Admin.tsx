@@ -248,7 +248,7 @@ const Admin: React.FC = () => {
         if (doc.type === 'pdf' || doc.type === 'report') {
             generateEcoReport({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte Reciclaje', action);
         } else if (doc.type === 'CGM') {
-            generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action);
+            generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action, doc.metadata?.cgm_number);
         } else {
             generateCR({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
         }
@@ -345,6 +345,11 @@ const Admin: React.FC = () => {
             const newDocs = [];
             const monthName = new Date(selectedYearGen, selectedMonthGen).toLocaleString('es-CL', { month: 'long' });
 
+            // Fetch current CGM count to assign sequential numbers
+            const { count: existingCGMCount } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('type', 'CGM');
+            const cgmBaseNum = existingCGMCount || 0;
+            let cgmIndex = 0;
+
             for (const [uid, group] of Object.entries(userGroups)) {
                 const isUnregistered = group.isUnregistered || group.profile?.is_unregistered === true;
                 const actualUserId = isUnregistered ? (await supabase.auth.getUser()).data.user?.id : uid;
@@ -354,8 +359,9 @@ const Admin: React.FC = () => {
                     type: 'CGM',
                     verified: false,
                     created_at: new Date(selectedYearGen, selectedMonthGen, 15).toISOString(),
-                    metadata: { month: monthName, year: selectedYearGen, waste_details: group.items, generated_by: 'Admin Batch Process', unregistered_client_id: isUnregistered ? uid : undefined }
+                    metadata: { month: monthName, year: selectedYearGen, waste_details: group.items, generated_by: 'Admin Batch Process', cgm_number: cgmBaseNum + cgmIndex + 1, unregistered_client_id: isUnregistered ? uid : undefined }
                 });
+                cgmIndex++;
             }
 
             if (newDocs.length > 0) {

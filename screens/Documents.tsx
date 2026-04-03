@@ -177,7 +177,8 @@ const Documents: React.FC = () => {
           Array.isArray(doc.metadata.waste_details) ? doc.metadata.waste_details : [],
           month,
           year,
-          action
+          action,
+          doc.metadata?.cgm_number
         );
       } else {
         generateCR(
