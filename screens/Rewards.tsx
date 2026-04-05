@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import Navbar from '../components/Navbar';
+import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 interface Transaction {
     id: string;
@@ -11,13 +13,26 @@ interface Transaction {
     created_at: string;
 }
 
+interface Reward {
+    id: number;
+    title: string;
+    description: string;
+    cost: number;
+    icon: string;
+    color: string;
+    image: string;
+}
+
 const Rewards: React.FC = () => {
     const navigate = useNavigate();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [points, setPoints] = useState(0);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [redeeming, setRedeeming] = useState(false);
 
-    const rewards = [
+    const rewards: Reward[] = [
         {
             id: 1,
             title: '15% Descuento Retiro',
@@ -91,6 +106,51 @@ const Rewards: React.FC = () => {
             console.error('Error fetching rewards data:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRedeem = async (reward: Reward) => {
+        if (points < reward.cost) {
+            toast.warning(`Te faltan ${(reward.cost - points).toLocaleString()} puntos para canjear esta recompensa.`);
+            return;
+        }
+
+        const ok = await confirm({
+            title: 'Confirmar canje',
+            message: `¿Canjear "${reward.title}" por ${reward.cost.toLocaleString()} puntos? Quedarás con ${(points - reward.cost).toLocaleString()} pts.`,
+            confirmLabel: 'Sí, canjear',
+        });
+        if (!ok) return;
+
+        try {
+            setRedeeming(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Sin sesión');
+
+            // Deduct points
+            const { error: pointsError } = await supabase
+                .from('profiles')
+                .update({ eco_points: points - reward.cost })
+                .eq('id', user.id);
+            if (pointsError) throw pointsError;
+
+            // Record transaction
+            const { error: txError } = await supabase
+                .from('points_transactions')
+                .insert([{
+                    user_id: user.id,
+                    amount: -reward.cost,
+                    reason: `Canje: ${reward.title}`,
+                }]);
+            if (txError) throw txError;
+
+            setPoints(prev => prev - reward.cost);
+            toast.success(`¡Canjeaste "${reward.title}"! Nos contactaremos contigo pronto.`);
+            fetchPointsAndHistory();
+        } catch (err: any) {
+            toast.error('Error al canjear: ' + err.message);
+        } finally {
+            setRedeeming(false);
         }
     };
 
@@ -203,13 +263,14 @@ const Rewards: React.FC = () => {
                                     </div>
                                 </div>
                                 <button
-                                    disabled={points < reward.cost}
+                                    disabled={points < reward.cost || redeeming}
+                                    onClick={() => handleRedeem(reward)}
                                     className={`relative z-10 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${points >= reward.cost
-                                        ? 'bg-primary text-background-dark shadow-glow active:scale-95 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                                        ? 'bg-primary text-white shadow-glow active:scale-95 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]'
                                         : 'bg-white/20 text-gray-400 border border-white/10 cursor-not-allowed'
                                         }`}
                                 >
-                                    Canjear
+                                    {redeeming ? '...' : points >= reward.cost ? 'Canjear' : `${(reward.cost - points).toLocaleString()} pts`}
                                 </button>
                             </div>
                         ))}
