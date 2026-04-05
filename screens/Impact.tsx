@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { jsPDF } from 'jspdf';
 
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
@@ -20,7 +21,11 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     arbolesRescatados: 0,
     aguaAhorrada: 0,
     energiaAhorrada: 0,
-    carbonFootprint: 0
+    carbonFootprint: 0,
+    kmEvitados: 0,
+    hogaresAbastecidos: 0,
+    duchasEquivalentes: 0,
+    vuelosEvitados: 0,
   });
   const [totalKg, setTotalKg] = useState(0);
   const [annualGoalKg, setAnnualGoalKg] = useState<number | null>(null);
@@ -161,11 +166,80 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
         arbolesRescatados: Math.round(treesEquivalent),
         aguaAhorrada: Math.round(waterSaved),
         energiaAhorrada: Math.round(energySaved),
-        carbonFootprint: co2AvoidedKg / 1000 // En Toneladas
+        carbonFootprint: co2AvoidedKg / 1000,
+        // Auto promedio: 0.21 kg CO2/km
+        kmEvitados: Math.round(co2AvoidedKg / 0.21),
+        // Hogar promedio Chile: ~10 kWh/día
+        hogaresAbastecidos: Math.round(energySaved / 10),
+        // Ducha promedio: 50 litros
+        duchasEquivalentes: Math.round(waterSaved / 50),
+        // Vuelo SCL-CCP (Santiago-Concepción) ~ 85 kg CO2 ida
+        vuelosEvitados: Math.round(co2AvoidedKg / 85),
       });
     };
     fetchImpactData();
   }, [selectedYear]);
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const green = [50, 97, 5] as [number, number, number];
+    const gray = [100, 100, 100] as [number, number, number];
+    const W = 210;
+
+    // Header bar
+    doc.setFillColor(...green);
+    doc.rect(0, 0, W, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('EcoNexo — Informe de Impacto Ambiental', 14, 12);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Período ${selectedYear}  |  Generado el ${new Date().toLocaleDateString('es-CL')}`, 14, 22);
+
+    // Summary block
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen General', 14, 38);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...gray);
+    const summaryLines = [
+      `Total reciclado: ${totalKg.toLocaleString('es-CL')} kg`,
+      `CO₂ evitado: ${stats.carbonFootprint.toFixed(2)} toneladas`,
+      `Agua ahorrada: ${stats.aguaAhorrada.toLocaleString('es-CL')} litros`,
+      `Energía ahorrada: ${stats.energiaAhorrada.toLocaleString('es-CL')} kWh`,
+    ];
+    summaryLines.forEach((line, i) => doc.text(line, 14, 46 + i * 7));
+
+    // Eco-equivalencies
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Equivalencias Ambientales', 14, 82);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...gray);
+    const equivLines = [
+      `🌳 ${stats.arbolesRescatados} árboles rescatados`,
+      `🚗 ${stats.kmEvitados.toLocaleString('es-CL')} km en auto evitados`,
+      `🏠 ${stats.hogaresAbastecidos.toLocaleString('es-CL')} hogares abastecidos por 1 día`,
+      `🚿 ${stats.duchasEquivalentes.toLocaleString('es-CL')} duchas equivalentes ahorradas`,
+      `✈️  ${stats.vuelosEvitados} vuelos cortos evitados (SCL-CCP)`,
+    ];
+    equivLines.forEach((line, i) => doc.text(line, 14, 90 + i * 7));
+
+    // Footer
+    doc.setFillColor(...green);
+    doc.rect(0, 282, W, 15, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text('EcoNexo SpA — Gestión Ambiental Inteligente — econexo.cl', 14, 291);
+
+    doc.save(`EcoNexo_Impacto_${selectedYear}.pdf`);
+    toast.success('PDF generado correctamente');
+  };
 
   const glossary = isLeyRep ? [
     { title: 'Equivalencia', desc: 'Conversión de métricas técnicas (como kg de CO₂) a conceptos cotidianos.' },
@@ -198,12 +272,21 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
         <h1 className="text-xl font-display font-black tracking-tight text-gray-900 dark:text-white">
           {isLeyRep ? 'Gestión REP' : 'Impacto Positivo'}
         </h1>
-        <button
-          onClick={() => setShowHelp(true)}
-          className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all group active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
-        >
-          <span className="material-symbols-outlined text-primary group-hover:rotate-12 transition-transform text-[22px]">help</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportPDF}
+            title="Exportar PDF"
+            className="size-10 flex items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-all active:scale-90 border border-primary/20 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-primary text-[22px]">picture_as_pdf</span>
+          </button>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all group active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-primary group-hover:rotate-12 transition-transform text-[22px]">help</span>
+          </button>
+        </div>
       </header>
 
       {/* Goal Modal */}
@@ -473,6 +556,30 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">kWh Energía</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Extra Equivalencies */}
+          <div className="space-y-3">
+            <h4 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">Más equivalencias</h4>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: 'directions_car', color: 'bg-orange-50 text-orange-500 border-orange-100', value: stats.kmEvitados.toLocaleString(), unit: 'km en auto', label: 'evitados' },
+                { icon: 'home', color: 'bg-purple-50 text-purple-500 border-purple-100', value: stats.hogaresAbastecidos.toLocaleString(), unit: 'hogares', label: '1 día con energía' },
+                { icon: 'shower', color: 'bg-cyan-50 text-cyan-500 border-cyan-100', value: stats.duchasEquivalentes.toLocaleString(), unit: 'duchas', label: 'de agua ahorrada' },
+                { icon: 'flight', color: 'bg-rose-50 text-rose-500 border-rose-100', value: stats.vuelosEvitados.toLocaleString(), unit: 'vuelos', label: 'cortos evitados' },
+              ].map((item) => (
+                <div key={item.icon} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[24px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-5 flex flex-col gap-3 transition-all hover:scale-[1.02]">
+                  <div className={`size-10 rounded-xl flex items-center justify-center border ${item.color}`}>
+                    <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-display font-black text-gray-900 dark:text-white tracking-tighter leading-none">{item.value}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mt-1">{item.unit}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5">{item.label}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
