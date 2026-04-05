@@ -10,13 +10,11 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Verify the user is authenticated
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'No autorizado' }), {
@@ -39,42 +37,48 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Parse the request body
     const { action, prompt, history, imageBase64 } = await req.json();
 
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'Gemini API key no configurada' }), {
+      return new Response(JSON.stringify({ error: 'GEMINI_API_KEY no configurada en los secretos de la Edge Function' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const GEMINI_MODEL = 'gemini-1.5-flash';
+    // Use latest stable model with fallback name
+    const GEMINI_MODEL = 'gemini-1.5-flash-latest';
     const GEMINI_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`;
 
     let responseText = '';
 
     if (action === 'chat') {
-      // Chat completion
       const systemInstruction = "Eres el asistente de IA experto de Econexo. Ayudas a empresas a gestionar residuos industriales, cumplir con normativas ambientales (como la Ley REP en Chile y normas internacionales) y optimizar métricas de sustentabilidad. Tus respuestas deben ser profesionales, técnicamente precisas, bien estructuradas (usa markdown si es necesario) y completas. Responde siempre en español.";
 
-      const contents = (history || [])
+      // Filter history: only include user/model turns, skip the initial greeting model message,
+      // and ensure the conversation always starts with a user message
+      const filteredHistory = (history || [])
+        .filter((msg: { role: string }) => msg.role === 'user' || msg.role === 'model')
         .map((msg: { role: string; parts: { text: string }[] }) => ({
-          role: msg.role === 'user' ? 'user' : 'model',
+          role: msg.role,
           parts: msg.parts.map((p: { text: string }) => ({ text: p.text })),
-        }))
-        .filter((msg: { role: string }, index: number) => msg.role === 'user' || index > 0);
+        }));
 
-      // Add the current prompt
-      contents.push({ role: 'user', parts: [{ text: prompt }] });
+      // Drop leading model messages — Gemini requires first turn to be user
+      while (filteredHistory.length > 0 && filteredHistory[0].role === 'model') {
+        filteredHistory.shift();
+      }
+
+      // Add the current user prompt
+      filteredHistory.push({ role: 'user', parts: [{ text: prompt }] });
 
       const geminiRes = await fetch(`${GEMINI_BASE_URL}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemInstruction }] },
-          contents,
+          contents: filteredHistory,
           generationConfig: {
             maxOutputTokens: 2048,
             temperature: 0.7,
@@ -84,16 +88,15 @@ Deno.serve(async (req: Request) => {
 
       const geminiData = await geminiRes.json();
 
-      if (geminiData.error) {
-        throw new Error(geminiData.error.message || 'Error de Gemini API');
+      if (!geminiRes.ok || geminiData.error) {
+        const errMsg = geminiData.error?.message || `HTTP ${geminiRes.status}`;
+        throw new Error(`Gemini API: ${errMsg}`);
       }
 
       responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Sin respuesta';
 
     } else if (action === 'analyze') {
-      // Image analysis
       const analysisPrompt = prompt || "Analiza esta imagen y dime su impacto ambiental o cómo debería reciclarse según la normativa chilena.";
-
       const imageData = imageBase64?.includes(',') ? imageBase64.split(',')[1] : imageBase64;
 
       const geminiRes = await fetch(`${GEMINI_BASE_URL}:generateContent?key=${GEMINI_API_KEY}`, {
@@ -111,8 +114,9 @@ Deno.serve(async (req: Request) => {
 
       const geminiData = await geminiRes.json();
 
-      if (geminiData.error) {
-        throw new Error(geminiData.error.message || 'Error de Gemini Vision');
+      if (!geminiRes.ok || geminiData.error) {
+        const errMsg = geminiData.error?.message || `HTTP ${geminiRes.status}`;
+        throw new Error(`Gemini Vision: ${errMsg}`);
       }
 
       responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Sin respuesta';
@@ -129,7 +133,7 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (err) {
+  } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message || 'Error interno del servidor' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
