@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { jsPDF } from 'jspdf';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
@@ -28,6 +29,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     vuelosEvitados: 0,
   });
   const [totalKg, setTotalKg] = useState(0);
+  const [materialBreakdown, setMaterialBreakdown] = useState<{ name: string; value: number }[]>([]);
   const [annualGoalKg, setAnnualGoalKg] = useState<number | null>(null);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
@@ -161,6 +163,13 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
       const treesEquivalent = co2AvoidedKg / CO2_PER_TREE; // 1 árbol absorbe ~22kg CO2/año
 
       setTotalKg(totalKg);
+      // Build donut data (only materials with actual kg)
+      setMaterialBreakdown(
+        Object.entries(materialBreakdown)
+          .filter(([, kg]) => kg > 0)
+          .sort(([, a], [, b]) => b - a)
+          .map(([name, value]) => ({ name, value }))
+      );
       setStats({
         metaRep: totalKg > 0 ? Math.min(Math.round((totalKg / 1000) * 100), 100) : 0,
         arbolesRescatados: Math.round(treesEquivalent),
@@ -558,6 +567,70 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
               </div>
             </div>
           </div>
+
+          {/* Material Breakdown Donut */}
+          {materialBreakdown.length > 0 && (() => {
+            const MATERIAL_COLORS: Record<string, string> = {
+              'Plásticos':   '#3b82f6',
+              'Papel/Cartón':'#f59e0b',
+              'Aluminio':    '#8b5cf6',
+              'Vidrio':      '#06b6d4',
+              'Metales':     '#64748b',
+              'Electrónicos':'#ec4899',
+              'Orgánicos':   '#84cc16',
+              'Peligrosos':  '#ef4444',
+              'Aceites':     '#f97316',
+              'Madera':      '#a16207',
+              'Textiles':    '#14b8a6',
+              'Neumáticos':  '#6b7280',
+              'Otros':       '#94a3b8',
+            };
+            const totalDonut = materialBreakdown.reduce((s, d) => s + d.value, 0);
+            return (
+              <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6 space-y-4">
+                <h4 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Distribución por material</h4>
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <div className="w-48 h-48 flex-shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={materialBreakdown}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius="60%"
+                          outerRadius="85%"
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {materialBreakdown.map((entry) => (
+                            <Cell key={entry.name} fill={MATERIAL_COLORS[entry.name] || '#94a3b8'} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number) => [`${value.toLocaleString('es-CL')} kg`, '']}
+                          contentStyle={{ borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 w-full space-y-2">
+                    {materialBreakdown.map((entry) => {
+                      const pct = Math.round((entry.value / totalDonut) * 100);
+                      const color = MATERIAL_COLORS[entry.name] || '#94a3b8';
+                      return (
+                        <div key={entry.name} className="flex items-center gap-2">
+                          <div className="size-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex-1">{entry.name}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 font-bold">{entry.value.toLocaleString('es-CL')} kg</span>
+                          <span className="text-xs font-black w-9 text-right" style={{ color }}>{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Extra Equivalencies */}
           <div className="space-y-3">
