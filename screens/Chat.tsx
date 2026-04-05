@@ -1,20 +1,51 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getGeminiResponse } from '../services/gemini';
+import { supabase } from '../services/supabase';
 import { Message } from '../types';
 import Navbar from '../components/Navbar';
+
+const GREETING: Message = {
+  role: 'model',
+  parts: [{ text: '¡Hola! Soy tu asistente de Econexo. ¿En qué puedo ayudarte hoy con la gestión ambiental de tu empresa?' }],
+};
+const MAX_STORED_MESSAGES = 50;
 
 const Chat: React.FC = () => {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', parts: [{ text: '¡Hola! Soy tu asistente de Econexo. ¿En qué puedo ayudarte hoy con la gestión ambiental de tu empresa?' }] }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [loading, setLoading] = useState(false);
+  const [chatKey, setChatKey] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load user-specific chat history from localStorage
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const key = `eco_chat_${user.id}`;
+      setChatKey(key);
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed: Message[] = JSON.parse(stored);
+          if (parsed.length > 0) setMessages(parsed);
+        } catch {
+          // ignore malformed data
+        }
+      }
+    });
+  }, []);
+
+  // Persist messages whenever they change
+  useEffect(() => {
+    if (!chatKey || messages.length === 0) return;
+    const toStore = messages.slice(-MAX_STORED_MESSAGES);
+    localStorage.setItem(chatKey, JSON.stringify(toStore));
+  }, [messages, chatKey]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,6 +70,11 @@ const Chat: React.FC = () => {
     }
   };
 
+  const handleNewChat = useCallback(() => {
+    setMessages([GREETING]);
+    if (chatKey) localStorage.removeItem(chatKey);
+  }, [chatKey]);
+
   return (
     <div className="flex flex-col h-full font-display bg-[#f0f4f0] dark:bg-background-dark w-full relative overflow-hidden text-slate-900 dark:text-slate-100">
       <Navbar />
@@ -52,8 +88,8 @@ const Chat: React.FC = () => {
         <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm transition-all text-gray-700 dark:text-gray-300">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        <div className="flex items-center gap-3">
-          <div className="size-10 rounded-full bg-primary flex items-center justify-center text-background-dark shadow-md">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white shadow-md">
             <span className="material-symbols-outlined filled text-xl">smart_toy</span>
           </div>
           <div>
@@ -64,6 +100,14 @@ const Chat: React.FC = () => {
             </div>
           </div>
         </div>
+        {/* New chat button */}
+        <button
+          onClick={handleNewChat}
+          title="Nueva conversación"
+          className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm transition-all text-gray-700 dark:text-gray-300"
+        >
+          <span className="material-symbols-outlined text-xl">edit_square</span>
+        </button>
       </div>
 
       {/* Messages */}
@@ -115,7 +159,7 @@ const Chat: React.FC = () => {
           <button
             onClick={handleSend}
             disabled={!input.trim() || loading}
-            className={`size-10 rounded-full flex items-center justify-center transition-all ${input.trim() ? 'bg-primary text-background-dark shadow-lg shadow-primary/20 active:scale-90' : 'text-gray-400 bg-gray-100 dark:bg-slate-700'
+            className={`size-10 rounded-full flex items-center justify-center transition-all ${input.trim() ? 'bg-primary text-white shadow-lg shadow-primary/20 active:scale-90' : 'text-gray-400 bg-gray-100 dark:bg-slate-700'
               }`}
           >
             <span className="material-symbols-outlined">send</span>
