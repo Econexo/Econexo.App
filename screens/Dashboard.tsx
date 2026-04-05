@@ -53,6 +53,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [userName, setUserName] = useState<string>('Usuario');
+  const [recentDocs, setRecentDocs] = useState<{ id: string; title: string; cert_number: string; date: string; totalKg: number; materials: string[] }[]>([]);
 
   const categories = [
     { label: 'Plásticos', value: 'Plásticos' },
@@ -111,6 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     loadStats();
     fetchClients();
     computeAlerts();
+    loadRecentDocs();
 
     // Subscribe to Web Push if not already subscribed (non-blocking)
     const initPush = async () => {
@@ -460,6 +462,35 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     }
 
     setAlerts(newAlerts);
+  };
+
+  const loadRecentDocs = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from('documents')
+      .select('id, title, metadata, created_at')
+      .eq('user_id', user.id)
+      .eq('type', 'CR')
+      .eq('verified', true)
+      .order('created_at', { ascending: false })
+      .limit(4);
+
+    if (!data) return;
+    setRecentDocs(data.map((doc: any) => {
+      const details = doc.metadata?.waste_details;
+      const items = Array.isArray(details) ? details : details ? [details] : [];
+      const totalKg = items.reduce((s: number, i: any) => s + (Number(i.quantity) || 0), 0);
+      const materials = [...new Set(items.map((i: any) => i.waste_type || 'Otros'))] as string[];
+      return {
+        id: doc.id,
+        title: doc.title,
+        cert_number: doc.metadata?.cert_number || doc.title,
+        date: new Date(doc.created_at).toLocaleDateString('es-CL'),
+        totalKg,
+        materials,
+      };
+    }));
   };
 
   const loadPrevYearStats = async (year: number) => {
@@ -969,6 +1000,35 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             ))}
           </div>
         </section>
+
+        {/* Recent Activity */}
+        {recentDocs.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Actividad Reciente</h3>
+              <Link to="/documents" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Ver todos</Link>
+            </div>
+            <div className="space-y-3">
+              {recentDocs.map(doc => (
+                <div key={doc.id} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[20px] border border-white/80 dark:border-slate-600/50 shadow-sm p-4 flex items-center gap-4">
+                  <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 flex-shrink-0">
+                    <span className="material-symbols-outlined text-primary filled text-lg">verified</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black text-gray-900 dark:text-white truncate">{doc.cert_number}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5 truncate">
+                      {doc.materials.slice(0, 2).join(' · ')}{doc.materials.length > 2 ? ` +${doc.materials.length - 2}` : ''}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-black text-primary">{doc.totalKg.toLocaleString('es-CL')} kg</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">{doc.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Scheduled Withdrawals Section */}
         <ScheduledWithdrawals isAdmin={isAdmin} />
