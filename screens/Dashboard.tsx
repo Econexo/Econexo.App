@@ -866,6 +866,23 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           </div>
         </section>
 
+        {/* Carbon Calculator shortcut */}
+        <section
+          onClick={() => navigate('/carbon-calculator')}
+          className="relative overflow-hidden rounded-[20px] p-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer group flex items-center gap-4"
+        >
+          <div className="size-14 rounded-2xl bg-green-50 text-primary flex items-center justify-center border border-green-100 group-hover:scale-110 transition-transform duration-500 flex-shrink-0">
+            <span className="material-symbols-outlined text-3xl">calculate</span>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white group-hover:text-primary transition-colors">Calculadora de Huella</h3>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">Calcula tu CO₂ mensual</p>
+          </div>
+          <div className="size-10 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-400 group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
+            <span className="material-symbols-outlined">arrow_forward</span>
+          </div>
+        </section>
+
         {/* Chart Section - ENCAPSULATED */}
         <section className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[28px] p-6 border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] flex flex-col gap-4 transition-all">
           <div className="flex items-center justify-between flex-wrap gap-2">
