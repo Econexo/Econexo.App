@@ -97,7 +97,7 @@ const AppRoutes: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-[#f0f4f0] dark:bg-background-dark overflow-x-hidden transition-colors duration-300">
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLogin={() => setIsAuthenticated(true)} onLeyRepChange={handleToggleLeyRep} currentLeyRep={isLeyRepUser} />} />
