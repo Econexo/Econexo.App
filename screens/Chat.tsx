@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getGeminiResponse } from '../services/gemini';
 import { Message } from '../types';
+import Navbar from '../components/Navbar';
 
 const Chat: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const Chat: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full font-display bg-[#f0f4f0] dark:bg-background-dark w-full relative overflow-hidden text-slate-900 dark:text-slate-100">
+      <Navbar />
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>

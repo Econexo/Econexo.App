@@ -1,8 +1,6 @@
 // Supabase Edge Function: gemini-proxy
 // Proxies requests to Google Gemini API, keeping the API key server-side only
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -16,21 +14,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'No autorizado' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Sesión inválida' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
