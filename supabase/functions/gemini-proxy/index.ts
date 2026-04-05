@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Use latest stable model with fallback name
-    const GEMINI_MODEL = 'gemini-2.0-flash';
+    const GEMINI_MODEL = 'gemini-1.5-flash';
     const GEMINI_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`;
 
     let responseText = '';
