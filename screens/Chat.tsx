@@ -71,7 +71,7 @@ const Chat: React.FC = () => {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] p-4 rounded-[20px] text-sm leading-relaxed shadow-sm ${m.role === 'user'
-              ? 'bg-primary text-background-dark font-medium rounded-tr-none shadow-primary/20'
+              ? 'bg-primary text-white font-medium rounded-tr-none shadow-primary/20'
               : 'bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl text-gray-800 dark:text-gray-200 rounded-tl-none border border-white/80 dark:border-slate-600/50 font-medium'
               }`}>
               <ReactMarkdown
