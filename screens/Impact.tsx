@@ -250,6 +250,129 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     toast.success('PDF generado correctamente');
   };
 
+  const handleShareCard = async () => {
+    const W = 1080, H = 1080;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#f0f4f0');
+    grad.addColorStop(1, '#d4e8c2');
+    ctx.fillStyle = grad;
+    ctx.roundRect(0, 0, W, H, 40);
+    ctx.fill();
+
+    // Top green bar
+    ctx.fillStyle = '#326105';
+    ctx.fillRect(0, 0, W, 160);
+
+    // Brand name
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 52px system-ui, sans-serif';
+    ctx.fillText('EcoNexo', 60, 100);
+    ctx.font = '28px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText(`Impacto Ambiental ${selectedYear}`, 60, 140);
+
+    // Leaf emoji area
+    ctx.font = '80px serif';
+    ctx.fillText('🌿', W - 120, 120);
+
+    // Main metric — CO2
+    ctx.fillStyle = '#326105';
+    ctx.font = 'bold 120px system-ui, sans-serif';
+    ctx.fillText(`${stats.carbonFootprint.toFixed(1)}`, 60, 330);
+    ctx.font = 'bold 36px system-ui, sans-serif';
+    ctx.fillStyle = '#555';
+    ctx.fillText('toneladas de CO₂ evitadas', 60, 390);
+
+    // Divider
+    ctx.strokeStyle = '#326105';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(60, 430);
+    ctx.lineTo(W - 60, 430);
+    ctx.stroke();
+
+    // 3 metric blocks
+    const metrics = [
+      { emoji: '🌳', value: stats.arbolesRescatados.toLocaleString('es-CL'), label: 'árboles rescatados' },
+      { emoji: '♻️', value: `${totalKg.toLocaleString('es-CL')} kg`, label: 'residuos reciclados' },
+      { emoji: '⚡', value: stats.energiaAhorrada.toLocaleString('es-CL'), label: 'kWh ahorrados' },
+    ];
+
+    metrics.forEach((m, i) => {
+      const x = 60 + i * 330;
+      const y = 480;
+      // Card bg
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath();
+      ctx.roundRect(x, y, 290, 240, 24);
+      ctx.fill();
+      // Emoji
+      ctx.font = '52px serif';
+      ctx.fillText(m.emoji, x + 20, y + 70);
+      // Value
+      ctx.fillStyle = '#326105';
+      ctx.font = 'bold 44px system-ui, sans-serif';
+      ctx.fillText(m.value, x + 20, y + 140);
+      // Label
+      ctx.fillStyle = '#666';
+      ctx.font = '22px system-ui, sans-serif';
+      ctx.fillText(m.label, x + 20, y + 180);
+    });
+
+    // Extra equivalencies row
+    const equivs = [
+      { emoji: '🚗', value: stats.kmEvitados.toLocaleString('es-CL'), label: 'km evitados' },
+      { emoji: '🚿', value: stats.duchasEquivalentes.toLocaleString('es-CL'), label: 'duchas ahorradas' },
+      { emoji: '✈️', value: stats.vuelosEvitados.toLocaleString('es-CL'), label: 'vuelos evitados' },
+    ];
+
+    equivs.forEach((e, i) => {
+      const x = 60 + i * 330;
+      const y = 760;
+      ctx.fillStyle = 'rgba(50,97,5,0.08)';
+      ctx.beginPath();
+      ctx.roundRect(x, y, 290, 110, 20);
+      ctx.fill();
+      ctx.font = '32px serif';
+      ctx.fillText(e.emoji, x + 16, y + 50);
+      ctx.fillStyle = '#326105';
+      ctx.font = 'bold 28px system-ui, sans-serif';
+      ctx.fillText(e.value, x + 65, y + 52);
+      ctx.fillStyle = '#888';
+      ctx.font = '18px system-ui, sans-serif';
+      ctx.fillText(e.label, x + 16, y + 90);
+    });
+
+    // Footer
+    ctx.fillStyle = '#326105';
+    ctx.font = 'bold 22px system-ui, sans-serif';
+    ctx.fillText('econexo.cl  ·  Gestión Ambiental Inteligente', 60, H - 40);
+
+    // Export
+    const dataUrl = canvas.toDataURL('image/png');
+    if (navigator.share) {
+      try {
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], `EcoNexo_Impacto_${selectedYear}.png`, { type: 'image/png' });
+        await navigator.share({ files: [file], title: `Mi impacto ambiental ${selectedYear}` });
+        return;
+      } catch {
+        // fallback to download
+      }
+    }
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `EcoNexo_Impacto_${selectedYear}.png`;
+    a.click();
+    toast.success('Tarjeta descargada como PNG');
+  };
+
   const glossary = isLeyRep ? [
     { title: 'Equivalencia', desc: 'Conversión de métricas técnicas (como kg de CO₂) a conceptos cotidianos.' },
     { title: 'Huella de Carbono', desc: 'Total de gases de efecto invernadero emitidos por la empresa.' },
@@ -658,21 +781,11 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
         </section>
 
         <button
-          onClick={() => {
-            if (navigator.share) {
-              navigator.share({
-                title: 'Mi Impacto Ambiental - Econexo',
-                text: '¡Mira el impacto positivo que estamos generando con Econexo!',
-                url: window.location.href,
-              }).catch(console.error);
-            } else {
-              toast.success('Enlace copiado al portapapeles');
-            }
-          }}
-          className="w-full h-16 bg-primary text-background-dark rounded-[22px] font-display font-black text-sm uppercase tracking-[0.25em] flex items-center justify-center gap-3 transform active:scale-95 transition-all shadow-[0_15px_30px_rgba(15,240,146,0.25)]"
+          onClick={handleShareCard}
+          className="w-full h-16 bg-primary text-white rounded-[22px] font-display font-black text-sm uppercase tracking-[0.25em] flex items-center justify-center gap-3 transform active:scale-95 transition-all shadow-[0_15px_30px_rgba(50,97,5,0.25)]"
         >
-          <span className="material-symbols-outlined font-black text-xl">ios_share</span>
-          Compartir Informe
+          <span className="material-symbols-outlined font-black text-xl">share</span>
+          Compartir Tarjeta de Impacto
         </button>
       </main >
 
