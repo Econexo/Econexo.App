@@ -42,13 +42,25 @@ const Navbar: React.FC = () => {
     }
   }, [location.pathname]);
 
-  const navItems = [
+  // Desktop sidebar has all items; mobile bottom bar shows the 5 most used
+  const desktopItems = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
+    { path: '/news', label: 'Noticias', icon: 'newspaper' },
     { path: '/notifications', label: 'Alertas', icon: 'notifications' },
     { path: '/profile', label: 'Perfil', icon: 'person' },
   ];
+
+  const mobileItems = [
+    { path: '/dashboard', label: 'Inicio', icon: 'home' },
+    { path: '/documents', label: 'Documentos', icon: 'description' },
+    { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
+    { path: '/news', label: 'Noticias', icon: 'newspaper' },
+    { path: '/profile', label: 'Perfil', icon: 'person' },
+  ];
+
+  const navItems = desktopItems;
 
   if (isAdmin) {
     navItems.splice(4, 0, { path: '/admin', label: 'Admin', icon: 'admin_panel_settings' });
@@ -61,7 +73,7 @@ const Navbar: React.FC = () => {
       {/* ─── MOBILE / TABLET: bottom bar ─── */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-white/60 dark:border-white/10 pb-6 pt-3 px-4 z-50 shadow-[0_-4px_20px_rgba(31,38,135,0.05)] transition-colors duration-300">
         <ul className="flex justify-between items-center w-full">
-          {navItems.map((item) => (
+          {mobileItems.map((item) => (
             <li key={item.path} className="flex-1">
               <Link
                 to={item.path}
