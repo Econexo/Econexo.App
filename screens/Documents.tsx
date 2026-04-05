@@ -508,32 +508,84 @@ const Documents: React.FC = () => {
     else navigate(-1);
   };
 
+  const exportToCSV = () => {
+    const crDocs = documents.filter(doc => doc.type === 'CR' && doc.verified);
+    if (crDocs.length === 0) {
+      toast.warning('No hay certificados de retiro para exportar.');
+      return;
+    }
+
+    const materialFactorsLocal: Record<string, number> = {
+      'Plásticos': 1.5, 'Papel/Cartón': 0.9, 'Vidrio': 0.3, 'Metales': 1.8,
+      'Electrónicos': 2.0, 'Peligrosos': 1.2, 'Orgánicos': 0.5, 'Aceites': 2.5,
+      'Madera': 0.7, 'Textiles': 1.1, 'Neumáticos': 1.4, 'Otros': 1.0
+    };
+
+    const rows: string[][] = [
+      ['Fecha', 'Certificado N°', 'Material', 'Cantidad (Kg)', 'Unidad', 'CO₂ Evitado (kg)', 'Descripción']
+    ];
+
+    crDocs.forEach(doc => {
+      const date = new Date(doc.created_at).toLocaleDateString('es-CL');
+      const certNum = doc.metadata?.cert_number || doc.title;
+      const details = doc.metadata?.waste_details;
+      const items = Array.isArray(details) ? details : details ? [details] : [];
+
+      items.forEach((item: any) => {
+        const qty = Number(item.quantity) || 0;
+        const material = item.waste_type || 'Otros';
+        const factor = materialFactorsLocal[material] ?? materialFactorsLocal['Otros'];
+        const co2 = (qty * factor).toFixed(2);
+        rows.push([date, certNum, material, qty.toString(), item.unit || 'Kg', co2, item.description || '']);
+      });
+    });
+
+    const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `econexo_retiros_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`CSV exportado con ${rows.length - 1} registros.`);
+  };
+
   return (
-    <div className="relative font-display bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
+    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
       <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
-      <div className="flex items-center p-4 sticky top-0 z-10 bg-white/70 backdrop-blur-md justify-between border-b border-white/40 shadow-sm">
+      <div className="flex items-center p-4 sticky top-0 z-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md justify-between border-b border-white/40 dark:border-slate-700/40 shadow-sm">
         <button
           onClick={handleBack}
-          className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all"
+          className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm transition-all"
         >
-          <span className="material-symbols-outlined text-gray-900">{(selectedFolder || selectedYear || selectedMonth) ? 'arrow_back' : 'close'}</span>
+          <span className="material-symbols-outlined text-gray-900 dark:text-gray-200">{(selectedFolder || selectedYear || selectedMonth) ? 'arrow_back' : 'close'}</span>
         </button>
-        <h2 className="text-lg font-black uppercase tracking-tighter text-gray-900">
+        <h2 className="text-lg font-black uppercase tracking-tighter text-gray-900 dark:text-white">
           {selectedMonth !== null ? monthNames[selectedMonth] :
             selectedYear !== null ? `Año ${selectedYear} ` :
               selectedFolder ? getFolderConfig(selectedFolder)?.name :
                 currentSection !== 'root' ? ROOT_SECTIONS.find(s => s.id === currentSection)?.name : 'Documentación'}
         </h2>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 active:scale-90 transition-all border border-white/40 shadow-sm"
-        >
-          <span className="material-symbols-outlined text-gray-900">settings</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportToCSV}
+            title="Exportar historial CSV"
+            className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-primary/10 active:scale-90 transition-all border border-white/40 dark:border-slate-600/40 shadow-sm text-gray-500 dark:text-gray-400 hover:text-primary"
+          >
+            <span className="material-symbols-outlined">table_view</span>
+          </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 active:scale-90 transition-all border border-white/40 dark:border-slate-600/40 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-gray-900 dark:text-gray-200">settings</span>
+          </button>
+        </div>
       </div>
 
       <div className="p-4 space-y-6 relative z-10">

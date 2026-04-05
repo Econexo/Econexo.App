@@ -45,6 +45,12 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [avatarUrl, setAvatarUrl] = useState<string>("https://picsum.photos/seed/user123/100/100");
   const [selectedYear, setSelectedYear] = useState<number | 'all'>(new Date().getFullYear());
   const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()]);
+  const [showComparison, setShowComparison] = useState(false);
+  const [prevYearTendencia, setPrevYearTendencia] = useState<{name: string, value: number}[]>(
+    ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].map(m => ({ name: m, value: 0 }))
+  );
+  const [alerts, setAlerts] = useState<{ type: 'warning' | 'success' | 'info'; icon: string; message: string }[]>([]);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [userName, setUserName] = useState<string>('Usuario');
 
@@ -62,6 +68,16 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     { label: 'Neumáticos/Caucho', value: 'Neumáticos' },
     { label: 'Otros', value: 'Otros' }
   ];
+
+  useEffect(() => {
+    if (showComparison && typeof selectedYear === 'number') {
+      loadPrevYearStats(selectedYear - 1);
+    } else {
+      setPrevYearTendencia(
+        ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].map(m => ({ name: m, value: 0 }))
+      );
+    }
+  }, [showComparison, selectedYear]);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -94,6 +110,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     checkUserRole();
     loadStats();
     fetchClients();
+    computeAlerts();
 
     // Subscribe to Web Push if not already subscribed (non-blocking)
     const initPush = async () => {
@@ -367,12 +384,137 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     }
   };
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const computeAlerts = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const newAlerts: { type: 'warning' | 'success' | 'info'; icon: string; message: string }[] = [];
+
+    // 1. Days since last withdrawal
+    const { data: lastDocs } = await supabase
+      .from('documents')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .eq('type', 'CR')
+      .eq('verified', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (lastDocs && lastDocs.length > 0) {
+      const lastDate = new Date(lastDocs[0].created_at);
+      const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSince >= 30) {
+        newAlerts.push({
+          type: 'warning',
+          icon: 'schedule',
+          message: `Llevas ${daysSince} días sin registrar un retiro. ¡Recuerda mantener tu historial al día!`
+        });
+      }
+    } else {
+      newAlerts.push({
+        type: 'info',
+        icon: 'info',
+        message: 'Aún no tienes retiros registrados. ¡Comienza registrando tu primer retiro!'
+      });
+    }
+
+    // 2. Annual goal from localStorage
+    const currentYear = new Date().getFullYear();
+    const goalKey = `eco_goal_${user.id}_${currentYear}`;
+    const storedGoal = localStorage.getItem(goalKey);
+    if (storedGoal) {
+      const goalKg = Number(storedGoal);
+      const { data: yearDocs } = await supabase
+        .from('documents')
+        .select('metadata')
+        .eq('user_id', user.id)
+        .eq('type', 'CR')
+        .eq('verified', true);
+
+      let totalKgYear = 0;
+      if (yearDocs) {
+        yearDocs.forEach((doc: any) => {
+          const date = new Date(doc.created_at);
+          if (date.getFullYear() === currentYear) {
+            const details = doc.metadata?.waste_details;
+            const items = Array.isArray(details) ? details : details ? [details] : [];
+            items.forEach((item: any) => { totalKgYear += Number(item.quantity) || 0; });
+          }
+        });
+      }
+
+      const pct = Math.round((totalKgYear / goalKg) * 100);
+      if (totalKgYear >= goalKg) {
+        newAlerts.push({
+          type: 'success',
+          icon: 'verified',
+          message: `¡Meta ${currentYear} alcanzada! Reciclaste ${totalKgYear.toLocaleString()} kg de ${goalKg.toLocaleString()} kg objetivo.`
+        });
+      } else if (pct >= 80) {
+        newAlerts.push({
+          type: 'info',
+          icon: 'local_fire_department',
+          message: `¡Estás al ${pct}% de tu meta ${currentYear}! Solo faltan ${(goalKg - totalKgYear).toLocaleString()} kg.`
+        });
+      }
+    }
+
+    setAlerts(newAlerts);
+  };
+
+  const loadPrevYearStats = async (year: number) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+    const isUserAdmin = !!profile?.is_admin;
+
+    let query = supabase.from('documents').select('*').eq('type', 'CR').eq('verified', true);
+    if (!isUserAdmin) query = query.eq('user_id', user.id);
+
+    const { data: docs } = await query;
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const trendData: Record<string, number> = {};
+
+    if (docs) {
+      docs.forEach((doc: any) => {
+        const date = new Date(doc.created_at);
+        if (!isNaN(date.getTime()) && date.getFullYear() === year) {
+          const details = doc.metadata?.waste_details;
+          const items = Array.isArray(details) ? details : details ? [details] : [];
+          const docTotal = items.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0);
+          const mName = monthNames[date.getMonth()];
+          trendData[mName] = Number(((trendData[mName] || 0) + docTotal).toFixed(2));
+        }
+      });
+    }
+
+    setPrevYearTendencia(monthNames.map(name => ({ name, value: trendData[name] || 0 })));
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200">
-          <p className="text-primary font-display font-black text-sm">{`${payload[0].value} Kg`}</p>
-          <p className="text-gray-400 text-[9px] uppercase tracking-widest font-bold">Residuos Recuperados</p>
+        <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 p-3 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200 space-y-1.5">
+          {payload[0] && (
+            <div className="flex items-center gap-2">
+              <div className="size-2 rounded-full bg-primary shrink-0"></div>
+              <p className="text-primary font-display font-black text-sm">{`${payload[0].value} Kg`}</p>
+              {showComparison && typeof selectedYear === 'number' && (
+                <p className="text-gray-400 text-[9px] font-bold">{selectedYear}</p>
+              )}
+            </div>
+          )}
+          {payload[1] && (
+            <div className="flex items-center gap-2">
+              <div className="size-2 rounded-full bg-secondary shrink-0"></div>
+              <p className="text-[#b4d351] font-display font-black text-sm">{`${payload[1].value} Kg`}</p>
+              {typeof selectedYear === 'number' && (
+                <p className="text-gray-400 text-[9px] font-bold">{selectedYear - 1}</p>
+              )}
+            </div>
+          )}
+          <p className="text-gray-400 text-[9px] uppercase tracking-widest font-bold border-t border-gray-100 dark:border-slate-700 pt-1.5">Residuos Recuperados</p>
         </div>
       );
     }
@@ -581,6 +723,31 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       </div>
 
       <main className="flex flex-col gap-6 p-6">
+        {/* Smart Alerts */}
+        {alerts.filter(a => !dismissedAlerts.has(a.message)).length > 0 && (
+          <div className="flex flex-col gap-2">
+            {alerts.filter(a => !dismissedAlerts.has(a.message)).map((alert, i) => {
+              const styles = {
+                warning: { bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-700/40', icon: 'text-amber-500', text: 'text-amber-800 dark:text-amber-300' },
+                success: { bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-700/40', icon: 'text-primary', text: 'text-green-800 dark:text-green-300' },
+                info:    { bg: 'bg-sky-50 dark:bg-sky-900/20',    border: 'border-sky-200 dark:border-sky-700/40',    icon: 'text-sky-500', text: 'text-sky-800 dark:text-sky-300' },
+              }[alert.type];
+              return (
+                <div key={i} className={`flex items-start gap-3 p-4 rounded-2xl border ${styles.bg} ${styles.border} animate-in fade-in slide-in-from-top-2 duration-300`}>
+                  <span className={`material-symbols-outlined text-xl shrink-0 mt-0.5 ${styles.icon}`}>{alert.icon}</span>
+                  <p className={`text-xs font-bold leading-relaxed flex-1 ${styles.text}`}>{alert.message}</p>
+                  <button
+                    onClick={() => setDismissedAlerts(prev => new Set([...prev, alert.message]))}
+                    className="shrink-0 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base">close</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Total Recuperado Card - REDESIGNED */}
         <button
           onClick={() => setShowDetail(!showDetail)}
@@ -669,13 +836,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         </section>
 
         {/* Chart Section - ENCAPSULATED */}
-        <section className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[28px] p-6 border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] flex flex-col gap-6 transition-all">
-          <div className="flex items-center justify-between">
+        <section className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[28px] p-6 border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] flex flex-col gap-4 transition-all">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="text-gray-900 dark:text-white text-lg font-display font-black tracking-tight transition-colors">Tendencia de Recuperación</h3>
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-              className="bg-gray-50 border border-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              onChange={(e) => { setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value)); setShowComparison(false); }}
+              className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
             >
               <option value="all">Histórico (Todos)</option>
               {availableYears.map(year => (
@@ -684,35 +851,80 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             </select>
           </div>
 
+          {/* Comparison toggle — only shown for specific year views */}
+          {typeof selectedYear === 'number' && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowComparison(prev => !prev)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                  showComparison
+                    ? 'bg-primary/10 border-primary/30 text-primary'
+                    : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-400 dark:text-gray-500 hover:border-primary/20'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">compare_arrows</span>
+                Comparar vs {selectedYear - 1}
+              </button>
+              {showComparison && (
+                <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                  <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-primary"></span>{selectedYear}</span>
+                  <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-[#b4d351]"></span>{selectedYear - 1}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="h-48 w-full">
-            {stats.tendencia.some(d => d.value > 0) ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.tendencia} margin={{ left: 15, right: 5, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#326105" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#326105" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Tooltip
-                    content={<CustomTooltip />}
-                    cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }}
-                  />
-                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={9} tickLine={false} axisLine={false} dy={5} interval={0} angle={-45} textAnchor="end" height={50} />
-                  <YAxis hide domain={[0, 'auto']} />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#326105"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorValue)"
-                    animationDuration={2000}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
+            {stats.tendencia.some(d => d.value > 0) ? (() => {
+              const comparisonData = stats.tendencia.map((d, i) => ({
+                ...d,
+                prevValue: showComparison ? (prevYearTendencia[i]?.value || 0) : undefined
+              }));
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={comparisonData} margin={{ left: 15, right: 5, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#326105" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#326105" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorPrev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#b4d351" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#b4d351" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+                    />
+                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={9} tickLine={false} axisLine={false} dy={5} interval={0} angle={-45} textAnchor="end" height={50} />
+                    <YAxis hide domain={[0, 'auto']} />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#326105"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorValue)"
+                      animationDuration={2000}
+                    />
+                    {showComparison && (
+                      <Area
+                        type="monotone"
+                        dataKey="prevValue"
+                        stroke="#b4d351"
+                        strokeWidth={2}
+                        strokeDasharray="5 3"
+                        fillOpacity={1}
+                        fill="url(#colorPrev)"
+                        animationDuration={2000}
+                      />
+                    )}
+                  </AreaChart>
+                </ResponsiveContainer>
+              );
+            })() : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2 border-2 border-dashed border-gray-100 dark:border-slate-700 rounded-2xl bg-gray-50/50 dark:bg-slate-800/50">
                 <span className="material-symbols-outlined text-4xl opacity-50">bar_chart_off</span>
                 <p className="text-xs font-bold uppercase tracking-widest opacity-70">Sin datos</p>
               </div>

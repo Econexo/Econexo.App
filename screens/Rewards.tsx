@@ -95,17 +95,17 @@ const Rewards: React.FC = () => {
     };
 
     return (
-        <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
+        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
             {/* Decorative Background Blobs */}
             <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
             <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
             <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
-            <div className="p-6 sticky top-0 z-10 bg-white/70 backdrop-blur-md flex items-center justify-between border-b border-white/40 shadow-sm">
-                <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all">
-                    <span className="material-symbols-outlined text-gray-700">arrow_back</span>
+            <div className="p-6 sticky top-0 z-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md flex items-center justify-between border-b border-white/40 dark:border-slate-700/40 shadow-sm">
+                <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm transition-all">
+                    <span className="material-symbols-outlined text-gray-700 dark:text-gray-300">arrow_back</span>
                 </button>
-                <h2 className="text-xl font-display font-black text-gray-900">Eco-Puntos</h2>
+                <h2 className="text-xl font-display font-black text-gray-900 dark:text-white">Eco-Puntos</h2>
                 <div className="size-10"></div>
             </div>
 
@@ -170,10 +170,10 @@ const Rewards: React.FC = () => {
 
                 {/* Available Rewards */}
                 <section className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2">Canjear Recompensas</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Canjear Recompensas</h3>
                     <div className="space-y-4">
                         {rewards.map(reward => (
-                            <div key={reward.id} className="bg-white/60 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 flex items-center gap-4 group relative overflow-hidden transition-all hover:border-primary/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+                            <div key={reward.id} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 dark:border-slate-600/50 flex items-center gap-4 group relative overflow-hidden transition-all hover:border-primary/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                                 {/* Subtle Icon Watermark */}
                                 <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
                                     <span className="material-symbols-outlined text-[120px]">{reward.icon}</span>
@@ -189,15 +189,15 @@ const Rewards: React.FC = () => {
                                                 <span className="bg-primary text-white text-[10px] font-black px-2 py-0.5 rounded-md w-fit mb-1 shadow-sm">
                                                     {reward.title.split(' ')[0]}
                                                 </span>
-                                                <h4 className="font-display font-black text-sm text-gray-900 leading-tight">
+                                                <h4 className="font-display font-black text-sm text-gray-900 dark:text-white leading-tight">
                                                     {reward.title.split(' ').slice(1).join(' ')}
                                                 </h4>
                                             </>
                                         ) : (
-                                            <h4 className="font-display font-black text-sm text-gray-900 leading-tight">{reward.title}</h4>
+                                            <h4 className="font-display font-black text-sm text-gray-900 dark:text-white leading-tight">{reward.title}</h4>
                                         )}
                                     </div>
-                                    <p className="text-[11px] text-gray-600 font-bold leading-tight">{reward.description}</p>
+                                    <p className="text-[11px] text-gray-600 dark:text-gray-400 font-bold leading-tight">{reward.description}</p>
                                     <div className="pt-2 flex items-center gap-2">
                                         <span className="text-xs font-black text-primary bg-green-50/50 px-2 py-0.5 rounded-md border border-green-100 backdrop-blur-sm">{reward.cost.toLocaleString()} pts</span>
                                     </div>
@@ -218,18 +218,18 @@ const Rewards: React.FC = () => {
 
                 {/* History */}
                 <section className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2">Historial de Puntos</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Historial de Puntos</h3>
                     {transactions.length === 0 ? (
-                        <div className="p-8 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300">
-                            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Aún no tienes movimientos</p>
+                        <div className="p-8 text-center bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300 dark:border-slate-600">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Aún no tienes movimientos</p>
                         </div>
                     ) : (
-                        <div className="bg-white/60 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
                             {transactions.map((t, idx) => (
-                                <div key={t.id} className={`p-4 flex items-center justify-between ${idx !== transactions.length - 1 ? 'border-b border-white/40' : ''} hover:bg-white/40 transition-colors`}>
+                                <div key={t.id} className={`p-4 flex items-center justify-between ${idx !== transactions.length - 1 ? 'border-b border-white/40 dark:border-slate-700/40' : ''} hover:bg-white/40 dark:hover:bg-slate-700/40 transition-colors`}>
                                     <div className="space-y-1">
-                                        <p className="text-[13px] font-bold text-gray-900">{t.reason}</p>
-                                        <p className="text-[9px] text-gray-500 font-black uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
+                                        <p className="text-[13px] font-bold text-gray-900 dark:text-white">{t.reason}</p>
+                                        <p className="text-[9px] text-gray-500 dark:text-gray-400 font-black uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <span className={`font-display font-black text-sm ${t.amount > 0 ? 'text-primary' : 'text-red-400'}`}>
                                         {t.amount > 0 ? '+' : ''}{t.amount.toLocaleString()}

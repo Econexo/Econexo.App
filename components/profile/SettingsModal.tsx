@@ -24,18 +24,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     return (
         <div className="fixed inset-0 z-[100] flex items-end justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose}></div>
-            <div className="relative w-full max-w-md bg-white/90 backdrop-blur-2xl border-t border-x border-white/80 rounded-t-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+            <div className="relative w-full max-w-md bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl border-t border-x border-white/80 dark:border-slate-700/60 rounded-t-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500">
 
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full"></div>
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-full"></div>
 
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h3 className="text-2xl font-display font-black text-gray-900">Ajustes</h3>
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Configuración General</p>
+                        <h3 className="text-2xl font-display font-black text-gray-900 dark:text-white">Ajustes</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">Configuración General</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="size-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
+                        className="size-10 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                         <span className="material-symbols-outlined">close</span>
                     </button>
@@ -43,14 +43,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="space-y-4">
                     {/* Dark Mode */}
-                    <label className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white/60 cursor-pointer hover:bg-white/80 transition-colors group shadow-sm">
+                    <label className="flex items-center justify-between p-4 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-white/60 dark:border-slate-700/50 cursor-pointer hover:bg-white/80 dark:hover:bg-slate-800 transition-colors group shadow-sm">
                         <div className="flex items-center gap-4">
                             <div className="size-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center border border-purple-100">
                                 <span className="material-symbols-outlined">dark_mode</span>
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Modo Oscuro</p>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Apariencia Visual</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">Modo Oscuro</p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Apariencia Visual</p>
                             </div>
                         </div>
                         <div className="relative">
@@ -60,14 +60,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     </label>
 
                     {/* Notifications */}
-                    <label className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white/60 cursor-pointer hover:bg-white/80 transition-colors group shadow-sm">
+                    <label className="flex items-center justify-between p-4 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-white/60 dark:border-slate-700/50 cursor-pointer hover:bg-white/80 dark:hover:bg-slate-800 transition-colors group shadow-sm">
                         <div className="flex items-center gap-4">
                             <div className="size-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center border border-blue-100">
                                 <span className="material-symbols-outlined">notifications</span>
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Notificaciones</p>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Alertas y Avisos</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">Notificaciones</p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Alertas y Avisos</p>
                             </div>
                         </div>
                         <div className="relative">
@@ -96,15 +96,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     {/* Change Password */}
                     <div
                         onClick={() => { onClose(); onOpenPasswordChange(); }}
-                        className="flex items-center justify-between p-4 bg-white/50 rounded-2xl border border-white/60 cursor-pointer hover:bg-white/80 transition-colors group shadow-sm"
+                        className="flex items-center justify-between p-4 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-white/60 dark:border-slate-700/50 cursor-pointer hover:bg-white/80 dark:hover:bg-slate-800 transition-colors group shadow-sm"
                     >
                         <div className="flex items-center gap-4">
                             <div className="size-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center border border-green-100">
                                 <span className="material-symbols-outlined">lock_reset</span>
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-gray-900 group-hover:text-green-600 transition-colors">Cambiar Contraseña</p>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Seguridad</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-green-600 transition-colors">Cambiar Contraseña</p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Seguridad</p>
                             </div>
                         </div>
                         <span className="material-symbols-outlined text-green-300 group-hover:text-green-500 transition-colors">chevron_right</span>
@@ -131,7 +131,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="mt-8">
                     <button
                         onClick={onClose}
-                        className="w-full py-4 bg-gray-900 text-white font-display font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-gray-900/20 hover:shadow-gray-900/30 active:scale-[0.98] transition-all"
+                        className="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-display font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-gray-900/20 hover:shadow-gray-900/30 active:scale-[0.98] transition-all"
                     >
                         Listo
                     </button>

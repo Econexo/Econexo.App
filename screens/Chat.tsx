@@ -39,15 +39,15 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen font-display bg-[#f0f4f0] max-w-md md:max-w-2xl lg:max-w-5xl mx-auto relative overflow-hidden text-slate-900">
+    <div className="flex flex-col h-screen font-display bg-[#f0f4f0] dark:bg-background-dark max-w-md md:max-w-2xl lg:max-w-5xl mx-auto relative overflow-hidden text-slate-900 dark:text-slate-100">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
       <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/40 p-4 flex items-center gap-4 shadow-sm">
-        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all text-gray-700">
+      <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/40 dark:border-slate-700/40 p-4 flex items-center gap-4 shadow-sm">
+        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm transition-all text-gray-700 dark:text-gray-300">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div className="flex items-center gap-3">
@@ -55,10 +55,10 @@ const Chat: React.FC = () => {
             <span className="material-symbols-outlined filled text-xl">smart_toy</span>
           </div>
           <div>
-            <h2 className="text-sm font-black text-gray-900">Asistente Eco</h2>
+            <h2 className="text-sm font-black text-gray-900 dark:text-white">Asistente Eco</h2>
             <div className="flex items-center gap-1">
               <span className="size-1.5 rounded-full bg-primary animate-pulse"></span>
-              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Online</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Online</span>
             </div>
           </div>
         </div>
@@ -70,7 +70,7 @@ const Chat: React.FC = () => {
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] p-4 rounded-[20px] text-sm leading-relaxed shadow-sm ${m.role === 'user'
               ? 'bg-primary text-background-dark font-medium rounded-tr-none shadow-primary/20'
-              : 'bg-white/60 backdrop-blur-2xl text-gray-800 rounded-tl-none border border-white/80 font-medium'
+              : 'bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl text-gray-800 dark:text-gray-200 rounded-tl-none border border-white/80 dark:border-slate-600/50 font-medium'
               }`}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -90,7 +90,7 @@ const Chat: React.FC = () => {
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white/60 backdrop-blur-2xl p-4 rounded-[20px] rounded-tl-none border border-white/80 flex gap-1">
+            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl p-4 rounded-[20px] rounded-tl-none border border-white/80 dark:border-slate-600/50 flex gap-1">
               <div className="size-1.5 bg-primary/40 rounded-full animate-bounce"></div>
               <div className="size-1.5 bg-primary/60 rounded-full animate-bounce delay-75"></div>
               <div className="size-1.5 bg-primary/80 rounded-full animate-bounce delay-150"></div>
@@ -101,19 +101,19 @@ const Chat: React.FC = () => {
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-white/70 backdrop-blur-md border-t border-white/40 z-20">
-        <div className="flex items-center gap-2 bg-white/50 border border-white/60 rounded-[24px] px-4 py-2 shadow-inner focus-within:bg-white focus-within:border-primary/30 transition-all">
+      <div className="p-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-t border-white/40 dark:border-slate-700/40 z-20">
+        <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 border border-white/60 dark:border-slate-600/40 rounded-[24px] px-4 py-2 shadow-inner focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:border-primary/30 transition-all">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Pregunta sobre Ley REP, reciclaje..."
-            className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 font-medium text-gray-900 placeholder:text-gray-400"
+            className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || loading}
-            className={`size-10 rounded-full flex items-center justify-center transition-all ${input.trim() ? 'bg-primary text-background-dark shadow-lg shadow-primary/20 active:scale-90' : 'text-gray-400 bg-gray-100'
+            className={`size-10 rounded-full flex items-center justify-center transition-all ${input.trim() ? 'bg-primary text-background-dark shadow-lg shadow-primary/20 active:scale-90' : 'text-gray-400 bg-gray-100 dark:bg-slate-700'
               }`}
           >
             <span className="material-symbols-outlined">send</span>

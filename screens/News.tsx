@@ -64,28 +64,28 @@ const News: React.FC = () => {
   }, [search, allArticles]);
 
   return (
-    <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
       <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
-      <div className="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-white/40 shadow-sm p-4 flex flex-col gap-4">
+      <div className="sticky top-0 z-40 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/40 dark:border-slate-700/40 shadow-sm p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-full border border-white/40 shadow-sm transition-all">
-            <span className="material-symbols-outlined text-gray-700">arrow_back</span>
+          <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm transition-all">
+            <span className="material-symbols-outlined text-gray-700 dark:text-gray-300">arrow_back</span>
           </button>
-          <h1 className="text-lg font-display font-black text-gray-900">Noticias</h1>
+          <h1 className="text-lg font-display font-black text-gray-900 dark:text-white">Noticias</h1>
           <div className="size-10"></div>
         </div>
 
         <div className="relative group">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors">search</span>
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">search</span>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-12 bg-white/60 backdrop-blur-sm rounded-xl pl-12 pr-4 text-sm border border-white/60 focus:border-primary/50 transition-all outline-none font-bold text-gray-700 placeholder:text-gray-400 focus:bg-white/80"
+            className="w-full h-12 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl pl-12 pr-4 text-sm border border-white/60 dark:border-slate-600/40 focus:border-primary/50 transition-all outline-none font-bold text-gray-700 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800"
             placeholder="Buscar noticias, guías o normativas..."
           />
         </div>
@@ -113,20 +113,20 @@ const News: React.FC = () => {
         )}
 
         <section>
-          <h2 className="font-display font-black text-lg mb-4 px-1 text-gray-900 flex items-center gap-2">
+          <h2 className="font-display font-black text-lg mb-4 px-1 text-gray-900 dark:text-white flex items-center gap-2">
             {search ? `Resultados (${filteredArticles.length})` : 'Lo más reciente'}
-            {loading && !search && <span className="text-xs text-gray-500 font-normal animate-pulse">(Actualizando...)</span>}
+            {loading && !search && <span className="text-xs text-gray-500 dark:text-gray-400 font-normal animate-pulse">(Actualizando...)</span>}
           </h2>
           <div className="space-y-4">
             {loading && dynamicArticles.length === 0 ? (
               // Loading Skeletons
               Array(3).fill(0).map((_, i) => (
-                <div key={i} className="bg-white/40 rounded-[24px] p-4 h-28 animate-pulse flex gap-4">
-                  <div className="size-20 bg-gray-200 rounded-xl"></div>
+                <div key={i} className="bg-white/40 dark:bg-slate-800/40 rounded-[24px] p-4 h-28 animate-pulse flex gap-4">
+                  <div className="size-20 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
                   <div className="flex-1 space-y-2 py-2">
-                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-2/3"></div>
                   </div>
                 </div>
               ))
@@ -137,23 +137,23 @@ const News: React.FC = () => {
                   href={a.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/60 backdrop-blur-2xl rounded-[24px] p-4 border border-white/80 flex gap-4 hover:border-primary/30 hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer block shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
+                  className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[24px] p-4 border border-white/80 dark:border-slate-600/50 flex gap-4 hover:border-primary/30 hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer block shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <img src={a.image} className="size-20 rounded-xl object-cover shadow-sm" alt={a.title} onError={(e) => (e.currentTarget.src = 'https://picsum.photos/100')} />
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
                       <span className="text-[10px] font-black text-primary uppercase tracking-wider">{a.category}</span>
-                      <h4 className="font-display font-bold text-sm text-gray-900 leading-snug line-clamp-2 mt-1">{a.title}</h4>
+                      <h4 className="font-display font-bold text-sm text-gray-900 dark:text-white leading-snug line-clamp-2 mt-1">{a.title}</h4>
                     </div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{a.time}</span>
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{a.time}</span>
                   </div>
                 </a>
               ))
             ) : (
-              <div className="py-12 text-center flex flex-col items-center gap-3 bg-white/40 backdrop-blur-sm rounded-[32px] border border-dashed border-gray-300">
+              <div className="py-12 text-center flex flex-col items-center gap-3 bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm rounded-[32px] border border-dashed border-gray-300 dark:border-slate-600">
                 <span className="material-symbols-outlined text-5xl text-gray-400">sentiment_dissatisfied</span>
-                <p className="text-gray-500 font-bold">No encontramos resultados.</p>
+                <p className="text-gray-500 dark:text-gray-400 font-bold">No encontramos resultados.</p>
                 <button onClick={() => setSearch('')} className="text-primary font-black text-xs uppercase tracking-widest underline">Limpiar filtros</button>
               </div>
             )}

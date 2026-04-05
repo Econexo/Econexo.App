@@ -22,6 +22,11 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     energiaAhorrada: 0,
     carbonFootprint: 0
   });
+  const [totalKg, setTotalKg] = useState(0);
+  const [annualGoalKg, setAnnualGoalKg] = useState<number | null>(null);
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalInput, setGoalInput] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Animation States
   const [animatedMeta, setAnimatedMeta] = useState(0);
@@ -65,10 +70,38 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     return () => clearInterval(timer);
   }, [stats]);
 
+  // Load goal from localStorage when user or year changes
+  useEffect(() => {
+    if (!userId) return;
+    const stored = localStorage.getItem(`eco_goal_${userId}_${selectedYear}`);
+    setAnnualGoalKg(stored ? Number(stored) : null);
+  }, [userId, selectedYear]);
+
+  const handleSaveGoal = () => {
+    const val = Number(goalInput);
+    if (!val || val <= 0 || !userId) {
+      toast.warning('Ingresa una meta válida mayor a 0 kg.');
+      return;
+    }
+    localStorage.setItem(`eco_goal_${userId}_${selectedYear}`, String(val));
+    setAnnualGoalKg(val);
+    setShowGoalModal(false);
+    setGoalInput('');
+    toast.success(`Meta ${selectedYear} establecida: ${val.toLocaleString()} kg`);
+  };
+
+  const handleRemoveGoal = () => {
+    if (!userId) return;
+    localStorage.removeItem(`eco_goal_${userId}_${selectedYear}`);
+    setAnnualGoalKg(null);
+    toast.success('Meta eliminada.');
+  };
+
   useEffect(() => {
     const fetchImpactData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserId(user.id);
 
       const { data: docs } = await supabase
         .from('documents')
@@ -122,6 +155,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
 
       const treesEquivalent = co2AvoidedKg / CO2_PER_TREE; // 1 árbol absorbe ~22kg CO2/año
 
+      setTotalKg(totalKg);
       setStats({
         metaRep: totalKg > 0 ? Math.min(Math.round((totalKg / 1000) * 100), 100) : 0,
         arbolesRescatados: Math.round(treesEquivalent),
@@ -145,27 +179,76 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     { title: 'Sumideros de CO₂', desc: 'Elementos naturales que absorben carbono de la atmósfera.' },
   ];
 
+  const goalProgress = annualGoalKg && annualGoalKg > 0
+    ? Math.min(Math.round((totalKg / annualGoalKg) * 100), 100)
+    : 0;
+  const goalAchieved = annualGoalKg !== null && totalKg >= annualGoalKg;
+
   return (
-    <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
       <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-white/70 backdrop-blur-md px-5 py-5 border-b border-white/40 shadow-sm">
-        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 transition-all active:scale-90 border border-white/40 shadow-sm">
-          <span className="material-symbols-outlined text-gray-700 text-[22px]">arrow_back</span>
+      <header className="sticky top-0 z-20 flex items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-md px-5 py-5 border-b border-white/40 dark:border-slate-700/40 shadow-sm">
+        <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm">
+          <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[22px]">arrow_back</span>
         </button>
-        <h1 className="text-xl font-display font-black tracking-tight text-gray-900">
+        <h1 className="text-xl font-display font-black tracking-tight text-gray-900 dark:text-white">
           {isLeyRep ? 'Gestión REP' : 'Impacto Positivo'}
         </h1>
         <button
           onClick={() => setShowHelp(true)}
-          className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 transition-all group active:scale-90 border border-white/40 shadow-sm"
+          className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all group active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
         >
           <span className="material-symbols-outlined text-primary group-hover:rotate-12 transition-transform text-[22px]">help</span>
         </button>
       </header>
+
+      {/* Goal Modal */}
+      {showGoalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowGoalModal(false)}></div>
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 dark:border-slate-700 shadow-2xl animate-in zoom-in duration-200">
+            <div className="text-center space-y-5">
+              <div className="size-14 rounded-3xl bg-primary/10 text-primary mx-auto flex items-center justify-center border border-primary/20">
+                <span className="material-symbols-outlined text-3xl">flag</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-display font-black text-gray-900 dark:text-white">Meta {selectedYear}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mt-1">¿Cuántos kg quieres reciclar este año?</p>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={goalInput}
+                  onChange={e => setGoalInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
+                  placeholder="Ej: 500"
+                  className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-2xl px-5 py-4 text-2xl font-black text-center text-gray-900 dark:text-white outline-none focus:border-primary transition-colors"
+                  autoFocus
+                />
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 font-black text-sm">kg</span>
+              </div>
+              <div className="space-y-3 pt-2">
+                <button
+                  onClick={handleSaveGoal}
+                  className="w-full h-14 bg-primary text-background-dark rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+                >
+                  Guardar Meta
+                </button>
+                <button
+                  onClick={() => setShowGoalModal(false)}
+                  className="w-full h-10 text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Help Modal */}
       {showHelp && (
@@ -223,29 +306,97 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
               </div>
             </div>
           </div>
-          <h2 className="mt-10 text-center text-3xl font-display font-black leading-[1.1] px-6 tracking-tighter text-gray-900">
+          <h2 className="mt-10 text-center text-3xl font-display font-black leading-[1.1] px-6 tracking-tighter text-gray-900 dark:text-white">
             {stats.metaRep > 0
               ? (isLeyRep ? '¡Tu empresa cumple con la normativa!' : '¡Estás transformando el medio ambiente!')
               : (isLeyRep ? 'Inicia tu registro para ver progreso REP' : 'Comienza a reciclar para ver tu impacto')}
           </h2>
         </section>
 
+        {/* Annual Goal Section */}
+        <section className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] p-6 border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                <span className="material-symbols-outlined text-primary text-lg">flag</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-display font-black text-gray-900 dark:text-white">Meta Anual {selectedYear}</h3>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">Objetivo de reciclaje</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              {annualGoalKg !== null && (
+                <button
+                  onClick={handleRemoveGoal}
+                  className="size-8 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                  title="Eliminar meta"
+                >
+                  <span className="material-symbols-outlined text-lg">delete</span>
+                </button>
+              )}
+              <button
+                onClick={() => { setGoalInput(annualGoalKg?.toString() || ''); setShowGoalModal(true); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+              >
+                <span className="material-symbols-outlined text-sm">{annualGoalKg !== null ? 'edit' : 'add'}</span>
+                {annualGoalKg !== null ? 'Editar' : 'Establecer'}
+              </button>
+            </div>
+          </div>
+
+          {annualGoalKg !== null ? (
+            <div className="space-y-3">
+              <div className="flex items-end justify-between">
+                <div>
+                  <span className="text-3xl font-display font-black text-gray-900 dark:text-white">{totalKg.toLocaleString()}</span>
+                  <span className="text-sm text-gray-400 dark:text-gray-500 font-bold ml-1">/ {annualGoalKg.toLocaleString()} kg</span>
+                </div>
+                <span className={`text-lg font-display font-black ${goalAchieved ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
+                  {goalProgress}%
+                </span>
+              </div>
+              <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-1000 ${goalAchieved ? 'bg-primary shadow-[0_0_12px_rgba(50,97,5,0.4)]' : 'bg-gradient-to-r from-primary/60 to-primary'}`}
+                  style={{ width: `${goalProgress}%` }}
+                ></div>
+              </div>
+              {goalAchieved ? (
+                <p className="text-xs text-primary font-black flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm filled">verified</span>
+                  ¡Meta alcanzada! Has reciclado {(totalKg - annualGoalKg).toLocaleString()} kg extra.
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 dark:text-gray-500 font-bold">
+                  Te faltan <span className="text-primary font-black">{(annualGoalKg - totalKg).toLocaleString()} kg</span> para alcanzar tu meta.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center py-4 gap-2 text-center">
+              <span className="material-symbols-outlined text-4xl text-gray-200 dark:text-slate-700">flag</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 font-bold">Sin meta establecida para {selectedYear}.<br />Define un objetivo de reciclaje anual.</p>
+            </div>
+          )}
+        </section>
+
         {/* Impact Cards */}
         <section className="space-y-6">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em]">Detalle de Beneficios</h3>
-            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-gray-200">
+            <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Detalle de Beneficios</h3>
+            <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2 py-1 rounded border border-gray-200 dark:border-slate-700">
               <button
                 onClick={() => setSelectedYear(y => y - 1)}
-                className="size-4 flex items-center justify-center text-gray-400 hover:text-primary transition-colors"
+                className="size-4 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
                 aria-label="Año anterior"
               >
                 <span className="material-symbols-outlined text-[14px]">chevron_left</span>
               </button>
-              <span className="text-[10px] text-gray-500 font-bold mx-1">PERIODO {selectedYear}</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mx-1">PERIODO {selectedYear}</span>
               <button
                 onClick={() => setSelectedYear(y => y + 1)}
-                className="size-4 flex items-center justify-center text-gray-400 hover:text-primary transition-colors"
+                className="size-4 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
                 aria-label="Año siguiente"
               >
                 <span className="material-symbols-outlined text-[14px]">chevron_right</span>
@@ -254,7 +405,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
           </div>
 
           {/* Forest Card */}
-          <div className="relative rounded-[32px] bg-white/60 backdrop-blur-2xl overflow-hidden border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] group transition-all hover:scale-[1.02]">
+          <div className="relative rounded-[32px] bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl overflow-hidden border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] group transition-all hover:scale-[1.02]">
             <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-multiply">
               <img
                 src="/assets/trees_rescued_bg.png"
@@ -275,10 +426,10 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 )}
               </div>
               <div className="space-y-1">
-                <span className="text-7xl font-display font-black text-gray-900 block tracking-tighter leading-none">{stats.arbolesRescatados}</span>
+                <span className="text-7xl font-display font-black text-gray-900 dark:text-white block tracking-tighter leading-none">{stats.arbolesRescatados}</span>
                 <span className="text-[13px] text-green-600 font-black uppercase tracking-[0.3em] block ml-1">Árboles Rescatados</span>
               </div>
-              <p className="text-[13px] text-gray-400 leading-relaxed font-bold tracking-tight">Equivale a la preservación efectiva de biodiversidad local frente a la deforestación industrial.</p>
+              <p className="text-[13px] text-gray-400 dark:text-gray-500 leading-relaxed font-bold tracking-tight">Equivale a la preservación efectiva de biodiversidad local frente a la deforestación industrial.</p>
               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden border border-gray-100">
                 <div className="h-full bg-primary" style={{ width: `${Math.min(stats.arbolesRescatados, 100)}% ` }}></div>
               </div>
@@ -286,7 +437,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-5">
-            <div className="relative overflow-hidden bg-white/60 backdrop-blur-2xl rounded-[28px] border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] group h-[180px] transition-all hover:scale-[1.02]">
+            <div className="relative overflow-hidden bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] group h-[180px] transition-all hover:scale-[1.02]">
               <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-multiply">
                 <img
                   src="/assets/water_saved_bg.png"
@@ -299,13 +450,13 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <span className="material-symbols-outlined text-2xl font-bold">water_drop</span>
                 </div>
                 <div>
-                  <p className="text-4xl font-display font-black text-gray-900 tracking-tighter">{stats.aguaAhorrada.toLocaleString()}</p>
-                  <p className="text-[11px] text-gray-400 font-black uppercase mt-1 tracking-widest leading-tight">Lts Agua</p>
+                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{stats.aguaAhorrada.toLocaleString()}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">Lts Agua</p>
                 </div>
               </div>
             </div>
 
-            <div className="relative overflow-hidden bg-white/60 backdrop-blur-2xl rounded-[28px] border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] group h-[180px] transition-all hover:scale-[1.02]">
+            <div className="relative overflow-hidden bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] group h-[180px] transition-all hover:scale-[1.02]">
               <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-multiply">
                 <img
                   src="/assets/energy_saved_bg.png"
@@ -318,8 +469,8 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <span className="material-symbols-outlined text-2xl font-bold">bolt</span>
                 </div>
                 <div>
-                  <p className="text-4xl font-display font-black text-gray-900 tracking-tighter">{stats.energiaAhorrada.toLocaleString()}</p>
-                  <p className="text-[11px] text-gray-400 font-black uppercase mt-1 tracking-widest leading-tight">kWh Energía</p>
+                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{stats.energiaAhorrada.toLocaleString()}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">kWh Energía</p>
                 </div>
               </div>
             </div>
