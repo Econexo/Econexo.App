@@ -571,19 +571,19 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
           {/* Material Breakdown Donut */}
           {materialBreakdown.length > 0 && (() => {
             const MATERIAL_COLORS: Record<string, string> = {
-              'Plásticos':   '#3b82f6',
-              'Papel/Cartón':'#f59e0b',
-              'Aluminio':    '#8b5cf6',
-              'Vidrio':      '#06b6d4',
-              'Metales':     '#64748b',
-              'Electrónicos':'#ec4899',
-              'Orgánicos':   '#84cc16',
-              'Peligrosos':  '#ef4444',
-              'Aceites':     '#f97316',
-              'Madera':      '#a16207',
-              'Textiles':    '#14b8a6',
-              'Neumáticos':  '#6b7280',
-              'Otros':       '#94a3b8',
+              'Plásticos':   '#eab308', // amarillo
+              'Papel/Cartón':'#3b82f6', // azul
+              'Aluminio':    '#9ca3af', // gris claro
+              'Vidrio':      '#22c55e', // verde
+              'Metales':     '#6b7280', // gris
+              'Electrónicos':'#ec4899', // rosa
+              'Orgánicos':   '#84cc16', // verde lima
+              'Peligrosos':  '#ef4444', // rojo
+              'Aceites':     '#f97316', // naranja
+              'Madera':      '#a16207', // café
+              'Textiles':    '#14b8a6', // teal
+              'Neumáticos':  '#374151', // gris oscuro
+              'Otros':       '#94a3b8', // gris suave
             };
             const totalDonut = materialBreakdown.reduce((s, d) => s + d.value, 0);
             return (
