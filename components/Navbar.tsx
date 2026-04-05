@@ -3,9 +3,15 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 
+// Hardcoded unread count matching Notifications screen data.
+// When notifications move to Supabase, replace this with a real query.
+const TOTAL_UNREAD = 1;
+const NOTIF_SEEN_KEY = 'eco_notif_seen';
+
 const Navbar: React.FC = () => {
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -22,11 +28,25 @@ const Navbar: React.FC = () => {
     checkAdmin();
   }, []);
 
+  // Compute unread badge
+  useEffect(() => {
+    const seen = localStorage.getItem(NOTIF_SEEN_KEY) === 'true';
+    setUnreadCount(seen ? 0 : TOTAL_UNREAD);
+  }, []);
+
+  // Clear badge when user navigates to /notifications
+  useEffect(() => {
+    if (location.pathname === '/notifications') {
+      localStorage.setItem(NOTIF_SEEN_KEY, 'true');
+      setUnreadCount(0);
+    }
+  }, [location.pathname]);
+
   const navItems = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
-    { path: '/news', label: 'Noticias', icon: 'newspaper' },
+    { path: '/notifications', label: 'Alertas', icon: 'notifications' },
     { path: '/profile', label: 'Perfil', icon: 'person' },
   ];
 
@@ -38,7 +58,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      {/* ─── MOBILE / TABLET: bottom bar (unchanged) ─── */}
+      {/* ─── MOBILE / TABLET: bottom bar ─── */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-white/60 dark:border-white/10 pb-6 pt-3 px-4 z-50 shadow-[0_-4px_20px_rgba(31,38,135,0.05)] transition-colors duration-300">
         <ul className="flex justify-between items-center w-full">
           {navItems.map((item) => (
@@ -50,10 +70,15 @@ const Navbar: React.FC = () => {
                   : 'text-gray-400 hover:text-gray-600'
                   } ${item.primary ? 'relative -top-6' : ''}`}
               >
-                <div className={`${item.primary ? 'size-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-white transform active:scale-95 transition-transform' : ''}`}>
+                <div className={`relative ${item.primary ? 'size-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-white transform active:scale-95 transition-transform' : ''}`}>
                   <span className={`material-symbols-outlined ${isActive(item.path) ? 'filled' : ''} ${item.primary ? 'text-[28px]' : 'text-[26px]'}`}>
                     {item.icon}
                   </span>
+                  {item.path === '/notifications' && unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 size-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none">
+                      {unreadCount}
+                    </span>
+                  )}
                 </div>
                 <span className={`text-[10px] font-bold uppercase tracking-wide ${item.primary ? 'mt-1' : ''}`}>
                   {item.label}
@@ -90,9 +115,16 @@ const Navbar: React.FC = () => {
                 }
               `}
             >
-              <span className={`material-symbols-outlined text-xl ${isActive(item.path) ? 'filled' : ''}`}>
-                {item.icon}
-              </span>
+              <div className="relative">
+                <span className={`material-symbols-outlined text-xl ${isActive(item.path) ? 'filled' : ''}`}>
+                  {item.icon}
+                </span>
+                {item.path === '/notifications' && unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 size-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
               <span>{item.label}</span>
               {item.primary && !isActive(item.path) && (
                 <span className="ml-auto size-2 rounded-full bg-primary animate-pulse" />
