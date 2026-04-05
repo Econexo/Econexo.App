@@ -70,6 +70,29 @@ const Chat: React.FC = () => {
     }
   };
 
+  const QUICK_SUGGESTIONS = [
+    '¿Qué es la Ley REP?',
+    '¿Qué exige el DS 148?',
+    '¿Cómo gestionar residuos peligrosos?',
+    '¿Qué es un gestor autorizado?',
+    '¿Cómo calcular mi huella de carbono?',
+  ];
+
+  const handleQuickSend = async (text: string) => {
+    if (loading) return;
+    const userMsg: Message = { role: 'user', parts: [{ text }] };
+    setMessages(prev => [...prev, userMsg]);
+    setLoading(true);
+    try {
+      const responseText = await getGeminiResponse(text, messages);
+      setMessages(prev => [...prev, { role: 'model', parts: [{ text: responseText || "No pude generar una respuesta." }] }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'model', parts: [{ text: "Lo siento, hubo un error de conexión." }] }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleNewChat = useCallback(() => {
     setMessages([GREETING]);
     if (chatKey) localStorage.removeItem(chatKey);
@@ -134,6 +157,21 @@ const Chat: React.FC = () => {
             </div>
           </div>
         ))}
+        {/* Quick suggestion chips — only visible on fresh/greeting-only chat */}
+        {messages.length === 1 && !loading && (
+          <div className="flex flex-wrap gap-2 px-1">
+            {QUICK_SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                onClick={() => handleQuickSend(s)}
+                className="text-xs font-bold px-4 py-2 rounded-full bg-white/70 dark:bg-slate-800/70 border border-primary/20 text-primary hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading && (
           <div className="flex justify-start">
             <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl p-4 rounded-[20px] rounded-tl-none border border-white/80 dark:border-slate-600/50 flex gap-1">
