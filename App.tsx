@@ -110,7 +110,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/notifications" element={isAuthenticated ? <div className="lg:ml-64"><Notifications /></div> : <Navigate to="/" />} />
           <Route path="/profile"       element={isAuthenticated ? <div className="lg:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
           <Route path="/analyze"       element={isAuthenticated ? <div className="lg:ml-64"><Analyze /></div> : <Navigate to="/" />} />
-          <Route path="/chat"          element={isAuthenticated ? <div className="lg:ml-64"><Chat /></div> : <Navigate to="/" />} />
+          <Route path="/chat"          element={isAuthenticated ? <div className="lg:ml-64 h-screen"><Chat /></div> : <Navigate to="/" />} />
           <Route path="/admin"         element={isAuthenticated && isAdmin ? <div className="lg:ml-64"><Admin /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
           <Route path="/rewards"       element={isAuthenticated ? <div className="lg:ml-64"><Rewards /></div> : <Navigate to="/" />} />
           <Route path="*" element={<Navigate to="/" />} />
