@@ -32,8 +32,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // Use latest stable model with fallback name
-    const GEMINI_MODEL = 'gemini-1.5-flash';
-    const GEMINI_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`;
+    const GEMINI_MODEL = 'gemini-pro';
+    const GEMINI_BASE_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}`;
 
     let responseText = '';
 
@@ -57,12 +57,18 @@ Deno.serve(async (req: Request) => {
       // Add the current user prompt
       filteredHistory.push({ role: 'user', parts: [{ text: prompt }] });
 
+      // Prepend system instruction as first user turn (gemini-pro doesn't support system_instruction field)
+      const contentsWithSystem = [
+        { role: 'user', parts: [{ text: systemInstruction }] },
+        { role: 'model', parts: [{ text: 'Entendido. Soy el asistente experto de Econexo.' }] },
+        ...filteredHistory,
+      ];
+
       const geminiRes = await fetch(`${GEMINI_BASE_URL}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemInstruction }] },
-          contents: filteredHistory,
+          contents: contentsWithSystem,
           generationConfig: {
             maxOutputTokens: 2048,
             temperature: 0.7,
