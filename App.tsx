@@ -8,6 +8,7 @@ import { supabase } from './services/supabase';
 import Login from './screens/Login';
 import ForgotPassword from './screens/ForgotPassword';
 import ResetPassword from './screens/ResetPassword';
+import Onboarding from './screens/Onboarding';
 
 // Lazy-loaded (only loaded when the user navigates to that route)
 const Dashboard    = lazy(() => import('./screens/Dashboard'));
@@ -27,10 +28,13 @@ const PageLoader = () => (
   </div>
 );
 
+const ONBOARDING_KEY = 'eco_onboarding_done';
+
 const AppRoutes: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLeyRepUser, setIsLeyRepUser] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -73,6 +77,10 @@ const AppRoutes: React.FC = () => {
       setIsAuthenticated(!!session);
       if (session?.user) {
         checkAdmin(session.user.id);
+        // Show onboarding on first sign-in ever
+        if (event === 'SIGNED_IN' && !localStorage.getItem(ONBOARDING_KEY)) {
+          setShowOnboarding(true);
+        }
       } else {
         setIsAdmin(false);
       }
@@ -92,12 +100,18 @@ const AppRoutes: React.FC = () => {
     setIsLeyRepUser(status);
   };
 
+  const handleOnboardingComplete = () => {
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+  };
+
   if (isAuthenticated === null) {
     return <PageLoader />;
   }
 
   return (
     <div className="min-h-screen bg-[#f0f4f0] dark:bg-background-dark overflow-x-hidden transition-colors duration-300">
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLogin={() => setIsAuthenticated(true)} onLeyRepChange={handleToggleLeyRep} currentLeyRep={isLeyRepUser} />} />
