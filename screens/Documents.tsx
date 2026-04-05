@@ -44,6 +44,8 @@ const Documents: React.FC = () => {
   const [showRangeModal, setShowRangeModal] = useState(false);
   const [rangeStart, setRangeStart] = useState(0); // January
   const [rangeEnd, setRangeEnd] = useState(2); // March
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'pending'>('all');
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -277,6 +279,14 @@ const Documents: React.FC = () => {
 
   const filteredDocuments = (selectedFolder && selectedYear !== null)
     ? documents.filter(doc => {
+      // Status filter
+      if (statusFilter === 'verified' && !doc.verified) return false;
+      if (statusFilter === 'pending' && doc.verified) return false;
+      // Search filter
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        if (!doc.title.toLowerCase().includes(q) && !doc.type.toLowerCase().includes(q)) return false;
+      }
       const folder = getFolderConfig(selectedFolder);
       if (!folder?.types.includes(doc.type)) return false;
 
@@ -501,6 +511,8 @@ const Documents: React.FC = () => {
   };
 
   const handleBack = () => {
+    setSearchText('');
+    setStatusFilter('all');
     if (selectedMonth !== null) setSelectedMonth(null);
     else if (selectedYear !== null) setSelectedYear(null);
     else if (selectedFolder !== null) setSelectedFolder(null);
@@ -762,9 +774,19 @@ const Documents: React.FC = () => {
         ) : (
           <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
             <div className="flex gap-2">
-              <div className="relative flex-1 flex items-center bg-white/60 backdrop-blur-xl rounded-2xl h-14 border border-white/80 shadow-sm">
+              <div className="relative flex-1 flex items-center bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl h-14 border border-white/80 dark:border-slate-600/50 shadow-sm">
                 <span className="material-symbols-outlined pl-4 text-gray-400">search</span>
-                <input className="bg-transparent flex-1 border-none focus:ring-0 px-3 text-sm font-bold text-gray-900 placeholder:text-gray-400" placeholder="Buscar en este mes..." />
+                <input
+                  value={searchText}
+                  onChange={e => setSearchText(e.target.value)}
+                  className="bg-transparent flex-1 border-none focus:ring-0 px-3 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400"
+                  placeholder="Buscar por título o tipo..."
+                />
+                {searchText && (
+                  <button onClick={() => setSearchText('')} className="pr-4 text-gray-400 hover:text-gray-600">
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                )}
               </div>
               {selectedFolder === 'reportes' && (
                 <button
@@ -775,6 +797,25 @@ const Documents: React.FC = () => {
                   <span>Generar</span>
                 </button>
               )}
+            </div>
+            {/* Status filter chips */}
+            <div className="flex gap-2">
+              {(['all', 'verified', 'pending'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setStatusFilter(f)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
+                    statusFilter === f
+                      ? 'bg-primary text-white border-primary shadow-sm'
+                      : 'bg-white/60 dark:bg-slate-800/60 text-gray-500 dark:text-gray-400 border-white/60 dark:border-slate-600/50 hover:border-primary/30'
+                  }`}
+                >
+                  {f === 'all' && <span className="material-symbols-outlined text-[12px]">filter_list</span>}
+                  {f === 'verified' && <span className="material-symbols-outlined text-[12px]">verified</span>}
+                  {f === 'pending' && <span className="material-symbols-outlined text-[12px]">schedule</span>}
+                  {f === 'all' ? 'Todos' : f === 'verified' ? 'Verificados' : 'Pendientes'}
+                </button>
+              ))}
             </div>
 
             {loading ? (
