@@ -49,6 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [prevYearTendencia, setPrevYearTendencia] = useState<{name: string, value: number}[]>(
     ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].map(m => ({ name: m, value: 0 }))
   );
+  const [prevYearMetrics, setPrevYearMetrics] = useState({ totalKg: 0, co2: 0, water: 0, energy: 0 });
   const [alerts, setAlerts] = useState<{ type: 'warning' | 'success' | 'info'; icon: string; message: string }[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -521,6 +522,25 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     }
 
     setPrevYearTendencia(monthNames.map(name => ({ name, value: trendData[name] || 0 })));
+
+    // Also compute aggregate metrics for comparison cards
+    let prevTotalKg = 0, prevCo2 = 0, prevWater = 0, prevEnergy = 0;
+    if (docs) {
+      docs.filter((doc: any) => new Date(doc.created_at).getFullYear() === year).forEach((doc: any) => {
+        const details = doc.metadata?.waste_details;
+        const items = Array.isArray(details) ? details : details ? [details] : [];
+        items.forEach((item: any) => {
+          const qty = Number(item.quantity) || 0;
+          prevTotalKg += qty;
+          const cat = normalizeMaterialType(item);
+          const f = materialFactors[cat] || materialFactors['Otros'];
+          prevCo2    += qty * f.co2;
+          prevWater  += qty * f.water;
+          prevEnergy += qty * f.energy;
+        });
+      });
+    }
+    setPrevYearMetrics({ totalKg: prevTotalKg, co2: prevCo2 / 1000, water: prevWater, energy: prevEnergy });
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -1017,6 +1037,80 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             ))}
           </div>
         </section>
+
+        {/* Annual Comparison Cards */}
+        {showComparison && typeof selectedYear === 'number' && (
+          <section className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">
+              Comparación {selectedYear} vs {selectedYear - 1}
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                {
+                  label: 'Kg Reciclados',
+                  icon: 'recycling',
+                  curr: stats.totalRecuperado,
+                  prev: prevYearMetrics.totalKg,
+                  unit: 'kg',
+                  format: (v: number) => v.toLocaleString('es-CL'),
+                },
+                {
+                  label: 'CO₂ Evitado',
+                  icon: 'cloud',
+                  curr: stats.co2Evitado / 1000,
+                  prev: prevYearMetrics.co2,
+                  unit: 'ton',
+                  format: (v: number) => v.toFixed(2),
+                },
+                {
+                  label: 'Agua Ahorrada',
+                  icon: 'water_drop',
+                  curr: stats.totalRecuperado * 15,
+                  prev: prevYearMetrics.water,
+                  unit: 'L',
+                  format: (v: number) => v.toLocaleString('es-CL'),
+                },
+                {
+                  label: 'Energía Ahorrada',
+                  icon: 'bolt',
+                  curr: stats.totalRecuperado * 4.2,
+                  prev: prevYearMetrics.energy,
+                  unit: 'kWh',
+                  format: (v: number) => v.toLocaleString('es-CL'),
+                },
+              ].map(metric => {
+                const diff = metric.prev > 0 ? ((metric.curr - metric.prev) / metric.prev) * 100 : null;
+                const improved = diff !== null && diff >= 0;
+                return (
+                  <div key={metric.label} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[24px] border border-white/80 dark:border-slate-600/50 shadow-sm p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-lg">{metric.icon}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 leading-tight">{metric.label}</span>
+                    </div>
+                    <div>
+                      <p className="text-xl font-black text-gray-900 dark:text-white leading-none">
+                        {metric.format(metric.curr)}
+                        <span className="text-[10px] text-gray-400 font-bold ml-1">{metric.unit}</span>
+                      </p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-1">
+                        {selectedYear - 1}: {metric.format(metric.prev)} {metric.unit}
+                      </p>
+                    </div>
+                    {diff !== null && (
+                      <div className={`flex items-center gap-1 text-xs font-black ${improved ? 'text-primary' : 'text-red-400'}`}>
+                        <span className="material-symbols-outlined text-sm">{improved ? 'trending_up' : 'trending_down'}</span>
+                        {improved ? '+' : ''}{diff.toFixed(1)}% vs año anterior
+                      </div>
+                    )}
+                    {diff === null && (
+                      <p className="text-[10px] text-gray-300 dark:text-slate-600 font-bold">Sin datos {selectedYear - 1}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Recent Activity */}
         {recentDocs.length > 0 && (
