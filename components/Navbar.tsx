@@ -42,29 +42,27 @@ const Navbar: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // Desktop sidebar has all items; mobile bottom bar shows the 5 most used
-  const desktopItems = [
+  const adminItem = { path: '/admin', label: 'Admin', icon: 'admin_panel_settings' };
+
+  // Desktop sidebar
+  const navItems = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
     { path: '/news', label: 'Noticias', icon: 'newspaper' },
+    ...(isAdmin ? [adminItem] : []),
     { path: '/notifications', label: 'Alertas', icon: 'notifications' },
     { path: '/profile', label: 'Perfil', icon: 'person' },
   ];
 
+  // Mobile bottom bar — includes Admin when user is admin
   const mobileItems = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
-    { path: '/news', label: 'Noticias', icon: 'newspaper' },
+    ...(isAdmin ? [adminItem] : [{ path: '/news', label: 'Noticias', icon: 'newspaper' }]),
     { path: '/profile', label: 'Perfil', icon: 'person' },
   ];
-
-  const navItems = desktopItems;
-
-  if (isAdmin) {
-    navItems.splice(4, 0, { path: '/admin', label: 'Admin', icon: 'admin_panel_settings' });
-  }
 
   const isActive = (path: string) => location.pathname === path;
 
