@@ -57,6 +57,7 @@ const Admin: React.FC = () => {
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploadDate, setUploadDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [uploadType, setUploadType] = useState('declaration');
+    const [uploadSource, setUploadSource] = useState<'gestor' | 'econexo'>('gestor');
 
     // Unregistered clients
     const [unregisteredClients, setUnregisteredClients] = useState<{ id: string; company_name: string; rut: string; address: string }[]>([]);
@@ -297,7 +298,7 @@ const Admin: React.FC = () => {
                 _type: uploadType,
                 _content_url: publicUrl,
                 _created_at: new Date(uploadDate).toISOString(),
-                _metadata: { original_name: uploadFile.name, size: uploadFile.size, mime_type: uploadFile.type, uploaded_by: 'admin' }
+                _metadata: { original_name: uploadFile.name, size: uploadFile.size, mime_type: uploadFile.type, uploaded_by: 'admin', source: uploadSource }
             });
             if (dbError) throw dbError;
 
@@ -307,6 +308,8 @@ const Admin: React.FC = () => {
             setShowUploadModal(false);
             setUploadFile(null);
             setUploadDate(new Date().toISOString().split('T')[0]);
+            setUploadSource('gestor');
+            setUploadType('declaration');
             setSelectedUser(null);
             fetchAdminData();
         } catch (err: any) {
@@ -429,6 +432,8 @@ const Admin: React.FC = () => {
                     onDateChange={setUploadDate}
                     uploadType={uploadType}
                     onTypeChange={setUploadType}
+                    uploadSource={uploadSource}
+                    onSourceChange={(src) => { setUploadSource(src); setUploadType(src === 'econexo' ? 'CR' : 'declaration'); }}
                     onFileChange={setUploadFile}
                     loading={loading}
                     onUpload={handleUploadDocument}

@@ -10,11 +10,26 @@ interface UploadDocumentModalProps {
     onDateChange: (date: string) => void;
     uploadType: string;
     onTypeChange: (type: string) => void;
+    uploadSource: 'gestor' | 'econexo';
+    onSourceChange: (source: 'gestor' | 'econexo') => void;
     onFileChange: (file: File | null) => void;
     loading: boolean;
     onUpload: () => void;
     onClose: () => void;
 }
+
+const GESTOR_TYPES = [
+    { value: 'declaration', label: 'Declaración / Certificado' },
+    { value: 'legal',       label: 'Documento Legal' },
+    { value: 'custom',      label: 'Otro' },
+];
+
+const ECONEXO_TYPES = [
+    { value: 'CR',     label: 'Certificado de Recepción (CR)' },
+    { value: 'CGM',    label: 'Certificado Gestión Mensual (CGM)' },
+    { value: 'report', label: 'Reporte Ambiental' },
+    { value: 'custom', label: 'Otro' },
+];
 
 const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
     show,
@@ -25,6 +40,8 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
     onDateChange,
     uploadType,
     onTypeChange,
+    uploadSource,
+    onSourceChange,
     onFileChange,
     loading,
     onUpload,
@@ -32,11 +49,41 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
 }) => {
     if (!show) return null;
 
+    const types = uploadSource === 'econexo' ? ECONEXO_TYPES : GESTOR_TYPES;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose}></div>
             <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-2xl animate-in zoom-in duration-200">
-                <h3 className="text-xl font-display font-black mb-6 text-gray-900">Subir Documento</h3>
+                <h3 className="text-xl font-display font-black mb-5 text-gray-900">Subir Documento</h3>
+
+                {/* Source selector */}
+                <div className="mb-5">
+                    <label className="text-[10px] font-black uppercase text-gray-500 block mb-2">Origen del Documento</label>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => onSourceChange('gestor')}
+                            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                                uploadSource === 'gestor'
+                                    ? 'bg-slate-700 text-white border-slate-700 shadow'
+                                    : 'bg-white/50 text-gray-500 border-white/60 hover:bg-white/80'
+                            }`}
+                        >
+                            Gestor
+                        </button>
+                        <button
+                            onClick={() => onSourceChange('econexo')}
+                            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                                uploadSource === 'econexo'
+                                    ? 'bg-primary text-white border-primary shadow'
+                                    : 'bg-white/50 text-gray-500 border-white/60 hover:bg-white/80'
+                            }`}
+                        >
+                            EcoNexo
+                        </button>
+                    </div>
+                </div>
+
                 <div className="space-y-4">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-gray-500">Empresa Destino</label>
@@ -51,6 +98,20 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                             ))}
                         </select>
                     </div>
+
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-gray-500">Tipo de Documento</label>
+                        <select
+                            className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
+                            value={uploadType}
+                            onChange={(e) => onTypeChange(e.target.value)}
+                        >
+                            {types.map(t => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-gray-500">Fecha del Documento</label>
                         <input
@@ -60,19 +121,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                             onChange={(e) => onDateChange(e.target.value)}
                         />
                     </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-gray-500">Tipo de Documento</label>
-                        <select
-                            className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
-                            value={uploadType}
-                            onChange={(e) => onTypeChange(e.target.value)}
-                        >
-                            <option value="declaration">Declaración / Certificado (Gestores)</option>
-                            <option value="legal">Documento Legal</option>
-                            <option value="custom">Otro</option>
-                            <option value="CR">Certificado Recepción (Interno)</option>
-                        </select>
-                    </div>
+
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-gray-500">Archivo (PDF / Imagen)</label>
                         <input
@@ -82,11 +131,14 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                             onChange={(e) => onFileChange(e.target.files ? e.target.files[0] : null)}
                         />
                     </div>
+
                     <div className="pt-2 space-y-2">
                         <button
                             onClick={onUpload}
                             disabled={loading}
-                            className="w-full py-3 bg-primary text-white rounded-xl font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                            className={`w-full py-3 text-white rounded-xl font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all disabled:opacity-50 ${
+                                uploadSource === 'econexo' ? 'bg-primary' : 'bg-slate-700'
+                            }`}
                         >
                             {loading ? 'Subiendo...' : 'Subir Documento'}
                         </button>
