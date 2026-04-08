@@ -51,6 +51,7 @@ const Navbar: React.FC = () => {
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
     { path: '/news', label: 'Noticias', icon: 'newspaper' },
     ...(isAdmin ? [adminItem] : []),
+    { path: '/ley-rep', label: 'Ley REP', icon: 'policy' },
     { path: '/notifications', label: 'Alertas', icon: 'notifications' },
     { path: '/profile', label: 'Perfil', icon: 'person' },
   ];
@@ -61,6 +62,7 @@ const Navbar: React.FC = () => {
     { path: '/documents', label: 'Documentos', icon: 'description' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
     ...(isAdmin ? [adminItem] : [{ path: '/news', label: 'Noticias', icon: 'newspaper' }]),
+    { path: '/ley-rep', label: 'Ley REP', icon: 'policy' },
     { path: '/profile', label: 'Perfil', icon: 'person' },
   ];
 

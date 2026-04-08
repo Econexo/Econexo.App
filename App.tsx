@@ -22,6 +22,7 @@ const Chat         = lazy(() => import('./screens/Chat'));
 const Admin        = lazy(() => import('./screens/Admin'));
 const Rewards           = lazy(() => import('./screens/Rewards'));
 const CarbonCalculator  = lazy(() => import('./screens/CarbonCalculator'));
+const LeyREP            = lazy(() => import('./screens/LeyREP'));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950 flex items-center justify-center">
@@ -129,6 +130,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/admin"         element={isAuthenticated && isAdmin ? <div className="lg:ml-64"><Admin /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
           <Route path="/rewards"            element={isAuthenticated ? <div className="lg:ml-64"><Rewards /></div> : <Navigate to="/" />} />
           <Route path="/carbon-calculator" element={isAuthenticated ? <div className="lg:ml-64"><CarbonCalculator /></div> : <Navigate to="/" />} />
+          <Route path="/ley-rep" element={isAuthenticated ? <div className="lg:ml-64"><LeyREP /></div> : <Navigate to="/" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>
