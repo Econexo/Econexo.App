@@ -102,9 +102,9 @@ const Chat: React.FC = () => {
     <div className="flex flex-col h-full font-display bg-[#f0f4f0] dark:bg-background-dark w-full relative overflow-hidden text-slate-900 dark:text-slate-100">
       <Navbar />
       {/* Decorative Background Blobs */}
-      <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
-      <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
-      <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+      <div className="absolute bottom-[20%] left-[-15%] w-36 h-36 sm:w-[380px] sm:h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
       {/* Header */}
       <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/40 dark:border-slate-700/40 p-4 flex items-center gap-4 shadow-sm">
@@ -137,7 +137,7 @@ const Chat: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar relative z-10">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-[20px] text-sm leading-relaxed shadow-sm ${m.role === 'user'
+            <div className={`max-w-[85%] break-words p-4 rounded-[20px] text-sm leading-relaxed shadow-sm ${m.role === 'user'
               ? 'bg-primary text-white font-medium rounded-tr-none shadow-primary/20'
               : 'bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl text-gray-800 dark:text-gray-200 rounded-tl-none border border-white/80 dark:border-slate-600/50 font-medium'
               }`}>

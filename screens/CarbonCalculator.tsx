@@ -172,8 +172,8 @@ const CarbonCalculator: React.FC = () => {
   return (
     <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
       {/* Blobs */}
-      <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
-      <div className="absolute bottom-[20%] right-[-15%] w-[350px] h-[350px] bg-yellow-400/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+      <div className="absolute bottom-[20%] right-[-15%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-yellow-400/10 rounded-full blur-[80px] pointer-events-none" />
 
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-md px-5 py-5 border-b border-white/40 dark:border-slate-700/40 shadow-sm">

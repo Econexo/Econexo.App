@@ -55,16 +55,16 @@ const UserDataSection: React.FC<UserDataSectionProps> = ({
                 ) : (
                     <>
                         <div className="flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center border border-blue-100"><span className="material-symbols-outlined font-bold">person</span></div>
-                            <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Nombre completo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white">{userData.name}</p></div>
+                            <div className="size-10 shrink-0 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center border border-blue-100"><span className="material-symbols-outlined font-bold">person</span></div>
+                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Nombre completo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.name}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center border border-green-100"><span className="material-symbols-outlined font-bold">alternate_email</span></div>
-                            <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Email Corporativo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white">{userData.email}</p></div>
+                            <div className="size-10 shrink-0 rounded-xl bg-green-50 text-green-500 flex items-center justify-center border border-green-100"><span className="material-symbols-outlined font-bold">alternate_email</span></div>
+                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Email Corporativo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.email}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100"><span className="material-symbols-outlined font-bold">badge</span></div>
-                            <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Cargo / Rol</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white">{userData.role || 'No especificado'}</p></div>
+                            <div className="size-10 shrink-0 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100"><span className="material-symbols-outlined font-bold">badge</span></div>
+                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Cargo / Rol</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.role || 'No especificado'}</p></div>
                         </div>
                     </>
                 )}

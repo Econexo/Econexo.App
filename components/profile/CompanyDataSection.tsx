@@ -130,16 +130,16 @@ const CompanyDataSection: React.FC<CompanyDataSectionProps> = ({
                 ) : (
                     <>
                         <div className="flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-yellow-50 text-yellow-500 flex items-center justify-center border border-yellow-100"><span className="material-symbols-outlined font-bold">corporate_fare</span></div>
-                            <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Razón Social</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors">{companyData.name}</p></div>
+                            <div className="size-10 shrink-0 rounded-xl bg-yellow-50 text-yellow-500 flex items-center justify-center border border-yellow-100"><span className="material-symbols-outlined font-bold">corporate_fare</span></div>
+                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Razón Social</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors truncate">{companyData.name}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center border border-purple-100"><span className="material-symbols-outlined font-bold">fingerprint</span></div>
-                            <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">RUT Empresa</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors">{companyData.rut}</p></div>
+                            <div className="size-10 shrink-0 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center border border-purple-100"><span className="material-symbols-outlined font-bold">fingerprint</span></div>
+                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">RUT Empresa</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors truncate">{companyData.rut}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center border border-red-100"><span className="material-symbols-outlined font-bold">location_on</span></div>
-                            <div><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Dirección</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors">{companyData.address || 'No especificada'}</p></div>
+                            <div className="size-10 shrink-0 rounded-xl bg-red-50 text-red-500 flex items-center justify-center border border-red-100"><span className="material-symbols-outlined font-bold">location_on</span></div>
+                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Dirección</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors line-clamp-2">{companyData.address || 'No especificada'}</p></div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-white/5">

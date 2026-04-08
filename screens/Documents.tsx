@@ -570,9 +570,9 @@ const Documents: React.FC = () => {
   return (
     <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
       {/* Decorative Background Blobs */}
-      <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
-      <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
-      <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+      <div className="absolute bottom-[20%] left-[-15%] w-36 h-36 sm:w-[380px] sm:h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
       <div className="flex items-center p-4 sticky top-0 z-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md justify-between border-b border-white/40 dark:border-slate-700/40 shadow-sm">
         <button
@@ -902,7 +902,7 @@ const Documents: React.FC = () => {
         showRangeModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowRangeModal(false)}></div>
-            <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-[0_30px_60px_rgba(0,0,0,0.15)] animate-in zoom-in duration-200">
+            <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[92vw] sm:max-w-[340px] rounded-[32px] p-5 sm:p-8 border border-white/80 shadow-[0_30px_60px_rgba(0,0,0,0.15)] animate-in zoom-in duration-200">
               <div className="text-center space-y-6">
                 <div className="size-16 rounded-3xl bg-primary/5 text-primary mx-auto flex items-center justify-center border border-primary/10">
                   <span className="material-symbols-outlined text-3xl">date_range</span>
@@ -964,7 +964,7 @@ const Documents: React.FC = () => {
         showSettings && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowSettings(false)}></div>
-            <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 shadow-[0_30px_60px_rgba(0,0,0,0.15)] animate-in zoom-in duration-200">
+            <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[92vw] sm:max-w-[340px] rounded-[32px] p-5 sm:p-8 border border-white/80 shadow-[0_30px_60px_rgba(0,0,0,0.15)] animate-in zoom-in duration-200">
               <div className="text-center space-y-6">
                 <div className="size-20 rounded-3xl bg-primary/5 text-primary mx-auto flex items-center justify-center border border-primary/10">
                   <span className="material-symbols-outlined text-4xl">add_to_drive</span>

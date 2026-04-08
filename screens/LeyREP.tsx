@@ -448,8 +448,8 @@ const LeyREP: React.FC = () => {
               {/* DS 12 inputs */}
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Envases y Embalajes (DS 12)</p>
               {(['ds12_papel', 'ds12_plastico', 'ds12_vidrio', 'ds12_metales'] as const).map(cat => (
-                <div key={cat} className="flex items-center gap-3">
-                  <label className="text-sm text-gray-600 dark:text-gray-300 w-32 shrink-0">
+                <div key={cat} className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400 xs:text-sm xs:text-gray-600 xs:dark:text-gray-300 xs:w-28 xs:shrink-0">
                     {REP_CATEGORY_LABELS[cat]}
                   </label>
                   <input
@@ -465,8 +465,8 @@ const LeyREP: React.FC = () => {
 
               {/* DS 8 input */}
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">Neumáticos (DS 8)</p>
-              <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-600 dark:text-gray-300 w-32 shrink-0">Neumáticos</label>
+              <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 xs:text-sm xs:text-gray-600 xs:dark:text-gray-300 xs:w-28 xs:shrink-0">Neumáticos</label>
                 <input
                   type="number"
                   min="0"
@@ -479,8 +479,8 @@ const LeyREP: React.FC = () => {
 
               {/* DS 10 input */}
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">RAEE (DS 10)</p>
-              <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-600 dark:text-gray-300 w-32 shrink-0">RAEE</label>
+              <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 xs:text-sm xs:text-gray-600 xs:dark:text-gray-300 xs:w-28 xs:shrink-0">RAEE</label>
                 <input
                   type="number"
                   min="0"

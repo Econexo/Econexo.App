@@ -615,9 +615,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   return (
     <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 lg:pb-8 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
       {/* Decorative Background Blobs for Glassmorphism */}
-      <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
-      <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
-      <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+      <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+      <div className="absolute bottom-[20%] left-[-15%] w-36 h-36 sm:w-[380px] sm:h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none"></div>
 
       {/* Withdrawal Modal */}
       {showWithdrawalModal && (

@@ -257,7 +257,7 @@ const Rewards: React.FC = () => {
                                             <h4 className="font-display font-black text-sm text-gray-900 dark:text-white leading-tight">{reward.title}</h4>
                                         )}
                                     </div>
-                                    <p className="text-[11px] text-gray-600 dark:text-gray-400 font-bold leading-tight">{reward.description}</p>
+                                    <p className="text-[11px] text-gray-600 dark:text-gray-400 font-bold leading-tight line-clamp-2">{reward.description}</p>
                                     <div className="pt-2 flex items-center gap-2">
                                         <span className="text-xs font-black text-primary bg-green-50/50 px-2 py-0.5 rounded-md border border-green-100 backdrop-blur-sm">{reward.cost.toLocaleString()} pts</span>
                                     </div>

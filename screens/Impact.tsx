@@ -425,7 +425,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
       {showGoalModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowGoalModal(false)}></div>
-          <div className="relative bg-white dark:bg-slate-900 w-full max-w-[340px] rounded-[32px] p-8 border border-white/80 dark:border-slate-700 shadow-2xl animate-in zoom-in duration-200">
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-[92vw] sm:max-w-[340px] rounded-[32px] p-5 sm:p-8 border border-white/80 dark:border-slate-700 shadow-2xl animate-in zoom-in duration-200">
             <div className="text-center space-y-5">
               <div className="size-14 rounded-3xl bg-primary/10 text-primary mx-auto flex items-center justify-center border border-primary/20">
                 <span className="material-symbols-outlined text-3xl">flag</span>
