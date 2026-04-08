@@ -3,6 +3,19 @@ import autoTable from 'jspdf-autotable';
 import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2, ECONEXO_LOGO_CGM, CGM_FOOTER_BAR } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 
+/**
+ * iOS Safari blocks doc.save() (programmatic anchor click).
+ * For iOS we open the blob URL in a new tab instead, which works reliably.
+ */
+function savePdf(doc: jsPDF, filename: string): void {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    if (isIOS) {
+        window.open(doc.output('bloburl'), '_blank');
+    } else {
+        doc.save(filename);
+    }
+}
+
 interface CompanyData {
     company_name: string;
     rut: string;
@@ -226,7 +239,7 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     if (action === 'preview') {
         window.open(doc.output('bloburl'), '_blank');
     } else {
-        doc.save(`CR_${client.company_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\/]/g, '_')}.pdf`);
+        savePdf(doc, `CR_${client.company_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\/]/g, '_')}.pdf`);
     }
 };
 
@@ -913,7 +926,7 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
     if (action === 'preview') {
         window.open(doc.output('bloburl'), '_blank');
     } else {
-        doc.save(`Reporte_EcoEq_${client.company_name.trim()}_${periodo}.pdf`);
+        savePdf(doc, `Reporte_EcoEq_${client.company_name.trim()}_${periodo}.pdf`);
     }
 };
 
@@ -1059,7 +1072,7 @@ export const generateCustomDoc = (client: CompanyData, title: string, contentHtm
     doc.text('Firma Autorizada', pageWidth / 2, sigY + 10, { align: 'center' });
     doc.text('EcoNexo SpA', pageWidth / 2, sigY + 15, { align: 'center' });
 
-    doc.save(`${title.replace(/\s+/g, '_')}_${referenceNumber}.pdf`);
+    savePdf(doc, `${title.replace(/\s+/g, '_')}_${referenceNumber}.pdf`);
 };
 
 
@@ -1386,7 +1399,7 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     if (action === 'preview') {
         window.open(doc.output('bloburl'), '_blank');
     } else {
-        doc.save(`CGM_${client.company_name.replace(/\s+/g, '_')}_${month}_${year}.pdf`);
+        savePdf(doc, `CGM_${client.company_name.replace(/\s+/g, '_')}_${month}_${year}.pdf`);
     }
 };
 
@@ -1608,6 +1621,6 @@ export const generateCommunityCR = (
     if (action === 'preview') {
         window.open(doc.output('bloburl'), '_blank');
     } else {
-        doc.save(`CRC_${community.community_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\/]/g, '_')}.pdf`);
+        savePdf(doc, `CRC_${community.community_name.replace(/\s+/g, '_')}_${certificateNumber.replace(/[:\/]/g, '_')}.pdf`);
     }
 };
