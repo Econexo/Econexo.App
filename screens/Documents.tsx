@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
-import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
+// pdfGenerator is loaded on-demand to defer 1.6 MB of PDF assets until needed
 import { createNotification } from '../services/notificationService';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
@@ -127,7 +127,7 @@ const Documents: React.FC = () => {
     }
   };
 
-  const handleDownload = (doc: Document, action: 'save' | 'preview' = 'save') => {
+  const handleDownload = async (doc: Document, action: 'save' | 'preview' = 'save') => {
     // Direct Download for Uploaded Documents (Gestores)
     if (doc.content_url) {
       window.open(doc.content_url, '_blank');
@@ -140,6 +140,7 @@ const Documents: React.FC = () => {
     }
 
     try {
+      const { generateCR, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
       const details = doc.metadata.waste_details;
       if (!details) {
         toast.warning("El documento no contiene detalles de residuos.");
@@ -371,6 +372,7 @@ const Documents: React.FC = () => {
 
     try {
       setLoading(true);
+      const { generateEcoReport } = await import('../services/pdfGenerator');
       generateEcoReport(
         {
           company_name: userProfile.company_name,
@@ -463,6 +465,7 @@ const Documents: React.FC = () => {
 
     try {
       setLoading(true);
+      const { generateEcoReport } = await import('../services/pdfGenerator');
       generateEcoReport(
         {
           company_name: userProfile.company_name,

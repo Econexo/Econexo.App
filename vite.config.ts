@@ -27,9 +27,12 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           output: {
             manualChunks: {
-              'pdf-assets': ['./services/constants', './services/phoneIconBase64'],
-              'pdf-engine': ['jspdf', 'jspdf-autotable'],
-              'charts': ['recharts'],
+              'react-vendor':    ['react', 'react-dom', 'react-router-dom'],
+              'supabase-vendor': ['@supabase/supabase-js'],
+              'markdown-vendor': ['react-markdown', 'remark-gfm'],
+              'pdf-assets':      ['./services/constants', './services/phoneIconBase64'],
+              'pdf-engine':      ['jspdf', 'jspdf-autotable'],
+              'charts':          ['recharts'],
             }
           }
         }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
-import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
+// pdfGenerator is loaded on-demand to defer 1.6 MB of PDF assets until needed
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 import { useToast } from '../components/ui/Toast';
 
@@ -139,6 +139,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
             ? `${MONTH_NAMES[reportMonth]} ${reportYear}`
             : `Año ${reportYear}`;
 
+        const { generateEcoReport } = await import('../services/pdfGenerator');
         generateEcoReport(
             { company_name: user.company_name, rut: user.rut, address: user.address || 'Chile' },
             allItems,
@@ -149,12 +150,13 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         setShowReportModal(false);
     };
 
-    const handleViewDoc = (doc: any) => {
+    const handleViewDoc = async (doc: any) => {
         const client = { company_name: user.company_name, rut: user.rut, address: user.address || 'Chile' };
         if (!doc.metadata?.waste_details) {
             toast.warning('Este documento no tiene detalles de residuos para previsualizar.');
             return;
         }
+        const { generateCR, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
         if (doc.type === 'CGM') {
             generateCGM(client, doc.metadata.waste_details, doc.metadata.month || 'Mes', doc.metadata.year || new Date().getFullYear(), 'preview', doc.metadata?.cgm_number);
         } else if (doc.type === 'pdf' || doc.type === 'report') {
