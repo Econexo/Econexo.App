@@ -23,6 +23,7 @@ interface Document {
     months_count?: number;
     month?: string;
     year?: number;
+    cgm_number?: number | string;
     source_document_ids?: string[];
   };
 }

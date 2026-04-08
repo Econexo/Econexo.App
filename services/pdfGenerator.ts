@@ -230,7 +230,7 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     }
 };
 
-export const generateEcoReport = (client: CompanyData, items: WasteItem[], periodo: string, action: 'save' | 'preview' = 'save') => {
+export const generateEcoReport = (client: CompanyData, items: WasteItem[], periodo: string, action: 'save' | 'preview' = 'save', _monthsCount?: number) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();

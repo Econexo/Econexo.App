@@ -42,10 +42,11 @@ const Navbar: React.FC = () => {
     }
   }, [location.pathname]);
 
-  const adminItem = { path: '/admin', label: 'Admin', icon: 'admin_panel_settings' };
+  type NavItem = { path: string; label: string; icon: string; primary?: boolean };
+  const adminItem: NavItem = { path: '/admin', label: 'Admin', icon: 'admin_panel_settings' };
 
   // Desktop sidebar
-  const navItems = [
+  const navItems: NavItem[] = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
@@ -57,7 +58,7 @@ const Navbar: React.FC = () => {
   ];
 
   // Mobile bottom bar — includes Admin when user is admin
-  const mobileItems = [
+  const mobileItems: NavItem[] = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
