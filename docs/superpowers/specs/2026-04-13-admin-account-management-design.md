@@ -89,10 +89,7 @@ const [suspending, setSuspending] = useState(false);
 
 ### ConfirmDialog
 
-Reuse the existing `ConfirmDialog` component if one exists, otherwise create a minimal inline modal with:
-- Backdrop overlay
-- Title + body text
-- Cancel + Confirm buttons
+Use the existing `components/ui/ConfirmDialog.tsx` component (already wrapped in `<ConfirmProvider>` in `App.tsx`).
 
 ---
 
@@ -108,10 +105,23 @@ In `components/UsersList.tsx` (or wherever the company list row is rendered):
 
 ## 5. App-Level Access Block
 
-In the main app routing/auth flow (likely `App.tsx` or an auth context):
+In `App.tsx` (`AppRoutes` component), the existing `checkAdmin` function already queries `profiles`:
 
-- After the user's session is resolved, fetch or read `profiles.is_active` for the logged-in user.
-- If `is_active === false`, redirect to a **"Cuenta suspendida"** screen instead of rendering the normal app.
+```ts
+const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', userId).single();
+```
+
+Extend this to also select `is_active`:
+
+```ts
+const { data: profile } = await supabase.from('profiles').select('is_admin, is_active').eq('id', userId).single();
+setIsAdmin(!!profile?.is_admin);
+setIsSuspended(profile?.is_active === false);
+```
+
+Add `const [isSuspended, setIsSuspended] = useState(false)` to `AppRoutes` state.
+
+When rendering routes: if `isAuthenticated && isSuspended`, render `<Suspended />` instead of the normal protected routes.
 
 ### SuspendedScreen component (new, minimal)
 
@@ -128,8 +138,8 @@ In the main app routing/auth flow (likely `App.tsx` or an auth context):
 ```
 
 - Path: `screens/Suspended.tsx`
-- No navigation. Only a sign-out button.
-- Check happens in `App.tsx` after `useAuth` resolves, before rendering protected routes.
+- No navigation bar. Only a sign-out button that calls `supabase.auth.signOut()`.
+- Rendered at app root level when `isSuspended === true`, before route matching.
 
 ---
 
@@ -153,7 +163,7 @@ Company user logs in (or app re-checks session)
 ## 7. Error Handling
 
 - Network/DB errors on name save or suspension toggle: show inline error text below the action, do not close the modal.
-- If the admin tries to suspend their own account: show an error ("No puedes suspender tu propia cuenta.") — check `client.id !== currentUser.id` before allowing the action.
+- If the admin tries to suspend their own account: show an error ("No puedes suspender tu propia cuenta.") — check `client.id !== session.user.id` (from `supabase.auth.getUser()`) before allowing the action.
 - Loading states: spinner/disabled button while Supabase call is in flight.
 
 ---
@@ -162,7 +172,7 @@ Company user logs in (or app re-checks session)
 
 | File | Action |
 |------|--------|
-| `supabase/migrations/YYYYMMDD_add_is_active_to_profiles.sql` | Create — add `is_active` column |
+| `supabase/migrations/20260413_add_is_active_to_profiles.sql` | Create — add `is_active` column |
 | `components/ClientOverviewModal.tsx` | Modify — edit name UI + suspend/reactivate UI |
 | `components/UsersList.tsx` | Modify — "Suspendida" badge |
 | `screens/Suspended.tsx` | Create — suspended account screen |
