@@ -114,7 +114,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
         .from('documents')
         .select('metadata, created_at')
         .eq('user_id', user.id)
-        .eq('type', 'CR')
+        .in('type', ['CR', 'COMMUNITY_CR'])
         .eq('verified', true);
 
       let totalKg = 0;

@@ -263,7 +263,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       let query = supabase
         .from('documents')
         .select('*')
-        .eq('type', 'CR')
+        .in('type', ['CR', 'COMMUNITY_CR'])
         .eq('verified', true);
 
       // Fetch user profile to check admin status again or strictly use the prop if passed, 
@@ -398,7 +398,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       .from('documents')
       .select('created_at')
       .eq('user_id', user.id)
-      .eq('type', 'CR')
+      .in('type', ['CR', 'COMMUNITY_CR'])
       .eq('verified', true)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -431,7 +431,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         .from('documents')
         .select('metadata')
         .eq('user_id', user.id)
-        .eq('type', 'CR')
+        .in('type', ['CR', 'COMMUNITY_CR'])
         .eq('verified', true);
 
       let totalKgYear = 0;
@@ -472,7 +472,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       .from('documents')
       .select('id, title, metadata, created_at')
       .eq('user_id', user.id)
-      .eq('type', 'CR')
+      .in('type', ['CR', 'COMMUNITY_CR'])
       .eq('verified', true)
       .order('created_at', { ascending: false })
       .limit(4);
@@ -501,7 +501,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
     const isUserAdmin = !!profile?.is_admin;
 
-    let query = supabase.from('documents').select('*').eq('type', 'CR').eq('verified', true);
+    let query = supabase.from('documents').select('*').in('type', ['CR', 'COMMUNITY_CR']).eq('verified', true);
     if (!isUserAdmin) query = query.eq('user_id', user.id);
 
     const { data: docs } = await query;

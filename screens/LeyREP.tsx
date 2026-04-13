@@ -128,7 +128,7 @@ const LeyREP: React.FC = () => {
       .from('documents')
       .select('metadata')
       .eq('user_id', userId)
-      .eq('type', 'CR')
+      .in('type', ['CR', 'COMMUNITY_CR'])
       .eq('verified', true)
       .gte('created_at', yearStart)
       .lte('created_at', yearEnd);
