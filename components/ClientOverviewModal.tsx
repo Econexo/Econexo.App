@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 // pdfGenerator is loaded on-demand to defer 1.6 MB of PDF assets until needed
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 interface UserProfile {
     id: string;
@@ -11,6 +12,7 @@ interface UserProfile {
     address: string;
     company_email?: string;
     eco_points?: number;
+    is_active?: boolean;
 }
 
 interface ClientOverviewModalProps {
@@ -25,6 +27,15 @@ const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
 
 const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose, onGenerateCR, onGenerateCGM }) => {
     const toast = useToast();
+    const confirm = useConfirm();
+
+    // Edit company name state
+    const [displayName, setDisplayName] = useState(user.company_name ?? '');
+    const [editingName, setEditingName] = useState(false);
+    const [nameInput, setNameInput] = useState(user.company_name ?? '');
+    const [nameSaving, setNameSaving] = useState(false);
+    const [nameError, setNameError] = useState<string | null>(null);
+
     const [loading, setLoading] = useState(true);
     const [documents, setDocuments] = useState<any[]>([]);
     const [ecoPoints, setEcoPoints] = useState(0);
@@ -108,6 +119,24 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         }
     };
 
+    const handleSaveName = async () => {
+        if (!nameInput.trim() || nameInput === displayName) return;
+        setNameSaving(true);
+        setNameError(null);
+        const { error } = await supabase
+            .from('profiles')
+            .update({ company_name: nameInput.trim() })
+            .eq('id', user.id);
+        setNameSaving(false);
+        if (error) {
+            setNameError('No se pudo guardar. Intenta de nuevo.');
+        } else {
+            setDisplayName(nameInput.trim());
+            setEditingName(false);
+            toast.success('Nombre actualizado correctamente.');
+        }
+    };
+
     const handleGenerateEcoReport = async () => {
         // Gather items from CR docs in the selected period
         const startDate = reportPeriodType === 'month'
@@ -184,7 +213,44 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                         {user.company_name?.[0]}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h2 className="font-black text-gray-900 text-lg leading-tight truncate">{user.company_name}</h2>
+                        {editingName ? (
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        autoFocus
+                                        value={nameInput}
+                                        onChange={e => setNameInput(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') { setEditingName(false); setNameInput(displayName); setNameError(null); } }}
+                                        className="flex-1 border border-primary/40 rounded-xl px-3 py-1.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/30"
+                                    />
+                                    <button
+                                        onClick={handleSaveName}
+                                        disabled={nameSaving || !nameInput.trim() || nameInput === displayName}
+                                        className="px-3 py-1.5 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-40 transition-colors hover:bg-primary/90"
+                                    >
+                                        {nameSaving ? '...' : 'Guardar'}
+                                    </button>
+                                    <button
+                                        onClick={() => { setEditingName(false); setNameInput(displayName); setNameError(null); }}
+                                        className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                                {nameError && <p className="text-xs text-red-500 font-bold">{nameError}</p>}
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 group">
+                                <h2 className="font-black text-gray-900 text-lg leading-tight truncate">{displayName}</h2>
+                                <button
+                                    onClick={() => { setNameInput(displayName); setEditingName(true); }}
+                                    className="opacity-0 group-hover:opacity-100 size-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all shrink-0"
+                                    title="Editar nombre"
+                                >
+                                    <span className="material-symbols-outlined text-gray-500 text-sm">edit</span>
+                                </button>
+                            </div>
+                        )}
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{user.rut}</p>
                     </div>
                     <button onClick={onClose} className="size-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
