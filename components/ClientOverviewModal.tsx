@@ -36,6 +36,11 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
     const [nameSaving, setNameSaving] = useState(false);
     const [nameError, setNameError] = useState<string | null>(null);
 
+    // Suspend / reactivate state
+    const [isActive, setIsActive] = useState(user.is_active !== false);
+    const [suspending, setSuspending] = useState(false);
+    const [suspendError, setSuspendError] = useState<string | null>(null);
+
     const [loading, setLoading] = useState(true);
     const [documents, setDocuments] = useState<any[]>([]);
     const [ecoPoints, setEcoPoints] = useState(0);
@@ -134,6 +139,40 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
             setDisplayName(nameInput.trim());
             setEditingName(false);
             toast.success('Nombre actualizado correctamente.');
+        }
+    };
+
+    const handleToggleSuspend = async () => {
+        // Guard: admin cannot suspend their own account
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser?.id === user.id) {
+            setSuspendError('No puedes suspender tu propia cuenta.');
+            return;
+        }
+
+        if (isActive) {
+            const ok = await confirm({
+                title: `¿Suspender cuenta de ${displayName}?`,
+                message: 'La empresa no podrá acceder a la plataforma hasta que reactives su cuenta.',
+                confirmLabel: 'Suspender',
+                cancelLabel: 'Cancelar',
+                danger: true,
+            });
+            if (!ok) return;
+        }
+        setSuspending(true);
+        setSuspendError(null);
+        const newActive = !isActive;
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_active: newActive })
+            .eq('id', user.id);
+        setSuspending(false);
+        if (error) {
+            setSuspendError('Error al actualizar la cuenta. Intenta de nuevo.');
+        } else {
+            setIsActive(newActive);
+            toast.success(newActive ? 'Cuenta reactivada.' : 'Cuenta suspendida.');
         }
     };
 
@@ -461,6 +500,37 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">CRs emitidos</p>
                                     <p className="font-bold text-gray-700 mt-0.5">{documents.filter(d => d.type === 'CR').length}</p>
                                 </div>
+                            </div>
+
+                            {/* ── Zona de peligro ── */}
+                            <div className="border-t-2 border-red-100 pt-4">
+                                <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-3">Zona de peligro</p>
+                                {suspendError && (
+                                    <p className="text-xs text-red-500 font-bold mb-2">{suspendError}</p>
+                                )}
+                                {isActive ? (
+                                    <button
+                                        onClick={handleToggleSuspend}
+                                        disabled={suspending}
+                                        className="w-full py-2.5 border-2 border-red-300 text-red-600 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-50 disabled:opacity-40 transition-colors"
+                                    >
+                                        {suspending ? 'Suspendiendo...' : 'Suspender cuenta'}
+                                    </button>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 justify-center bg-red-50 border border-red-200 rounded-xl px-4 py-2">
+                                            <span className="material-symbols-outlined text-red-500 text-base">block</span>
+                                            <span className="text-xs font-black text-red-600 uppercase tracking-widest">Cuenta suspendida</span>
+                                        </div>
+                                        <button
+                                            onClick={handleToggleSuspend}
+                                            disabled={suspending}
+                                            className="w-full py-2.5 bg-green-600 text-white rounded-xl font-black uppercase tracking-widest text-xs hover:bg-green-700 disabled:opacity-40 transition-colors"
+                                        >
+                                            {suspending ? 'Reactivando...' : 'Reactivar cuenta'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
