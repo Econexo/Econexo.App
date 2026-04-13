@@ -8,6 +8,7 @@ export interface AdminUserProfile {
     is_admin?: boolean;
     company_email?: string;
     is_unregistered?: boolean;
+    is_active?: boolean;
 }
 
 export interface AdminDocument {
