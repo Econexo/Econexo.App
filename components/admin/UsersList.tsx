@@ -31,7 +31,14 @@ const UsersList: React.FC<UsersListProps> = ({ users, onViewClient, onShowUnregi
                             {u.company_name?.[0]}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate text-gray-900">{u.company_name}</p>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <p className="font-bold text-sm truncate text-gray-900">{u.company_name}</p>
+                                {u.is_active === false && (
+                                    <span className="shrink-0 bg-red-100 text-red-700 text-[9px] font-black uppercase tracking-widest rounded px-2 py-0.5">
+                                        Suspendida
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p>
                         </div>
                         <button
