@@ -9,6 +9,7 @@ import Login from './screens/Login';
 import ForgotPassword from './screens/ForgotPassword';
 import ResetPassword from './screens/ResetPassword';
 import Onboarding from './screens/Onboarding';
+import Suspended from './screens/Suspended';
 
 // Lazy-loaded (only loaded when the user navigates to that route)
 const Dashboard    = lazy(() => import('./screens/Dashboard'));
@@ -35,6 +36,7 @@ const ONBOARDING_KEY = 'eco_onboarding_done';
 const AppRoutes: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuspended, setIsSuspended] = useState(false);
   const [isLeyRepUser, setIsLeyRepUser] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
@@ -71,8 +73,9 @@ const AppRoutes: React.FC = () => {
     });
 
     const checkAdmin = async (userId: string) => {
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', userId).single();
+      const { data: profile } = await supabase.from('profiles').select('is_admin, is_active').eq('id', userId).single();
       setIsAdmin(!!profile?.is_admin);
+      setIsSuspended(profile?.is_active === false);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -85,6 +88,7 @@ const AppRoutes: React.FC = () => {
         }
       } else {
         setIsAdmin(false);
+        setIsSuspended(false);
       }
       if (session?.user.user_metadata.ley_rep_declared !== undefined) {
         setIsLeyRepUser(session.user.user_metadata.ley_rep_declared);
@@ -109,6 +113,10 @@ const AppRoutes: React.FC = () => {
 
   if (isAuthenticated === null) {
     return <PageLoader />;
+  }
+
+  if (isAuthenticated && isSuspended) {
+    return <Suspended />;
   }
 
   return (
