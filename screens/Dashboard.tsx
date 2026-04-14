@@ -43,8 +43,10 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     unit: 'Kg'
   });
   const [avatarUrl, setAvatarUrl] = useState<string>("https://picsum.photos/seed/user123/100/100");
-  const [selectedYear, setSelectedYear] = useState<number | 'all'>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number | 'all' | 'range'>(new Date().getFullYear());
   const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()]);
+  const [rangeStart, setRangeStart] = useState<number>(new Date().getFullYear() - 1);
+  const [rangeEnd, setRangeEnd] = useState<number>(new Date().getFullYear());
   const [showComparison, setShowComparison] = useState(false);
   const [prevYearTendencia, setPrevYearTendencia] = useState<{name: string, value: number}[]>(
     ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].map(m => ({ name: m, value: 0 }))
@@ -126,7 +128,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       }
     };
     initPush();
-  }, [selectedYear]);
+  }, [selectedYear, rangeStart, rangeEnd]);
 
   const fetchClients = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -301,8 +303,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             const docYear = date.getFullYear();
             uniqueYears.add(docYear);
 
-            // Filter based on selection ('all' or specific year)
-            if (selectedYear === 'all' || docYear === selectedYear) {
+            // Filter based on selection ('all', specific year, or range)
+            const inRange = selectedYear === 'range' && docYear >= rangeStart && docYear <= rangeEnd;
+            if (selectedYear === 'all' || docYear === selectedYear || inRange) {
               const details = doc.metadata?.waste_details;
               let items = [];
 
@@ -325,8 +328,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               // Suma total y por tipo con formateo
               total = Number((total + docTotal).toFixed(2));
 
-              if (selectedYear === 'all') {
-                // Agrupar por AÑO para el gráfico histórico
+              if (selectedYear === 'all' || selectedYear === 'range') {
+                // Agrupar por AÑO para el gráfico histórico / por rango
                 const yKey = docYear.toString();
                 trendData[yKey] = Number(((trendData[yKey] || 0) + docTotal).toFixed(2));
               } else {
@@ -361,6 +364,14 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         // Ordenar años ascendente para el timeline
         const sortedYears = Array.from(uniqueYears).sort((a, b) => a - b);
         chartData = sortedYears.map(y => ({
+          name: y.toString(),
+          value: trendData[y.toString()] || 0
+        }));
+      } else if (selectedYear === 'range') {
+        // Mostrar cada año dentro del rango seleccionado
+        const rangeYears: number[] = [];
+        for (let y = rangeStart; y <= rangeEnd; y++) rangeYears.push(y);
+        chartData = rangeYears.map(y => ({
           name: y.toString(),
           value: trendData[y.toString()] || 0
         }));
@@ -909,15 +920,42 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             <h3 className="text-gray-900 dark:text-white text-lg font-display font-black tracking-tight transition-colors">Tendencia de Recuperación</h3>
             <select
               value={selectedYear}
-              onChange={(e) => { setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value)); setShowComparison(false); }}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSelectedYear(v === 'all' ? 'all' : v === 'range' ? 'range' : Number(v));
+                setShowComparison(false);
+              }}
               className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
             >
-              <option value="all">Histórico (Todos)</option>
+              <option value="all">Todos los años</option>
+              <option value="range">Por rango</option>
               {availableYears.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
           </div>
+
+          {/* Range pickers — only shown for range mode */}
+          {selectedYear === 'range' && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">De</span>
+              <select
+                value={rangeStart}
+                onChange={(e) => setRangeStart(Number(e.target.value))}
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              >
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">A</span>
+              <select
+                value={rangeEnd}
+                onChange={(e) => setRangeEnd(Number(e.target.value))}
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              >
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Comparison toggle — only shown for specific year views */}
           {typeof selectedYear === 'number' && (
