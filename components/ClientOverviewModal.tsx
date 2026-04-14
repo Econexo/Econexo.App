@@ -249,7 +249,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                 {/* ── Header ── */}
                 <div className="flex items-center gap-4 p-6 border-b border-gray-100 shrink-0">
                     <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-xl font-black uppercase border border-primary/20">
-                        {user.company_name?.[0]}
+                        {displayName[0]}
                     </div>
                     <div className="flex-1 min-w-0">
                         {editingName ? (
@@ -270,8 +270,9 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                         {nameSaving ? '...' : 'Guardar'}
                                     </button>
                                     <button
+                                        disabled={nameSaving}
                                         onClick={() => { setEditingName(false); setNameInput(displayName); setNameError(null); }}
-                                        className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors"
+                                        className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-200 disabled:opacity-40 transition-colors"
                                     >
                                         Cancelar
                                     </button>

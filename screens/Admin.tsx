@@ -531,7 +531,7 @@ const Admin: React.FC = () => {
             {showClientOverview && clientOverviewUser && (
                 <ClientOverviewModal
                     user={clientOverviewUser}
-                    onClose={() => { setShowClientOverview(false); setClientOverviewUser(null); }}
+                    onClose={() => { setShowClientOverview(false); setClientOverviewUser(null); fetchAdminData(); }}
                     onGenerateCR={() => { setSelectedUser(clientOverviewUser); setWasteItems([]); setShowCRModal(true); }}
                     onGenerateCGM={() => { setSelectedUser(clientOverviewUser); setShowMonthlyGenModal(true); }}
                 />
