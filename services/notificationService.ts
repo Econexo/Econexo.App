@@ -4,13 +4,10 @@ export interface NotificationData {
     userId: string;
     title: string;
     message: string;
-    type: 'document' | 'certificate' | 'withdrawal' | 'report';
+    type: 'document' | 'certificate' | 'withdrawal' | 'report' | 'account';
     metadata?: any;
 }
 
-/**
- * Create a new notification for a user and trigger a Web Push to their devices
- */
 export const createNotification = async (data: NotificationData) => {
     try {
         const { error } = await supabase.from('notifications').insert([
@@ -29,9 +26,8 @@ export const createNotification = async (data: NotificationData) => {
             return { success: false, error };
         }
 
-        // --- Send Web Push to user's devices ---
-        try {
-            await supabase.functions.invoke('send-push', {
+        await Promise.allSettled([
+            supabase.functions.invoke('send-push', {
                 body: {
                     userId: data.userId,
                     title: data.title,
@@ -39,11 +35,17 @@ export const createNotification = async (data: NotificationData) => {
                     url: '/dashboard',
                     data: data.metadata || {},
                 },
-            });
-        } catch (pushErr) {
-            // Push failure should not block the notification flow
-            console.warn('Web Push delivery failed (non-critical):', pushErr);
-        }
+            }),
+            supabase.functions.invoke('send-email', {
+                body: {
+                    userId: data.userId,
+                    type: data.type,
+                    title: data.title,
+                    message: data.message,
+                    metadata: data.metadata || {},
+                },
+            }),
+        ]);
 
         return { success: true };
     } catch (err) {
@@ -52,9 +54,6 @@ export const createNotification = async (data: NotificationData) => {
     }
 };
 
-/**
- * Mark a notification as read
- */
 export const markNotificationAsRead = async (notificationId: string) => {
     try {
         const { error } = await supabase
@@ -74,9 +73,6 @@ export const markNotificationAsRead = async (notificationId: string) => {
     }
 };
 
-/**
- * Mark all notifications as read for a user
- */
 export const markAllNotificationsAsRead = async (userId: string) => {
     try {
         const { error } = await supabase
@@ -97,9 +93,6 @@ export const markAllNotificationsAsRead = async (userId: string) => {
     }
 };
 
-/**
- * Get notifications for a user
- */
 export const getNotifications = async (userId: string, limit = 20) => {
     try {
         const { data, error } = await supabase
@@ -120,4 +113,3 @@ export const getNotifications = async (userId: string, limit = 20) => {
         return { success: false, error: err, data: [] };
     }
 };
-
