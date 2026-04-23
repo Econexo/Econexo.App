@@ -108,8 +108,8 @@ Deno.serve(async (req: Request) => {
     if (!resendResponse.ok) {
       const errText = await resendResponse.text();
       console.error('Resend error:', resendResponse.status, errText);
-      return new Response(JSON.stringify({ error: 'Resend API error', details: errText }), {
-        status: 502,
+      return new Response(JSON.stringify({ sent: false, error: 'Resend API error' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -121,8 +121,8 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err: any) {
     console.error('send-email error:', err);
-    return new Response(JSON.stringify({ error: err.message || 'Internal server error' }), {
-      status: 500,
+    return new Response(JSON.stringify({ sent: false, error: err.message || 'Internal server error' }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
