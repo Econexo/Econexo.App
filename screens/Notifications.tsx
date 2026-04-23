@@ -29,6 +29,7 @@ function getIconColor(type: string): string {
     case 'certificate': return 'bg-green-50 text-green-600';
     case 'withdrawal': return 'bg-blue-50 text-blue-600';
     case 'report': return 'bg-purple-50 text-purple-600';
+    case 'document': return 'bg-orange-50 text-orange-600';
     case 'account': return 'bg-red-50 text-red-600';
     default: return 'bg-gray-50 text-gray-600';
   }
