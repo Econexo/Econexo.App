@@ -53,19 +53,22 @@ const Notifications: React.FC = () => {
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setUserId(user.id);
 
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        const { data } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
-      setNotifications(data || []);
-      setLoading(false);
+        setNotifications(data || []);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchNotifications();
@@ -73,13 +76,17 @@ const Notifications: React.FC = () => {
 
   const handleMarkAllRead = async () => {
     if (!userId) return;
-    await markAllNotificationsAsRead(userId);
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    const result = await markAllNotificationsAsRead(userId);
+    if (result.success) {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    }
   };
 
   const handleMarkRead = async (id: string) => {
-    await markNotificationAsRead(id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    const result = await markNotificationAsRead(id);
+    if (result.success) {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    }
   };
 
   return (
