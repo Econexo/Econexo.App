@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
+import { createNotification } from '../services/notificationService';
 
 interface UserProfile {
     id: string;
@@ -173,6 +174,15 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         } else {
             setIsActive(newActive);
             toast.success(newActive ? 'Cuenta reactivada.' : 'Cuenta suspendida.');
+            await createNotification({
+                userId: user.id,
+                title: newActive ? 'Cuenta reactivada' : 'Cuenta suspendida',
+                message: newActive
+                    ? 'Tu cuenta ha sido reactivada. Ya puedes acceder a la plataforma Econexo.'
+                    : 'Tu cuenta ha sido suspendida. Contacta a soporte en econexo.hub@gmail.com para más información.',
+                type: 'account',
+                metadata: { is_active: newActive },
+            });
         }
     };
 
