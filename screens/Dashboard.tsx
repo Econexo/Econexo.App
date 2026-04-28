@@ -10,6 +10,7 @@ import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/m
 import { createNotification } from '../services/notificationService';
 import { useToast } from '../components/ui/Toast';
 import { subscribeToPush, isPushSubscribed } from '../services/pushService';
+import PWAInstallBanner from '../components/PWAInstallBanner';
 
 interface DashboardProps {
   isLeyRep: boolean;
@@ -785,6 +786,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       </div>
 
       <main className="flex flex-col gap-6 p-6">
+        <PWAInstallBanner />
+
         {/* Smart Alerts */}
         {alerts.filter(a => !dismissedAlerts.has(a.message)).length > 0 && (
           <div className="flex flex-col gap-2">

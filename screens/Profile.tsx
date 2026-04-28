@@ -9,6 +9,7 @@ import { useConfirm } from '../components/ui/ConfirmDialog';
 
 // Profile subcomponents
 import ProfileHeader from '../components/profile/ProfileHeader';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import UserDataSection from '../components/profile/UserDataSection';
 import CompanyDataSection from '../components/profile/CompanyDataSection';
 import SettingsModal from '../components/profile/SettingsModal';
@@ -27,6 +28,8 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
   const navigate = useNavigate();
   const toast = useToast();
   const confirm = useConfirm();
+  const { canInstall, isIOS, isInstalled, isInStandaloneMode, install } = usePWAInstall();
+  const [showIOSModal, setShowIOSModal] = useState(false);
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -308,6 +311,42 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
           onSave={saveCompany}
         />
 
+        {/* Install App Card */}
+        {!isInstalled && !isInStandaloneMode && (canInstall || isIOS) && (
+          <section>
+            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-2xl border border-white/80 dark:border-white/10 p-5 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+              <div className="flex items-center gap-4">
+                <div className="size-12 rounded-2xl bg-primary flex items-center justify-center shadow-md shadow-primary/30 shrink-0">
+                  <span className="material-symbols-outlined text-white text-2xl">install_mobile</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Instalar App</h4>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
+                    {isInstalled ? 'Ya instalada en tu dispositivo' : 'Agrega Econexo a tu pantalla de inicio'}
+                  </p>
+                </div>
+                <button
+                  onClick={isIOS ? () => setShowIOSModal(true) : install}
+                  disabled={isInstalled}
+                  className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-transform disabled:opacity-50 shrink-0"
+                >
+                  {isInstalled ? 'Instalada' : 'Instalar'}
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {isInstalled || isInStandaloneMode ? (
+          <div className="flex items-center gap-3 px-4 py-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 rounded-2xl">
+            <span className="material-symbols-outlined text-green-600 text-xl">check_circle</span>
+            <div>
+              <p className="text-xs font-black text-green-800 dark:text-green-300">App instalada</p>
+              <p className="text-[10px] text-green-600 dark:text-green-400 font-bold">Estás usando Econexo como app nativa</p>
+            </div>
+          </div>
+        ) : null}
+
         <button
           onClick={async () => { await supabase.auth.signOut(); navigate('/'); }}
           className="w-full py-4 rounded-2xl border border-red-900/10 text-red-500 font-display font-black text-xs uppercase tracking-[0.25em] bg-red-50 hover:bg-red-100 transition-all active:scale-[0.98] mt-4"
@@ -315,6 +354,47 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
           Cerrar Sesión Segura
         </button>
       </div>
+
+      {/* iOS Install Instructions Modal */}
+      {showIOSModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-8">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowIOSModal(false)} />
+          <div className="relative bg-white rounded-[28px] p-6 w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-300 border border-white/80">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <span className="material-symbols-outlined text-primary text-2xl">install_mobile</span>
+              </div>
+              <div>
+                <h3 className="font-black text-gray-900 text-sm">Instalar en iPhone</h3>
+                <p className="text-[10px] text-gray-500 font-bold">Sigue estos pasos en Safari</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[
+                { icon: 'ios_share', text: 'Toca el botón Compartir (cuadrado con flecha) en la barra inferior de Safari' },
+                { icon: 'add_box', text: 'Desplázate y selecciona "Agregar a pantalla de inicio"' },
+                { icon: 'check_circle', text: 'Toca "Agregar" en la esquina superior derecha' },
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[10px] font-black text-primary">{i + 1}</span>
+                  </div>
+                  <div className="flex items-start gap-2 flex-1">
+                    <span className="material-symbols-outlined text-primary text-base mt-0.5 shrink-0">{step.icon}</span>
+                    <p className="text-xs text-gray-700 font-medium leading-relaxed">{step.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowIOSModal(false)}
+              className="w-full mt-6 h-12 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       <Navbar />
 
