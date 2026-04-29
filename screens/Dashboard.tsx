@@ -11,6 +11,7 @@ import { createNotification } from '../services/notificationService';
 import { useToast } from '../components/ui/Toast';
 import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
+import { useCountUp } from '../hooks/useCountUp';
 
 interface DashboardProps {
   isLeyRep: boolean;
@@ -58,6 +59,10 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [userName, setUserName] = useState<string>('Usuario');
   const [recentDocs, setRecentDocs] = useState<{ id: string; title: string; cert_number: string; date: string; totalKg: number; materials: string[] }[]>([]);
+
+  const animatedKg = useCountUp(stats.totalRecuperado);
+  const animatedCO2 = useCountUp(Math.round(stats.co2Evitado));
+  const animatedPoints = useCountUp(stats.ecoPoints);
 
   const categories = [
     { label: 'Plásticos', value: 'Plásticos' },
@@ -823,7 +828,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             <div className="flex flex-col gap-0.5">
               <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">Total Residuos Recuperados</span>
               <div className="flex items-baseline gap-1.5">
-                <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{stats.totalRecuperado.toLocaleString()}</h3>
+                <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{animatedKg.toLocaleString()}</h3>
                 <span className="text-sm font-bold text-white/90">KG</span>
               </div>
             </div>
@@ -874,7 +879,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               </div>
               <div>
                 <h3 className="text-gray-900 dark:text-white text-2xl font-display font-black tracking-tight flex items-center gap-2 transition-colors">
-                  {stats.ecoPoints.toLocaleString()} <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mt-1">Pts</span>
+                  {animatedPoints.toLocaleString()} <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mt-1">Pts</span>
                 </h3>
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight group-hover:text-yellow-600 transition-colors">
                   Próximo Nivel: {Math.floor(stats.ecoPoints / 1000) + 1}

@@ -28,6 +28,23 @@ interface Document {
   };
 }
 
+const DocSkeletonCard = () => (
+  <div className="bg-white/60 backdrop-blur-2xl p-4 rounded-[24px] border border-white/80 space-y-4 animate-pulse">
+    <div className="flex items-center gap-4">
+      <div className="size-12 rounded-xl bg-gray-200 shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-gray-200 rounded w-3/4" />
+        <div className="h-2.5 bg-gray-200 rounded w-1/2" />
+      </div>
+    </div>
+    <div className="flex gap-2">
+      <div className="flex-1 h-10 bg-gray-200 rounded-xl" />
+      <div className="flex-1 h-10 bg-gray-200 rounded-xl" />
+      <div className="size-10 bg-gray-200 rounded-xl" />
+    </div>
+  </div>
+);
+
 const Documents: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
@@ -195,6 +212,22 @@ const Documents: React.FC = () => {
     } catch (error: any) {
       console.error("Download error:", error);
       toast.error("Error al procesar: " + (error.message || "Error desconocido"));
+    }
+  };
+
+  const handleShare = async (doc: Document) => {
+    if (!navigator.share) {
+      toast.info('Tu navegador no soporta compartir. Descarga el documento primero.');
+      return;
+    }
+    try {
+      await navigator.share({
+        title: doc.title,
+        text: `Documento Econexo: ${doc.title}`,
+        url: doc.content_url || window.location.href,
+      });
+    } catch {
+      // user cancelled — no-op
     }
   };
 
@@ -823,8 +856,8 @@ const Documents: React.FC = () => {
             </div>
 
             {loading ? (
-              <div className="flex justify-center p-12">
-                <span className="animate-spin material-symbols-outlined text-primary text-4xl">progress_activity</span>
+              <div className="space-y-3">
+                {Array(3).fill(0).map((_, i) => <DocSkeletonCard key={i} />)}
               </div>
             ) : filteredDocuments.length === 0 ? (
               <div className="p-12 text-center bg-white/40 rounded-[32px] border border-dashed border-gray-300 backdrop-blur-sm">
@@ -872,6 +905,15 @@ const Documents: React.FC = () => {
                         <span className="material-symbols-outlined text-sm">download</span>
                         Bajar
                       </button>
+                      {navigator.share && (
+                        <button
+                          onClick={() => handleShare(doc)}
+                          className="size-10 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-xl flex items-center justify-center border border-blue-100 transition-colors"
+                          title="Compartir"
+                        >
+                          <span className="material-symbols-outlined text-lg">share</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(doc)}
                         className="size-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
