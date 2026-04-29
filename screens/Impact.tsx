@@ -7,6 +7,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
 import { useToast } from '../components/ui/Toast';
+import { useCountUp } from '../hooks/useCountUp';
 
 interface ImpactProps {
   isLeyRep: boolean;
@@ -390,6 +391,10 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     : 0;
   const goalAchieved = annualGoalKg !== null && totalKg >= annualGoalKg;
 
+  const animatedArboles = useCountUp(stats.arbolesRescatados);
+  const animatedAgua = useCountUp(stats.aguaAhorrada);
+  const animatedEnergia = useCountUp(stats.energiaAhorrada);
+
   return (
     <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
       {/* Decorative Background Blobs */}
@@ -641,7 +646,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 )}
               </div>
               <div className="space-y-1">
-                <span className="text-7xl font-display font-black text-gray-900 dark:text-white block tracking-tighter leading-none">{stats.arbolesRescatados}</span>
+                <span className="text-7xl font-display font-black text-gray-900 dark:text-white block tracking-tighter leading-none">{animatedArboles}</span>
                 <span className="text-[13px] text-green-600 font-black uppercase tracking-[0.3em] block ml-1">Árboles Rescatados</span>
               </div>
               <p className="text-[13px] text-gray-400 dark:text-gray-500 leading-relaxed font-bold tracking-tight">Equivale a la preservación efectiva de biodiversidad local frente a la deforestación industrial.</p>
@@ -665,7 +670,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <span className="material-symbols-outlined text-2xl font-bold">water_drop</span>
                 </div>
                 <div>
-                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{stats.aguaAhorrada.toLocaleString()}</p>
+                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedAgua.toLocaleString()}</p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">Lts Agua</p>
                 </div>
               </div>
@@ -684,7 +689,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <span className="material-symbols-outlined text-2xl font-bold">bolt</span>
                 </div>
                 <div>
-                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{stats.energiaAhorrada.toLocaleString()}</p>
+                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedEnergia.toLocaleString()}</p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">kWh Energía</p>
                 </div>
               </div>

@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase';
 import Navbar from '../components/Navbar';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
+import { useCountUp } from '../hooks/useCountUp';
 
 interface Transaction {
     id: string;
@@ -23,6 +24,18 @@ interface Reward {
     image: string;
 }
 
+const RewardSkeleton = () => (
+    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 dark:border-slate-600/50 flex items-center gap-4 animate-pulse">
+        <div className="size-14 rounded-2xl bg-gray-200 dark:bg-slate-700 shrink-0" />
+        <div className="flex-1 space-y-2">
+            <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-2/3" />
+            <div className="h-2.5 bg-gray-200 dark:bg-slate-700 rounded w-full" />
+            <div className="h-5 bg-gray-200 dark:bg-slate-700 rounded w-1/4 mt-2" />
+        </div>
+        <div className="w-16 h-8 bg-gray-200 dark:bg-slate-700 rounded-xl shrink-0" />
+    </div>
+);
+
 const Rewards: React.FC = () => {
     const navigate = useNavigate();
     const toast = useToast();
@@ -31,6 +44,7 @@ const Rewards: React.FC = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [redeeming, setRedeeming] = useState(false);
+    const animatedPoints = useCountUp(points);
 
     const rewards: Reward[] = [
         {
@@ -194,7 +208,7 @@ const Rewards: React.FC = () => {
                             <div className="text-right">
                                 <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em]">Impacto</p>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-2xl font-display font-black text-white">{points.toLocaleString()}</span>
+                                    <span className="text-2xl font-display font-black text-white">{animatedPoints.toLocaleString()}</span>
                                     <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">pts</span>
                                 </div>
                             </div>
@@ -232,7 +246,7 @@ const Rewards: React.FC = () => {
                 <section className="space-y-4">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Canjear Recompensas</h3>
                     <div className="space-y-4">
-                        {rewards.map(reward => (
+                        {loading ? Array(3).fill(0).map((_, i) => <RewardSkeleton key={i} />) : rewards.map(reward => (
                             <div key={reward.id} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 dark:border-slate-600/50 flex items-center gap-4 group relative overflow-hidden transition-all hover:border-primary/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                                 {/* Subtle Icon Watermark */}
                                 <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
@@ -280,8 +294,21 @@ const Rewards: React.FC = () => {
                 {/* History */}
                 <section className="space-y-4">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Historial de Puntos</h3>
-                    {transactions.length === 0 ? (
-                        <div className="p-8 text-center bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300 dark:border-slate-600">
+                    {loading ? (
+                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/80 dark:border-slate-600/50 animate-pulse">
+                            {Array(3).fill(0).map((_, i) => (
+                                <div key={i} className={`p-4 flex items-center justify-between ${i < 2 ? 'border-b border-gray-100 dark:border-slate-700' : ''}`}>
+                                    <div className="space-y-2">
+                                        <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-40" />
+                                        <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded w-20" />
+                                    </div>
+                                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-12" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : transactions.length === 0 ? (
+                        <div className="p-10 text-center bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300 dark:border-slate-600 flex flex-col items-center gap-3">
+                            <span className="material-symbols-outlined text-4xl text-gray-300 dark:text-slate-600">receipt_long</span>
                             <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Aún no tienes movimientos</p>
                         </div>
                     ) : (
