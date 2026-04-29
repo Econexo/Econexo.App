@@ -124,6 +124,21 @@ const CarbonCalculator: React.FC = () => {
     setTimeout(() => document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
+  const handleShare = async () => {
+    const text = [
+      `🌱 Huella de Carbono Econexo`,
+      `Huella mensual: ${total.toFixed(2)} ton CO₂e`,
+      `Energía: ${categoryTotals.energy.toFixed(3)} ton | Combustibles: ${categoryTotals.fuel.toFixed(3)} ton`,
+      `Transporte: ${categoryTotals.transport.toFixed(3)} ton | Residuos: ${categoryTotals.waste.toFixed(3)} ton`,
+      `Anual estimado: ${(total * 12).toFixed(1)} ton CO₂e`,
+    ].join('\n');
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Huella de Carbono Econexo', text }); return; } catch { /* cancelled */ }
+    }
+    await navigator.clipboard.writeText(text);
+    toast.success('Resultado copiado al portapapeles');
+  };
+
   const handleExportPDF = () => {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const green: [number, number, number] = [50, 97, 5];
@@ -185,9 +200,14 @@ const CarbonCalculator: React.FC = () => {
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Calculadora mensual</p>
         </div>
         {calculated ? (
-          <button onClick={handleExportPDF} className="size-10 flex items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm active:scale-90">
-            <span className="material-symbols-outlined text-primary text-[22px]">picture_as_pdf</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={handleShare} className="size-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 shadow-sm active:scale-90">
+              <span className="material-symbols-outlined text-blue-500 text-[22px]">{navigator.share ? 'share' : 'content_copy'}</span>
+            </button>
+            <button onClick={handleExportPDF} className="size-10 flex items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm active:scale-90">
+              <span className="material-symbols-outlined text-primary text-[22px]">picture_as_pdf</span>
+            </button>
+          </div>
         ) : <div className="size-10" />}
       </header>
 

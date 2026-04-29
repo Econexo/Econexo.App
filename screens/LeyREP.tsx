@@ -209,8 +209,31 @@ const LeyREP: React.FC = () => {
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (isLeyRep === null || loading) {
     return (
-      <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950 flex items-center justify-center">
-        <span className="animate-spin material-symbols-outlined text-primary text-5xl">progress_activity</span>
+      <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950">
+        <Navbar />
+        <main className="p-4 md:p-8 max-w-3xl mx-auto pb-32 animate-pulse">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="size-10 bg-gray-200 dark:bg-slate-700 rounded-xl" />
+            <div className="space-y-1.5">
+              <div className="h-5 bg-gray-200 dark:bg-slate-700 rounded w-48" />
+              <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-32" />
+            </div>
+          </div>
+          <div className="bg-white/80 dark:bg-slate-900/80 rounded-3xl p-5 mb-6 space-y-3">
+            <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-24" />
+            <div className="flex gap-3">
+              {[1,2,3].map(i => <div key={i} className="h-10 bg-gray-200 dark:bg-slate-700 rounded-xl flex-1" />)}
+            </div>
+          </div>
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-white/80 dark:bg-slate-900/80 rounded-3xl p-5 mb-4 space-y-3">
+              <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-40" />
+              <div className="grid grid-cols-2 gap-3">
+                {[1,2].map(j => <div key={j} className="h-20 bg-gray-200 dark:bg-slate-700 rounded-2xl" />)}
+              </div>
+            </div>
+          ))}
+        </main>
       </div>
     );
   }
