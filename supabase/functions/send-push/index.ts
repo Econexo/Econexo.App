@@ -63,10 +63,32 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-        const { userId, title, body, url, data } = await req.json();
+        // Verify caller identity from JWT — userId must match the authenticated user
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+        const callerClient = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
+        if (authError || !caller) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
 
-        if (!userId || !title || !body) {
-            return new Response(JSON.stringify({ error: 'Missing required fields: userId, title, body' }), {
+        const { title, body, url, data } = await req.json();
+        const userId = caller.id; // always derived from the verified JWT
+
+        if (!title || !body) {
+            return new Response(JSON.stringify({ error: 'Missing required fields: title, body' }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });

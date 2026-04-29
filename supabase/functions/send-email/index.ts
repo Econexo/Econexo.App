@@ -7,6 +7,10 @@ const corsHeaders = {
 
 const APP_URL = 'https://econexo.cl';
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function buildEmailHtml(type: string, title: string, message: string, metadata: Record<string, any>): string {
   const ctaMap: Record<string, { label: string; url: string }> = {
     certificate: { label: 'Ver certificado →', url: `${APP_URL}/dashboard` },
@@ -35,8 +39,8 @@ function buildEmailHtml(type: string, title: string, message: string, metadata: 
         </td></tr>
         <!-- Body -->
         <tr><td style="padding:32px;">
-          <h2 style="margin:0 0 16px;color:#1a2e0a;font-size:18px;font-weight:900;">${title}</h2>
-          <p style="margin:0 0 24px;color:#4a5568;font-size:15px;line-height:1.6;">${message}</p>
+          <h2 style="margin:0 0 16px;color:#1a2e0a;font-size:18px;font-weight:900;">${escapeHtml(title)}</h2>
+          <p style="margin:0 0 24px;color:#4a5568;font-size:15px;line-height:1.6;">${escapeHtml(message)}</p>
           <a href="${cta.url}" style="display:inline-block;background:#326105;color:#ffffff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:900;font-size:14px;letter-spacing:0.5px;">${cta.label}</a>
         </td></tr>
         <!-- Footer -->
@@ -56,9 +60,31 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { userId, type, title, message, metadata } = await req.json();
+    // Verify caller identity from JWT — userId is derived from the token, not the body
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const callerClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
+    if (authError || !caller) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    if (!userId || !type || !title || !message) {
+    const { type, title, message, metadata } = await req.json();
+    const userId = caller.id; // always derived from the verified JWT
+
+    if (!type || !title || !message) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
