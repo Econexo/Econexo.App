@@ -20,7 +20,14 @@ const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [loading, setLoading] = useState(false);
   const [chatKey, setChatKey] = useState<string | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleCopy = async (text: string, idx: number) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 1800);
+  };
 
   // Load user-specific chat history from localStorage
   useEffect(() => {
@@ -136,24 +143,37 @@ const Chat: React.FC = () => {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar relative z-10">
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] break-words p-4 rounded-[20px] text-sm leading-relaxed shadow-sm ${m.role === 'user'
-              ? 'bg-primary text-white font-medium rounded-tr-none shadow-primary/20'
-              : 'bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl text-gray-800 dark:text-gray-200 rounded-tl-none border border-white/80 dark:border-slate-600/50 font-medium'
-              }`}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h3: ({ node, ...props }) => <h3 className="text-base font-bold mb-2 mt-1" {...props} />,
-                  p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                  ul: ({ node, ...props }) => <ul className="list-disc ml-4 mb-2" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="list-decimal ml-4 mb-2" {...props} />,
-                  li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-black" {...props} />,
-                }}
-              >
-                {m.parts[0].text}
-              </ReactMarkdown>
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} group`}>
+            <div className="relative">
+              <div className={`max-w-[85%] break-words p-4 rounded-[20px] text-sm leading-relaxed shadow-sm ${m.role === 'user'
+                ? 'bg-primary text-white font-medium rounded-tr-none shadow-primary/20'
+                : 'bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl text-gray-800 dark:text-gray-200 rounded-tl-none border border-white/80 dark:border-slate-600/50 font-medium'
+                }`}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h3: ({ node, ...props }) => <h3 className="text-base font-bold mb-2 mt-1" {...props} />,
+                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                    ul: ({ node, ...props }) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                    li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                    strong: ({ node, ...props }) => <strong className="font-black" {...props} />,
+                  }}
+                >
+                  {m.parts[0].text}
+                </ReactMarkdown>
+              </div>
+              {m.role === 'model' && (
+                <button
+                  onClick={() => handleCopy(m.parts[0].text, i)}
+                  className="absolute -bottom-2 right-2 size-6 rounded-full bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Copiar"
+                >
+                  <span className="material-symbols-outlined text-[12px] text-gray-500 dark:text-gray-400">
+                    {copiedIdx === i ? 'check' : 'content_copy'}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         ))}

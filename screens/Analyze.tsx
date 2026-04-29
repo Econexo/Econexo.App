@@ -3,13 +3,31 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { analyzeImage } from '../services/gemini';
 import Navbar from '../components/Navbar';
+import { useToast } from '../components/ui/Toast';
 
 const Analyze: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleShare = async () => {
+    if (!result) return;
+    const text = `Análisis Econexo:\n\n${result}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Análisis Ambiental Econexo', text });
+        return;
+      } catch { /* user cancelled */ }
+    }
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success('Resultado copiado al portapapeles');
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,9 +146,9 @@ const Analyze: React.FC = () => {
                   <button className="flex-1 h-12 bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-white/60 dark:border-slate-600/40 text-gray-600 dark:text-gray-400 transition-colors" onClick={reset}>
                     Nueva Foto
                   </button>
-                  <button className="flex-1 h-12 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-primary/20 transition-colors">
-                    <span className="material-symbols-outlined text-lg">save</span>
-                    Guardar Reporte
+                  <button onClick={handleShare} className="flex-1 h-12 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-primary/20 transition-colors">
+                    <span className="material-symbols-outlined text-lg">{copied ? 'check' : navigator.share ? 'share' : 'content_copy'}</span>
+                    {copied ? 'Copiado' : navigator.share ? 'Compartir' : 'Copiar'}
                   </button>
                 </div>
               </div>
