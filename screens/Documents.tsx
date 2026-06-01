@@ -233,10 +233,14 @@ const Documents: React.FC = () => {
       return;
     }
     try {
+      // Scanned docs store a Storage path (not a shareable URL); only share absolute URLs.
+      const shareUrl = doc.content_url && /^https?:\/\//i.test(doc.content_url)
+        ? doc.content_url
+        : window.location.href;
       await navigator.share({
         title: doc.title,
         text: `Documento Econexo: ${doc.title}`,
-        url: doc.content_url || window.location.href,
+        url: shareUrl,
       });
     } catch {
       // user cancelled — no-op
