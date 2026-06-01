@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add an in-app Adobe Scan-style document scanner to the EcoNexo PWA that auto-detects a document, corrects perspective, applies a B/W filter, assembles a multi-page PDF, and saves it to the Documentos section.
+**Goal:** Add an in-app Adobe Scan-style document scanner to the EcoNexo PWA's **Admin panel** that auto-detects a document, corrects perspective, applies a B/W filter, assembles a multi-page PDF, and saves it **assigned to a selected client** (mirroring the existing admin "Subir Documento" flow).
 
-**Architecture:** A new lazy-loaded `screens/Scan.tsx` orchestrates the flow. All computer-vision logic lives in isolated service modules (`opencvLoader`, `docScanner`) loaded on demand; pure geometry/PDF math is split into testable modules (`scanGeometry`, `pdfGeometry`). The PDF is uploaded to a new **private** Supabase Storage bucket `documents` with RLS, and a row is inserted into the existing `documents` table storing the storage **path** (not a public URL); downloads use signed URLs.
+**Architecture:** A new lazy-loaded, **admin-guarded** `screens/Scan.tsx` orchestrates the flow, launched from a Quick Action in `screens/Admin.tsx`. All computer-vision logic lives in isolated service modules (`opencvLoader`, `docScanner`) loaded on demand; pure geometry/PDF math is split into testable modules (`scanGeometry`, `pdfGeometry`). The PDF is uploaded to a new **private** Supabase Storage bucket `scanned-docs` (separate from the existing public `documents` bucket) into the client's folder, and a row is created via the existing `create_admin_document` RPC storing the storage **path** (not a public URL) plus a client notification; the client downloads via signed URLs.
 
 **Tech Stack:** React 19 + Vite + TypeScript, react-router-dom (HashRouter), Supabase JS, jspdf (already installed), OpenCV.js (loaded from CDN at runtime), Vitest (added by this plan).
 
@@ -17,13 +17,14 @@
 - Create `services/opencvLoader.ts` — lazy-loads OpenCV.js from CDN once.
 - Create `services/docScanner.ts` — `detectDocument`, `warpDocument`, `applyFilter` (use `cv` passed in + `scanGeometry`).
 - Create `services/scanToPdf.ts` — `buildScanPdf` (jspdf + `pdfGeometry`).
-- Create `services/documentUpload.ts` — `uploadScannedDocument` (Storage upload + table insert).
-- Create `screens/Scan.tsx` — UI orchestration.
-- Create `supabase/migrations/20260531_create_documents_bucket.sql` — private bucket + RLS.
+- Create `services/documentUpload.ts` — `uploadScannedDocument` (Storage upload to `scanned-docs` + `create_admin_document` RPC + client notification).
+- Create `screens/Scan.tsx` — UI orchestration + client/source/type/date selectors.
+- Create `supabase/migrations/20260531_create_scanned_docs_bucket.sql` — private bucket + admin-aware RLS.
 - Create `vitest.config.ts`, `services/scanGeometry.test.ts`, `services/pdfGeometry.test.ts`.
 - Modify `package.json` — add Vitest devDep + `test` script.
-- Modify `App.tsx` — register `/scan` route (lazy).
-- Modify `screens/Documents.tsx` — add "Escanear" button; make `handleDownload` use signed URLs for storage paths.
+- Modify `App.tsx` — register admin-guarded `/scan` route (lazy).
+- Modify `screens/Admin.tsx` — add "Escanear Documento" Quick Action button.
+- Modify `screens/Documents.tsx` — make `handleDownload` use signed URLs (`scanned-docs`) for storage paths.
 
 ---
 
@@ -531,55 +532,82 @@ git commit -m "feat: add multi-page scan-to-PDF assembly"
 
 ---
 
-## Task 7: Supabase private bucket migration
+## Task 7: Supabase private `scanned-docs` bucket migration
 
 **Files:**
-- Create: `supabase/migrations/20260531_create_documents_bucket.sql`
+- Create: `supabase/migrations/20260531_create_scanned_docs_bucket.sql`
+
+> This is a NEW bucket, separate from the existing public `documents` bucket
+> (which stays public and untouched). Admins upload scanned PDFs into a client's
+> folder (`scanned-docs/{client_id}/...`); the client reads only their own folder.
 
 - [ ] **Step 1: Create the migration**
 
-Create `supabase/migrations/20260531_create_documents_bucket.sql`:
+Create `supabase/migrations/20260531_create_scanned_docs_bucket.sql`:
 
 ```sql
--- Bucket privado para los PDFs escaneados por los usuarios
+-- Bucket privado NUEVO para los PDFs escaneados por el admin y asignados a clientes.
+-- No toca el bucket público 'documents' existente.
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('documents', 'documents', false)
+VALUES ('scanned-docs', 'scanned-docs', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Re-runnable: drop existing policy names first
-DROP POLICY IF EXISTS "documents_user_read" ON storage.objects;
-DROP POLICY IF EXISTS "documents_user_insert" ON storage.objects;
-DROP POLICY IF EXISTS "documents_user_update" ON storage.objects;
-DROP POLICY IF EXISTS "documents_user_delete" ON storage.objects;
+DROP POLICY IF EXISTS "scanned_docs_select" ON storage.objects;
+DROP POLICY IF EXISTS "scanned_docs_insert" ON storage.objects;
+DROP POLICY IF EXISTS "scanned_docs_update" ON storage.objects;
+DROP POLICY IF EXISTS "scanned_docs_delete" ON storage.objects;
 
--- Cada usuario solo accede a su propia carpeta: documents/{auth.uid()}/...
-CREATE POLICY "documents_user_read" ON storage.objects
+-- Lectura: el dueño de la carpeta (cliente) o un admin.
+CREATE POLICY "scanned_docs_select" ON storage.objects
   FOR SELECT TO authenticated
-  USING (bucket_id = 'documents' AND (storage.foldername(name))[1] = auth.uid()::text);
+  USING (
+    bucket_id = 'scanned-docs' AND (
+      (storage.foldername(name))[1] = auth.uid()::text
+      OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+      OR auth.jwt() ->> 'email' = 'econexo.hub@gmail.com'
+    )
+  );
 
-CREATE POLICY "documents_user_insert" ON storage.objects
+-- Escritura: solo admin (sube a la carpeta de cualquier cliente).
+CREATE POLICY "scanned_docs_insert" ON storage.objects
   FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'documents' AND (storage.foldername(name))[1] = auth.uid()::text);
+  WITH CHECK (
+    bucket_id = 'scanned-docs' AND (
+      EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+      OR auth.jwt() ->> 'email' = 'econexo.hub@gmail.com'
+    )
+  );
 
-CREATE POLICY "documents_user_update" ON storage.objects
+CREATE POLICY "scanned_docs_update" ON storage.objects
   FOR UPDATE TO authenticated
-  USING (bucket_id = 'documents' AND (storage.foldername(name))[1] = auth.uid()::text);
+  USING (
+    bucket_id = 'scanned-docs' AND (
+      EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+      OR auth.jwt() ->> 'email' = 'econexo.hub@gmail.com'
+    )
+  );
 
-CREATE POLICY "documents_user_delete" ON storage.objects
+CREATE POLICY "scanned_docs_delete" ON storage.objects
   FOR DELETE TO authenticated
-  USING (bucket_id = 'documents' AND (storage.foldername(name))[1] = auth.uid()::text);
+  USING (
+    bucket_id = 'scanned-docs' AND (
+      EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+      OR auth.jwt() ->> 'email' = 'econexo.hub@gmail.com'
+    )
+  );
 ```
 
 - [ ] **Step 2: Apply the migration**
 
-Apply via the Supabase Dashboard SQL editor (or `supabase db push` if the CLI is linked). After running, confirm in Dashboard > Storage that a **private** bucket named `documents` exists.
-Expected: bucket `documents` present, `public = false`, 4 policies on `storage.objects`.
+Apply via the Supabase Dashboard SQL editor (or `supabase db push` if the CLI is linked). After running, confirm in Dashboard > Storage that a **private** bucket named `scanned-docs` exists.
+Expected: bucket `scanned-docs` present, `public = false`, 4 policies on `storage.objects`. The existing `documents` bucket is unchanged.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/20260531_create_documents_bucket.sql
-git commit -m "feat: add private documents storage bucket with RLS"
+git add supabase/migrations/20260531_create_scanned_docs_bucket.sql
+git commit -m "feat: add private scanned-docs storage bucket with admin RLS"
 ```
 
 ---
@@ -589,7 +617,8 @@ git commit -m "feat: add private documents storage bucket with RLS"
 **Files:**
 - Create: `services/documentUpload.ts`
 
-> Not unit-tested: requires an authenticated Supabase session + live Storage. Verified manually in Task 9.
+> Not unit-tested: requires an authenticated admin Supabase session + live Storage. Verified manually in Task 9.
+> Mirrors `handleUploadDocument` in `screens/Admin.tsx`: upload to Storage → `create_admin_document` RPC → notify the client. The only differences: the file is the scanned PDF Blob, the bucket is the private `scanned-docs`, and `content_url` stores the Storage PATH (not a public URL).
 
 - [ ] **Step 1: Create the module**
 
@@ -597,48 +626,62 @@ Create `services/documentUpload.ts`:
 
 ```ts
 import { supabase } from './supabase';
+import { createNotification } from './notificationService';
 
 export interface UploadScanParams {
   pdf: Blob;
   title: string;
   type: string;
+  clientId: string;
+  createdAt: string; // ISO date string (document date chosen by admin)
+  source: 'gestor' | 'econexo';
 }
 
-/** Uploads the scanned PDF to the private 'documents' bucket and inserts a row.
- *  content_url stores the Storage PATH (not a public URL); downloads use signed URLs. */
-export async function uploadScannedDocument({ pdf, title, type }: UploadScanParams): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('No hay sesión de usuario');
-
-  const filePath = `${user.id}/scan-${Date.now()}.pdf`;
+/** Uploads the scanned PDF to the private 'scanned-docs' bucket under the client's
+ *  folder, creates the row via the create_admin_document RPC (assigning it to the
+ *  client), and notifies the client. content_url stores the Storage PATH (not a
+ *  public URL); downloads use signed URLs. Requires an admin session (enforced by RLS). */
+export async function uploadScannedDocument(
+  { pdf, title, type, clientId, createdAt, source }: UploadScanParams,
+): Promise<void> {
+  const timestamp = Date.now();
+  const filePath = `${clientId}/${timestamp}_scan.pdf`;
 
   const { error: uploadError } = await supabase.storage
-    .from('documents')
+    .from('scanned-docs')
     .upload(filePath, pdf, { contentType: 'application/pdf', upsert: false });
   if (uploadError) throw uploadError;
 
-  const { error: insertError } = await supabase.from('documents').insert([{
-    user_id: user.id,
-    title,
-    type,
-    content_url: filePath,
-    verified: false,
-    metadata: { source: 'scanner' },
-  }]);
-  if (insertError) throw insertError;
+  const { error: rpcError } = await supabase.rpc('create_admin_document', {
+    _user_id: clientId,
+    _title: title,
+    _type: type,
+    _content_url: filePath,
+    _created_at: createdAt,
+    _metadata: { source: 'scanner', uploaded_by: 'admin', upload_source: source, mime_type: 'application/pdf' },
+  });
+  if (rpcError) throw rpcError;
+
+  await createNotification({
+    userId: clientId,
+    title: '📄 Nuevo Documento Disponible',
+    message: `El administrador ha subido un nuevo documento escaneado: "${title}".`,
+    type: 'document',
+    metadata: { file_name: title, document_type: type },
+  });
 }
 ```
 
 - [ ] **Step 2: Verify it typechecks**
 
 Run: `npx tsc --noEmit`
-Expected: no errors related to `services/documentUpload.ts`.
+Expected: no errors related to `services/documentUpload.ts`. (Confirm the import path/signature of `createNotification` matches `services/notificationService.ts` — it is used the same way in `screens/Admin.tsx`.)
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add services/documentUpload.ts
-git commit -m "feat: add scanned-document upload service"
+git commit -m "feat: add scanned-document upload service (admin → client)"
 ```
 
 ---
@@ -659,6 +702,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useToast } from '../components/ui/Toast';
+import { supabase } from '../services/supabase';
 import { loadOpenCV } from '../services/opencvLoader';
 import { detectDocument, warpDocument, applyFilter, FilterMode } from '../services/docScanner';
 import { buildScanPdf, ScanPage } from '../services/scanToPdf';
@@ -667,11 +711,19 @@ import type { Point } from '../services/scanGeometry';
 
 type Stage = 'capture' | 'adjust' | 'review';
 
-const DESTINATIONS = [
-  { label: 'Gestores · Certificados', type: 'declaration' },
-  { label: 'Econexo · Recepción (CR)', type: 'CR' },
-  { label: 'Econexo · Reportes', type: 'report' },
-  { label: 'Otro', type: 'custom' },
+interface ClientProfile { id: string; company_name: string | null; }
+
+const GESTOR_TYPES = [
+  { value: 'declaration', label: 'Declaración / Certificado' },
+  { value: 'legal',       label: 'Documento Legal' },
+  { value: 'custom',      label: 'Otro' },
+];
+
+const ECONEXO_TYPES = [
+  { value: 'CR',     label: 'Certificado de Recepción (CR)' },
+  { value: 'CGM',    label: 'Certificado Gestión Mensual (CGM)' },
+  { value: 'report', label: 'Reporte Ambiental' },
+  { value: 'custom', label: 'Otro' },
 ];
 
 const Scan: React.FC = () => {
@@ -686,7 +738,13 @@ const Scan: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
   const [title, setTitle] = useState('');
-  const [destIndex, setDestIndex] = useState(0);
+
+  // Client assignment (mirrors the admin "Subir Documento" modal)
+  const [clients, setClients] = useState<ClientProfile[]>([]);
+  const [clientId, setClientId] = useState('');
+  const [source, setSource] = useState<'gestor' | 'econexo'>('gestor');
+  const [docType, setDocType] = useState('declaration');
+  const [docDate, setDocDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   // Source image + adjustable corners (natural-image coordinates)
   const sourceCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -705,6 +763,17 @@ const Scan: React.FC = () => {
       .then((cv) => { cvRef.current = cv; setCvReady(true); })
       .catch(() => setCvError(true));
   }, []);
+
+  useEffect(() => {
+    supabase.from('profiles').select('id, company_name').order('company_name')
+      .then(({ data }) => setClients(data || []));
+  }, []);
+
+  const docTypes = source === 'econexo' ? ECONEXO_TYPES : GESTOR_TYPES;
+  // Keep docType valid when the source toggles between the two type lists.
+  useEffect(() => {
+    if (!docTypes.some((t) => t.value === docType)) setDocType(docTypes[0].value);
+  }, [source]);
 
   const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -783,13 +852,21 @@ const Scan: React.FC = () => {
 
   const handleSave = async () => {
     if (pages.length === 0) return;
+    if (!clientId) { toast.warning('Selecciona una empresa destino.'); return; }
     setSaving(true);
     try {
       const pdf = buildScanPdf(pages);
       const finalTitle = title.trim() || `Documento escaneado ${new Date().toLocaleDateString()}`;
-      await uploadScannedDocument({ pdf, title: finalTitle, type: DESTINATIONS[destIndex].type });
-      toast.success('Documento guardado en Documentos.');
-      navigate('/documents');
+      await uploadScannedDocument({
+        pdf,
+        title: finalTitle,
+        type: docType,
+        clientId,
+        createdAt: new Date(docDate).toISOString(),
+        source,
+      });
+      toast.success('Documento escaneado y asignado al cliente.');
+      navigate('/admin');
     } catch (err: any) {
       toast.error('Error al guardar: ' + (err.message || 'desconocido'));
     } finally {
@@ -914,21 +991,45 @@ const Scan: React.FC = () => {
       {showFinalize && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowFinalize(false)} />
-          <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-6 border border-white/80 shadow-xl space-y-4">
-            <h3 className="text-lg font-display font-black text-gray-900 text-center">Guardar documento</h3>
+          <div className="relative bg-white/90 backdrop-blur-2xl w-full max-w-[340px] rounded-[32px] p-6 border border-white/80 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-display font-black text-gray-900 text-center">Asignar a cliente</h3>
+
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Origen del Documento</label>
+              <div className="flex gap-2">
+                <button onClick={() => setSource('gestor')} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${source === 'gestor' ? 'bg-slate-700 text-white border-slate-700' : 'bg-white/50 text-gray-500 border-white/60'}`}>Gestor</button>
+                <button onClick={() => setSource('econexo')} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${source === 'econexo' ? 'bg-primary text-white border-primary' : 'bg-white/50 text-gray-500 border-white/60'}`}>EcoNexo</button>
+              </div>
+            </div>
+
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Empresa Destino</label>
+              <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary">
+                <option value="">Seleccionar Empresa...</option>
+                {clients.map((c) => <option key={c.id} value={c.id}>{c.company_name || c.id}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Tipo de Documento</label>
+              <select value={docType} onChange={(e) => setDocType(e.target.value)} className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary">
+                {docTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Fecha del Documento</label>
+              <input type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary" />
+            </div>
+
             <div className="space-y-1 text-left">
               <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Título</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Documento escaneado" className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary" />
             </div>
-            <div className="space-y-1 text-left">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Carpeta</label>
-              <select value={destIndex} onChange={(e) => setDestIndex(Number(e.target.value))} className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary">
-                {DESTINATIONS.map((d, i) => <option key={i} value={i}>{d.label}</option>)}
-              </select>
-            </div>
+
             <button onClick={handleSave} disabled={saving} className="w-full h-14 bg-primary text-background-dark rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <span className="material-symbols-outlined">save</span>}
-              {saving ? 'Guardando…' : 'Guardar'}
+              {saving ? 'Guardando…' : 'Guardar y asignar'}
             </button>
             <button onClick={() => setShowFinalize(false)} className="w-full h-10 text-gray-400 text-[10px] font-black uppercase tracking-widest">Cancelar</button>
           </div>
@@ -952,12 +1053,12 @@ Expected: no errors. (The route is wired in Task 10; the screen compiles standal
 
 Temporarily test by wiring the route (do Task 10 first if preferred), then:
 Run: `npm run dev`
-- Open the app, log in, navigate to `/#/scan`.
+- Log in **as an admin**, navigate to `/#/scan` (or via the new Admin button from Task 10).
 - Confirm "Cargando motor de escaneo…" appears then the capture UI.
 - Capture/upload a photo of a document; confirm corners appear (auto-detected or default), drag a corner handle, switch B/N filter.
 - "Usar página" → thumbnail appears in review; add a 2nd page; reorder and delete.
-- "Guardar PDF" → fill title, pick "Gestores · Certificados" → Guardar.
-- Confirm redirect to Documentos and a success toast.
+- "Guardar PDF" → choose origen (Gestor/EcoNexo), select an **Empresa Destino**, pick a tipo and fecha, optional título → "Guardar y asignar".
+- Confirm redirect to `/admin` and a success toast. Then log in as that client and confirm the document appears in Documentos (Task 11 verifies the signed-URL open).
 
 - [ ] **Step 4: Commit**
 
@@ -968,11 +1069,11 @@ git commit -m "feat: add document scanner screen"
 
 ---
 
-## Task 10: Wire route + entry button
+## Task 10: Wire admin-guarded route + Admin Quick Action button
 
 **Files:**
 - Modify: `App.tsx`
-- Modify: `screens/Documents.tsx`
+- Modify: `screens/Admin.tsx`
 
 - [ ] **Step 1: Add the lazy import in `App.tsx`**
 
@@ -982,26 +1083,23 @@ After the other lazy screen imports (near `App.tsx:26`), add:
 const Scan               = lazy(() => import('./screens/Scan'));
 ```
 
-- [ ] **Step 2: Add the route in `App.tsx`**
+- [ ] **Step 2: Add the admin-guarded route in `App.tsx`**
 
-After the `/analyze` route (`App.tsx:136`), add:
+Right after the `/admin` route (`App.tsx:138`), add a route guarded the same way (`isAuthenticated && isAdmin`):
 
 ```tsx
-          <Route path="/scan"          element={isAuthenticated ? <div className="lg:ml-64"><Scan /></div> : <Navigate to="/" />} />
+          <Route path="/scan"          element={isAuthenticated && isAdmin ? <div className="lg:ml-64"><Scan /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
 ```
 
-- [ ] **Step 3: Add a scan button in `Documents.tsx` header**
+- [ ] **Step 3: Add an "Escanear Documento" button to Admin Quick Actions**
 
-In `screens/Documents.tsx`, add `useNavigate` usage is already present (`navigate`). Inside the header action group (the `<div className="flex items-center gap-2">` around `Documents.tsx:623`), add as the first child:
+In `screens/Admin.tsx`, inside the Quick Actions `<section className="grid grid-cols-2 gap-4">` (around `Admin.tsx:459`), add a new button after the "Subir Documento" button (the one calling `setShowUploadModal(true)`). `navigate` is already in scope at the top of the component:
 
 ```tsx
-          <button
-            onClick={() => navigate('/scan')}
-            title="Escanear documento"
-            className="size-10 flex items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 active:scale-90 transition-all border border-primary/20 shadow-sm text-primary"
-          >
-            <span className="material-symbols-outlined">document_scanner</span>
-          </button>
+                    <button onClick={() => navigate('/scan')} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
+                        <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">document_scanner</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Escanear Documento</span>
+                    </button>
 ```
 
 - [ ] **Step 4: Verify it typechecks and builds**
@@ -1012,8 +1110,8 @@ Expected: no errors; build succeeds.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add App.tsx screens/Documents.tsx
-git commit -m "feat: wire /scan route and Documentos scan button"
+git add App.tsx screens/Admin.tsx
+git commit -m "feat: wire admin-guarded /scan route and Admin scan button"
 ```
 
 ---
@@ -1038,13 +1136,14 @@ In `screens/Documents.tsx`, replace the opening of `handleDownload` (currently):
 with:
 
 ```tsx
-    // Uploaded documents: legacy rows store an absolute URL; scanned rows store a Storage path.
+    // Uploaded/scanned documents: legacy & public-bucket rows store an absolute URL;
+    // scanned rows store a Storage path in the private 'scanned-docs' bucket.
     if (doc.content_url) {
       if (/^https?:\/\//i.test(doc.content_url)) {
         window.open(doc.content_url, '_blank');
       } else {
         const { data, error } = await supabase.storage
-          .from('documents')
+          .from('scanned-docs')
           .createSignedUrl(doc.content_url, 60);
         if (error || !data) {
           toast.error('No se pudo abrir el documento: ' + (error?.message || 'error'));
@@ -1064,7 +1163,7 @@ Expected: no errors. (`handleDownload` is already `async`.)
 - [ ] **Step 3: Manual verification**
 
 Run: `npm run dev`
-- Open a previously scanned document from Documentos (folder "Gestores · Certificados", filter "Pendientes" since `verified=false`).
+- Log in as the client the admin assigned the scan to, and open that document from Documentos (in the folder matching the chosen tipo).
 - Confirm it opens the PDF via a signed URL (URL contains `token=`), and that the PDF shows the scanned pages.
 
 - [ ] **Step 4: Commit**
@@ -1078,6 +1177,7 @@ git commit -m "feat: open stored documents via signed URLs"
 
 ## Self-Review Notes
 
-- **Spec coverage:** auto-detect + perspective correction (Tasks 4–5), B/N filter (Task 5), multi-page list with reorder/delete (Task 9), multi-page PDF (Task 6), save to Documentos via private bucket + RLS (Tasks 7–8), signed-URL download (Task 11), lazy OpenCV load (Task 4, used in Task 9). OCR and live auto-capture are explicitly out of scope per the spec.
-- **Type consistency:** `Point`/`OrderedCorners` defined in `scanGeometry.ts` and reused by `docScanner.ts` and `Scan.tsx`; `FilterMode` defined in `docScanner.ts`; `ScanPage` defined in `scanToPdf.ts` and consumed in `Scan.tsx`; `content_url` stores a Storage path consistently in `documentUpload.ts` and is read accordingly in Task 11.
-- **Note on `verified`:** scanned docs are inserted with `verified: false`, so they appear under the "Pendientes" filter in Documentos until an admin/flow verifies them. This matches the existing data model.
+- **Spec coverage:** admin-only placement + admin-guarded route (Task 10), auto-detect + perspective correction (Tasks 4–5), B/N filter (Task 5), multi-page list with reorder/delete (Task 9), multi-page PDF (Task 6), assign-to-client via `create_admin_document` RPC + notification into a new private bucket with admin-aware RLS (Tasks 7–8), signed-URL download from `scanned-docs` (Task 11), lazy OpenCV load (Task 4, used in Task 9). OCR and live auto-capture are explicitly out of scope per the spec.
+- **Type consistency:** `Point`/`OrderedCorners` defined in `scanGeometry.ts` and reused by `docScanner.ts` and `Scan.tsx`; `FilterMode` defined in `docScanner.ts`; `ScanPage` defined in `scanToPdf.ts` and consumed in `Scan.tsx`; `UploadScanParams` (with `clientId`, `createdAt`, `source`) defined in `documentUpload.ts` and matched by the `handleSave` call in `Scan.tsx`; `content_url` stores a Storage path in `documentUpload.ts` and is read accordingly via `scanned-docs` signed URLs in Task 11.
+- **Note on the existing bucket:** the public `documents` bucket and its rows (absolute URLs) are untouched; the signed-URL branch in Task 11 only applies to non-`http` `content_url` values (the new `scanned-docs` paths).
+- **Note on `verified`/`type`:** rows are created through the same `create_admin_document` RPC as the existing admin upload, so scanned docs inherit identical `verified`/listing behavior and use the same `type` values (Gestor: `declaration`/`legal`/`custom`; EcoNexo: `CR`/`CGM`/`report`/`custom`).
