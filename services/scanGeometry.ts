@@ -23,3 +23,13 @@ export function orderCorners(points: Point[]): OrderedCorners {
     tr: byDiff[3],
   };
 }
+
+function dist(a: Point, b: Point): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+export function outputSize(c: OrderedCorners): { width: number; height: number } {
+  const width = Math.max(dist(c.tl, c.tr), dist(c.bl, c.br));
+  const height = Math.max(dist(c.tl, c.bl), dist(c.tr, c.br));
+  return { width: Math.round(width), height: Math.round(height) };
+}
