@@ -145,9 +145,21 @@ const Documents: React.FC = () => {
   };
 
   const handleDownload = async (doc: Document, action: 'save' | 'preview' = 'save') => {
-    // Direct Download for Uploaded Documents (Gestores)
+    // Uploaded/scanned documents: legacy & public-bucket rows store an absolute URL;
+    // scanned rows store a Storage path in the private 'scanned-docs' bucket.
     if (doc.content_url) {
-      window.open(doc.content_url, '_blank');
+      if (/^https?:\/\//i.test(doc.content_url)) {
+        window.open(doc.content_url, '_blank');
+      } else {
+        const { data, error } = await supabase.storage
+          .from('scanned-docs')
+          .createSignedUrl(doc.content_url, 60);
+        if (error || !data) {
+          toast.error('No se pudo abrir el documento: ' + (error?.message || 'error'));
+          return;
+        }
+        window.open(data.signedUrl, '_blank');
+      }
       return;
     }
 
