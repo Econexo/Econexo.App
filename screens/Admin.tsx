@@ -465,6 +465,10 @@ const Admin: React.FC = () => {
                         <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 border border-blue-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">cloud_upload</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento</span>
                     </button>
+                    <button onClick={() => navigate('/scan')} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
+                        <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">document_scanner</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Escanear Documento</span>
+                    </button>
                     <button onClick={() => setShowCommunityManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
                         <div className="size-10 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">nature_people</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-green-600 transition-colors">Retiros Comunitarios</span>
