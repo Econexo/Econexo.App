@@ -4,34 +4,14 @@ declare global {
   }
 }
 
-const OPENCV_CDN = 'https://docs.opencv.org/4.10.0/opencv.js';
-// Generous cap so slow mobile connections still succeed, but a real failure
+// Self-hosted from public/opencv/opencv.js (served at the site root by Vercel).
+// Avoids depending on docs.opencv.org, whose connections frequently stall on
+// mobile and never fire load/error — leaving the scanner stuck forever.
+const OPENCV_URL = '/opencv/opencv.js';
+// Overall cap covering BOTH the download and the WASM init. A real failure
 // surfaces as an error instead of an infinite spinner.
-const LOAD_TIMEOUT_MS = 60000;
+const LOAD_TIMEOUT_MS = 45000;
 let loadPromise: Promise<any> | null = null;
-
-/**
- * Polls until OpenCV's WASM runtime is ready (`cv.Mat` exists). This is the
- * reliable readiness signal: relying solely on `cv.onRuntimeInitialized` is
- * racy because the runtime can finish initializing before the callback is
- * attached, leaving the promise pending forever.
- */
-function waitForRuntime(resolve: (cv: any) => void, reject: (e: Error) => void): void {
-  const start = Date.now();
-  const poll = () => {
-    const cv = window.cv;
-    if (cv && cv.Mat) {
-      resolve(cv);
-      return;
-    }
-    if (Date.now() - start > LOAD_TIMEOUT_MS) {
-      reject(new Error('OpenCV tardó demasiado en inicializar'));
-      return;
-    }
-    setTimeout(poll, 100);
-  };
-  poll();
-}
 
 export function loadOpenCV(): Promise<any> {
   if (typeof window !== 'undefined' && window.cv && window.cv.Mat) {
@@ -40,45 +20,75 @@ export function loadOpenCV(): Promise<any> {
   if (loadPromise) return loadPromise;
 
   loadPromise = new Promise((resolve, reject) => {
-    const handleScriptLoaded = () => {
+    let settled = false;
+
+    // Single timer governing the whole load, so even a stalled script request
+    // (which fires neither onload nor onerror) cannot hang forever.
+    const timer = setTimeout(() => {
+      finishError(new Error('OpenCV tardó demasiado en cargar'));
+    }, LOAD_TIMEOUT_MS);
+
+    function finishOk(cv: any) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(cv);
+    }
+    function finishError(err: Error) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(err);
+    }
+
+    // Poll for the WASM runtime being ready. `cv.Mat` is the reliable signal;
+    // relying only on cv.onRuntimeInitialized is racy (it can fire before the
+    // callback is attached).
+    function pollForRuntime() {
+      if (settled) return;
       const cv = window.cv;
-      if (!cv) {
-        reject(new Error('OpenCV no se cargó'));
+      if (cv && cv.Mat) {
+        finishOk(cv);
         return;
       }
-      // Some OpenCV.js builds expose `cv` as a Promise/Module factory.
+      setTimeout(pollForRuntime, 100);
+    }
+
+    function handleScriptLoaded() {
+      const cv = window.cv;
+      if (!cv) {
+        finishError(new Error('OpenCV no se cargó'));
+        return;
+      }
+      // Some builds expose `cv` as a Promise/Module factory.
       if (typeof cv.then === 'function') {
         cv
           .then((mod: any) => {
             window.cv = mod;
-            waitForRuntime(resolve, reject);
+            pollForRuntime();
           })
-          .catch(() => reject(new Error('OpenCV no se inicializó')));
+          .catch(() => finishError(new Error('OpenCV no se inicializó')));
         return;
       }
-      // Attach the official hook AND poll: whichever fires first wins, which
-      // closes the race where the runtime initializes before the callback.
       try {
-        cv.onRuntimeInitialized = () => resolve(window.cv);
+        cv.onRuntimeInitialized = () => finishOk(window.cv);
       } catch {
         /* read-only on some builds — polling covers it */
       }
-      waitForRuntime(resolve, reject);
-    };
+      pollForRuntime();
+    }
 
-    // Reuse an already-injected script tag (e.g. after a remount) instead of
-    // adding a duplicate.
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${OPENCV_CDN}"]`);
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${OPENCV_URL}"]`);
     if (existing) {
       handleScriptLoaded();
       return;
     }
 
     const script = document.createElement('script');
-    script.src = OPENCV_CDN;
+    script.src = OPENCV_URL;
     script.async = true;
     script.onload = handleScriptLoaded;
-    script.onerror = () => reject(new Error('No se pudo descargar OpenCV.js'));
+    script.onerror = () => finishError(new Error('No se pudo descargar OpenCV.js'));
     document.body.appendChild(script);
   });
 
