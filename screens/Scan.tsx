@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useToast } from '../components/ui/Toast';
 import { supabase } from '../services/supabase';
-import { loadOpenCV } from '../services/opencvLoader';
 import { detectDocument, warpDocument, applyFilter, FilterMode } from '../services/docScanner';
 import { buildScanPdf, ScanPage } from '../services/scanToPdf';
 import { uploadScannedDocument } from '../services/documentUpload';
@@ -30,8 +29,6 @@ const Scan: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [cvReady, setCvReady] = useState(false);
-  const [cvError, setCvError] = useState(false);
   const [stage, setStage] = useState<Stage>('capture');
   const [filter, setFilter] = useState<FilterMode>('bw');
   const [pages, setPages] = useState<ScanPage[]>([]);
@@ -55,14 +52,6 @@ const Scan: React.FC = () => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const cvRef = useRef<any>(null);
-
-  useEffect(() => {
-    loadOpenCV()
-      .then((cv) => { cvRef.current = cv; setCvReady(true); })
-      .catch(() => setCvError(true));
-  }, []);
 
   useEffect(() => {
     supabase.from('profiles').select('id, company_name').order('company_name')
@@ -89,7 +78,7 @@ const Scan: React.FC = () => {
       setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
       setImgUrl(url);
 
-      const detected = detectDocument(cvRef.current, canvas);
+      const detected = detectDocument(canvas);
       setCorners(detected ?? [
         { x: img.naturalWidth * 0.1, y: img.naturalHeight * 0.1 },
         { x: img.naturalWidth * 0.9, y: img.naturalHeight * 0.1 },
@@ -126,8 +115,8 @@ const Scan: React.FC = () => {
 
   const confirmCrop = () => {
     try {
-      const warped = warpDocument(cvRef.current, sourceCanvasRef.current!, corners);
-      const filtered = applyFilter(cvRef.current, warped, filter);
+      const warped = warpDocument(sourceCanvasRef.current!, corners);
+      const filtered = applyFilter(warped, filter);
       const dataUrl = filtered.toDataURL('image/jpeg', 0.9);
       setPages((prev) => [...prev, { dataUrl, width: filtered.width, height: filtered.height }]);
       if (imgUrl) URL.revokeObjectURL(imgUrl);
@@ -186,20 +175,7 @@ const Scan: React.FC = () => {
       </div>
 
       <div className="p-4 space-y-6 relative z-10">
-        {cvError && (
-          <div className="p-4 rounded-2xl bg-red-50 text-red-600 text-sm font-bold border border-red-100">
-            No se pudo cargar el motor de escaneo. Revisa tu conexión e inténtalo de nuevo.
-          </div>
-        )}
-
-        {!cvReady && !cvError && (
-          <div className="p-12 text-center text-gray-500 font-bold">
-            <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
-            <p className="mt-4 text-xs uppercase tracking-widest">Cargando motor de escaneo…</p>
-          </div>
-        )}
-
-        {cvReady && stage === 'capture' && (
+        {stage === 'capture' && (
           <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-white/80 dark:border-slate-600/80 rounded-[32px] bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl">
             <div className="size-20 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mb-6 border border-primary/20">
               <span className="material-symbols-outlined text-4xl">document_scanner</span>
@@ -219,7 +195,7 @@ const Scan: React.FC = () => {
           </div>
         )}
 
-        {cvReady && stage === 'adjust' && imgUrl && (
+        {stage === 'adjust' && imgUrl && (
           <div className="space-y-4">
             <div
               className="relative rounded-[24px] overflow-hidden bg-black select-none touch-none"
@@ -262,7 +238,7 @@ const Scan: React.FC = () => {
           </div>
         )}
 
-        {cvReady && stage === 'review' && (
+        {stage === 'review' && (
           <div className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-1">{pages.length} página(s)</h3>
             <div className="grid grid-cols-3 gap-3">
