@@ -280,7 +280,10 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                     {Object.entries(byMonth)
                         .sort(([a], [b]) => Number(b) - Number(a))
                         .map(([monthIdx, monthCerts]) => {
+                            // Only CR/CGM count toward kg gestionados; reports (pdf/report)
+                            // re-state the same waste and must not be added to the total.
                             const monthKg = monthCerts.reduce((s, c) => {
+                                if (c.type !== 'CR' && c.type !== 'CGM') return s;
                                 const details = c.metadata?.waste_details || [];
                                 return s + details.reduce((ss: number, i: any) => ss + (Number(i.quantity) || 0), 0);
                             }, 0);
