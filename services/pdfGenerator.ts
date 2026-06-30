@@ -1078,7 +1078,13 @@ export const generateCustomDoc = (client: CompanyData, title: string, contentHtm
 
 
 
-export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save', docNumber?: number | string) => {
+export interface CgmDestination {
+    name: string;
+    rut?: string;
+    resolution?: string;
+}
+
+export const generateCGM = (client: CompanyData, items: WasteItem[], month: string, year: number, action: 'save' | 'preview' = 'save', docNumber?: number | string, destinations?: CgmDestination[]) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -1341,16 +1347,29 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     underlineText("DESTINO AUTORIZADO:", margin, currentY);
     currentY += 6;
     doc.setFont('helvetica', 'normal');
-    const destinations = [
-        ["SOREPA SPA., RUT: 86.359.300-K", "Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA"],
-        ["GCR, RUT: 76.958.842-6", "Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA"]
+    // Destinations are selected by the admin when generating the CGM and stored in
+    // the document metadata. Fall back to the legacy fixed pair only when the
+    // document predates this feature (no destinations passed at all).
+    const fallbackDestinations: CgmDestination[] = [
+        { name: 'SOREPA SPA.', rut: '86.359.300-K', resolution: 'Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA' },
+        { name: 'GCR', rut: '76.958.842-6', resolution: 'Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA' },
     ];
-    destinations.forEach(d => {
-        doc.text(d[0], margin, currentY);
-        currentY += 5;
-        doc.text(d[1], margin, currentY);
+    const destinationList = destinations === undefined ? fallbackDestinations : destinations;
+    if (destinationList.length === 0) {
+        doc.text('—', margin, currentY);
         currentY += 8;
-    });
+    } else {
+        destinationList.forEach(d => {
+            const line1 = d.rut ? `${d.name}, RUT: ${d.rut}` : d.name;
+            doc.text(line1, margin, currentY);
+            currentY += 5;
+            if (d.resolution) {
+                doc.text(d.resolution, margin, currentY);
+                currentY += 5;
+            }
+            currentY += 3;
+        });
+    }
 
     // --- TRANSPORTE AUTORIZADO (below destinos) ---
     doc.setFont('helvetica', 'bold');
