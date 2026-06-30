@@ -14,6 +14,10 @@ interface UserProfile {
     company_email?: string;
     eco_points?: number;
     is_active?: boolean;
+    phone?: string;
+    workers_count?: number;
+    company_size?: string;
+    waste_types?: string[];
 }
 
 interface ClientOverviewModalProps {
@@ -495,22 +499,44 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
 
                             {/* ── Client Info footer ── */}
                             <div className="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-3 text-xs">
-                                <div>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Dirección</p>
-                                    <p className="font-bold text-gray-700 mt-0.5">{user.address || '—'}</p>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">RUT</p>
+                                    <p className="font-bold text-gray-700 mt-0.5 break-words">{user.rut || '—'}</p>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Teléfono</p>
+                                    <p className="font-bold text-gray-700 mt-0.5 break-words">{user.phone || '—'}</p>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Dirección</p>
+                                    <p className="font-bold text-gray-700 mt-0.5 break-words">{user.address || '—'}</p>
+                                </div>
+                                <div className="min-w-0">
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Email</p>
                                     <p className="font-bold text-gray-700 mt-0.5 truncate">{user.company_email || '—'}</p>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">N° Trabajadores</p>
+                                    <p className="font-bold text-gray-700 mt-0.5">{user.workers_count ?? '—'}</p>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tamaño empresa</p>
+                                    <p className="font-bold text-gray-700 mt-0.5 break-words">{user.company_size || '—'}</p>
+                                </div>
+                                <div className="min-w-0">
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Documentos totales</p>
                                     <p className="font-bold text-gray-700 mt-0.5">{documents.length}</p>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">CRs emitidos</p>
                                     <p className="font-bold text-gray-700 mt-0.5">{documents.filter(d => d.type === 'CR').length}</p>
                                 </div>
+                                {user.waste_types && user.waste_types.length > 0 && (
+                                    <div className="col-span-2 min-w-0">
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tipos de residuo</p>
+                                        <p className="font-bold text-gray-700 mt-0.5 break-words">{user.waste_types.join(', ')}</p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* ── Zona de peligro ── */}

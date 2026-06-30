@@ -17,6 +17,10 @@ const TYPE_LABELS: Record<string, { label: string; color: string }> = {
     CGM:     { label: 'CGM',     color: 'bg-orange-100 text-orange-700' },
     report:  { label: 'Reporte', color: 'bg-blue-100 text-blue-700' },
     pdf:     { label: 'PDF',     color: 'bg-purple-100 text-purple-700' },
+    guia:          { label: 'Guía',   color: 'bg-teal-100 text-teal-700' },
+    oc:            { label: 'OC',     color: 'bg-indigo-100 text-indigo-700' },
+    ticket_pesaje: { label: 'Pesaje', color: 'bg-amber-100 text-amber-700' },
+    cdf:           { label: 'CDF',    color: 'bg-rose-100 text-rose-700' },
     custom:  { label: 'Especial',color: 'bg-gray-100 text-gray-600' },
 };
 

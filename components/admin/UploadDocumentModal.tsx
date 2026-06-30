@@ -19,16 +19,24 @@ interface UploadDocumentModalProps {
 }
 
 const GESTOR_TYPES = [
-    { value: 'declaration', label: 'Declaración / Certificado' },
-    { value: 'legal',       label: 'Documento Legal' },
-    { value: 'custom',      label: 'Otro' },
+    { value: 'declaration',   label: 'Declaración / Certificado' },
+    { value: 'legal',         label: 'Documento Legal' },
+    { value: 'guia',          label: 'Guía' },
+    { value: 'oc',            label: 'Orden de Compra (OC)' },
+    { value: 'ticket_pesaje', label: 'Ticket de Pesaje' },
+    { value: 'cdf',           label: 'Certificado Disposición Final (CDF)' },
+    { value: 'custom',        label: 'Otro' },
 ];
 
 const ECONEXO_TYPES = [
-    { value: 'CR',     label: 'Certificado de Recepción (CR)' },
-    { value: 'CGM',    label: 'Certificado Gestión Mensual (CGM)' },
-    { value: 'report', label: 'Reporte Ambiental' },
-    { value: 'custom', label: 'Otro' },
+    { value: 'CR',            label: 'Certificado de Recepción (CR)' },
+    { value: 'CGM',           label: 'Certificado Gestión Mensual (CGM)' },
+    { value: 'report',        label: 'Reporte Ambiental' },
+    { value: 'guia',          label: 'Guía' },
+    { value: 'oc',            label: 'Orden de Compra (OC)' },
+    { value: 'ticket_pesaje', label: 'Ticket de Pesaje' },
+    { value: 'cdf',           label: 'Certificado Disposición Final (CDF)' },
+    { value: 'custom',        label: 'Otro' },
 ];
 
 const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({

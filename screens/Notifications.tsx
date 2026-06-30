@@ -193,7 +193,7 @@ const Notifications: React.FC = () => {
                 <span className="material-symbols-outlined text-2xl">{getIcon(n.type)}</span>
               </div>
               <div className="flex-1 space-y-1 min-w-0">
-                <h4 className="font-display font-bold text-sm text-gray-900 dark:text-white leading-tight">{n.title}</h4>
+                <h4 className="font-display font-bold text-sm text-gray-900 dark:text-white leading-tight pr-5 break-words">{n.title}</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">{n.message}</p>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 pt-1 font-black uppercase tracking-widest">{getRelativeTime(n.created_at)}</p>
               </div>
