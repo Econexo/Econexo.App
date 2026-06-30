@@ -74,11 +74,13 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
         let totalKg = 0;
         let crCount = 0;
         filtered.forEach(c => {
-            if (c.type === 'CR' || c.type === 'CGM') {
+            // Only CR counts toward kg gestionados. CGM is the monthly summary of the
+            // company's CRs, and reports re-state the same waste — both would double-count.
+            if (c.type === 'CR') {
                 const details = c.metadata?.waste_details || [];
                 totalKg += details.reduce((s: number, i: any) => s + (Number(i.quantity) || 0), 0);
+                crCount++;
             }
-            if (c.type === 'CR') crCount++;
         });
         return { totalKg, crCount, total: filtered.length };
     }, [filtered]);
@@ -280,10 +282,10 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                     {Object.entries(byMonth)
                         .sort(([a], [b]) => Number(b) - Number(a))
                         .map(([monthIdx, monthCerts]) => {
-                            // Only CR/CGM count toward kg gestionados; reports (pdf/report)
-                            // re-state the same waste and must not be added to the total.
+                            // Only CR counts toward kg gestionados; CGM (monthly summary)
+                            // and reports re-state the same waste and would double-count.
                             const monthKg = monthCerts.reduce((s, c) => {
-                                if (c.type !== 'CR' && c.type !== 'CGM') return s;
+                                if (c.type !== 'CR') return s;
                                 const details = c.metadata?.waste_details || [];
                                 return s + details.reduce((ss: number, i: any) => ss + (Number(i.quantity) || 0), 0);
                             }, 0);
