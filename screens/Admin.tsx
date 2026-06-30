@@ -12,7 +12,8 @@ import ClientOverviewModal from '../components/ClientOverviewModal';
 import UnregisteredClientsManager, { UnregisteredClient } from '../components/UnregisteredClientsManager';
 
 // Admin subcomponents
-import MonthlyGenModal from '../components/admin/MonthlyGenModal';
+import MonthlyGenModal, { CgmDestinationOption } from '../components/admin/MonthlyGenModal';
+import CgmDestinationsManager from '../components/admin/CgmDestinationsManager';
 import UploadDocumentModal from '../components/admin/UploadDocumentModal';
 import GenerateCRModal from '../components/admin/GenerateCRModal';
 import PendingDocsList from '../components/admin/PendingDocsList';
@@ -53,6 +54,11 @@ const Admin: React.FC = () => {
     const [selectedMonthGen, setSelectedMonthGen] = useState(new Date().getMonth());
     const [selectedYearGen, setSelectedYearGen] = useState(new Date().getFullYear());
 
+    // CGM authorized destinations
+    const [cgmDestinations, setCgmDestinations] = useState<CgmDestinationOption[]>([]);
+    const [selectedDestIds, setSelectedDestIds] = useState<string[]>([]);
+    const [showDestinationsManager, setShowDestinationsManager] = useState(false);
+
     // Upload modal state
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploadDate, setUploadDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -68,7 +74,17 @@ const Admin: React.FC = () => {
     useEffect(() => {
         checkAdmin();
         fetchAdminData();
+        fetchCgmDestinations();
     }, []);
+
+    const fetchCgmDestinations = async () => {
+        const { data } = await supabase
+            .from('cgm_destinations')
+            .select('id, name, rut, resolution')
+            .eq('active', true)
+            .order('created_at', { ascending: true });
+        setCgmDestinations(data || []);
+    };
 
     const checkAdmin = async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -249,7 +265,7 @@ const Admin: React.FC = () => {
         if (doc.type === 'pdf' || doc.type === 'report') {
             generateEcoReport({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte Reciclaje', action);
         } else if (doc.type === 'CGM') {
-            generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action, doc.metadata?.cgm_number);
+            generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action, doc.metadata?.cgm_number, doc.metadata?.destinations);
         } else {
             generateCR({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
         }
@@ -353,6 +369,12 @@ const Admin: React.FC = () => {
             const cgmBaseNum = existingCGMCount || 0;
             let cgmIndex = 0;
 
+            // Destinations chosen for this generation (stored in metadata so the PDF
+            // reproduces exactly what was selected, regardless of later DB changes).
+            const chosenDestinations = cgmDestinations
+                .filter(d => selectedDestIds.includes(d.id))
+                .map(d => ({ name: d.name, rut: d.rut, resolution: d.resolution }));
+
             for (const [uid, group] of Object.entries(userGroups)) {
                 const isUnregistered = group.isUnregistered || group.profile?.is_unregistered === true;
                 const actualUserId = isUnregistered ? (await supabase.auth.getUser()).data.user?.id : uid;
@@ -362,7 +384,7 @@ const Admin: React.FC = () => {
                     type: 'CGM',
                     verified: false,
                     created_at: new Date(selectedYearGen, selectedMonthGen, 15).toISOString(),
-                    metadata: { month: monthName, year: selectedYearGen, waste_details: group.items, generated_by: 'Admin Batch Process', cgm_number: cgmBaseNum + cgmIndex + 1, unregistered_client_id: isUnregistered ? uid : undefined }
+                    metadata: { month: monthName, year: selectedYearGen, waste_details: group.items, generated_by: 'Admin Batch Process', cgm_number: cgmBaseNum + cgmIndex + 1, unregistered_client_id: isUnregistered ? uid : undefined, destinations: chosenDestinations }
                 });
                 cgmIndex++;
             }
@@ -420,7 +442,10 @@ const Admin: React.FC = () => {
                     selectedYear={selectedYearGen}
                     onYearChange={setSelectedYearGen}
                     onGenerate={handleGenerateMonthlyReports}
-                    onClose={() => { setShowMonthlyGenModal(false); setSelectedUser(null); }}
+                    onClose={() => { setShowMonthlyGenModal(false); setSelectedUser(null); setSelectedDestIds([]); }}
+                    destinations={cgmDestinations}
+                    selectedDestinationIds={selectedDestIds}
+                    onToggleDestination={(id) => setSelectedDestIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
                 />
 
                 <UploadDocumentModal
@@ -473,9 +498,13 @@ const Admin: React.FC = () => {
                         <div className="size-10 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">nature_people</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-green-600 transition-colors">Retiros Comunitarios</span>
                     </button>
-                    <button onClick={() => setShowFixCerts(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
+                    <button onClick={() => setShowFixCerts(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 border border-orange-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">build</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-500 transition-colors">Corregir Fechas / Direcciones</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-500 transition-colors text-center">Corregir Fechas / Direcciones</span>
+                    </button>
+                    <button onClick={() => setShowDestinationsManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
+                        <div className="size-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 border border-teal-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">pin_drop</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-teal-600 transition-colors text-center">Destinos CGM</span>
                     </button>
                 </section>
 
@@ -528,6 +557,13 @@ const Admin: React.FC = () => {
                         setSelectedUser({ id: client.id, company_name: client.company_name, rut: client.rut, address: client.address, is_unregistered: true });
                         setShowMonthlyGenModal(true);
                     }}
+                />
+            )}
+
+            {/* CGM Destinations Manager */}
+            {showDestinationsManager && (
+                <CgmDestinationsManager
+                    onClose={() => { setShowDestinationsManager(false); fetchCgmDestinations(); }}
                 />
             )}
 
