@@ -84,11 +84,13 @@ const Documents: React.FC = () => {
   const ECONEXO_FOLDERS = [
     { id: 'recepcion', name: 'Recepción (CR)', icon: 'verified', color: 'bg-primary', types: ['CR'] },
     { id: 'mensual', name: 'Gestión Mensual', icon: 'calendar_month', color: 'bg-orange-500', types: ['CGM'] },
-    { id: 'reportes', name: 'Reportes de Impacto', icon: 'analytics', color: 'bg-green-600', types: ['pdf', 'report'] }
+    { id: 'reportes', name: 'Reportes de Impacto', icon: 'analytics', color: 'bg-green-600', types: ['pdf', 'report'] },
+    { id: 'trazabilidad', name: 'Guías, OC, Pesaje y CDF', icon: 'inventory_2', color: 'bg-teal-600', types: ['guia', 'oc', 'ticket_pesaje', 'cdf'] }
   ];
 
   const GESTORES_FOLDERS = [
-    { id: 'declaraciones', name: 'Certificados', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal', 'custom'] }
+    { id: 'declaraciones', name: 'Certificados', icon: 'assignment', color: 'bg-purple-500', types: ['declaration', 'legal', 'custom'] },
+    { id: 'trazabilidad', name: 'Guías, OC, Pesaje y CDF', icon: 'inventory_2', color: 'bg-teal-600', types: ['guia', 'oc', 'ticket_pesaje', 'cdf'] }
   ];
 
   // Helper to get current folders list based on section
@@ -694,11 +696,11 @@ const Documents: React.FC = () => {
                       <div className={`size-14 rounded-2xl ${folder.color}/10 flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform shadow-sm`}>
                         <span className={`material-symbols-outlined text-3xl font-bold ${folder.id === 'recepcion' ? 'filled' : ''}`} style={{ color: folder.color.replace('bg-', 'text-').replace('-500', '-600').replace('-600', '-600') }}>{folder.icon}</span>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-display font-black text-sm text-gray-900">{folder.name}</h4>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-display font-black text-sm text-gray-900 break-words">{folder.name}</h4>
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{count} documentos</p>
                       </div>
-                      <span className="material-symbols-outlined text-gray-300 group-hover:translate-x-1 transition-transform group-hover:text-primary">chevron_right</span>
+                      <span className="material-symbols-outlined text-gray-300 group-hover:translate-x-1 transition-transform group-hover:text-primary shrink-0">chevron_right</span>
                     </button>
                   );
                 })}

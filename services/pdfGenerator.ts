@@ -1149,7 +1149,13 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     introLines.forEach((line: string) => { doc.text(line, margin, currentY); currentY += 6; });
 
     doc.setFont('helvetica', 'bold');
-    doc.text(`01 al 31 de ${month} de ${year},`, margin, currentY);
+    // Compute the real last day of the month so the certificate period matches the
+    // actual calendar (e.g. June ends on 30, February on 28/29, not a hardcoded 31).
+    const CGM_MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const monthIndex = CGM_MONTH_NAMES.indexOf(String(month).trim().toLowerCase());
+    const lastDay = monthIndex >= 0 ? new Date(year, monthIndex + 1, 0).getDate() : 31;
+    const lastDayStr = String(lastDay).padStart(2, '0');
+    doc.text(`01 al ${lastDayStr} de ${month} de ${year},`, margin, currentY);
     currentY += 6;
 
     doc.setFont('helvetica', 'normal');

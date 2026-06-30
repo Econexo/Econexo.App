@@ -9,6 +9,10 @@ export interface AdminUserProfile {
     company_email?: string;
     is_unregistered?: boolean;
     is_active?: boolean;
+    phone?: string;
+    workers_count?: number;
+    company_size?: string;
+    waste_types?: string[];
 }
 
 export interface AdminDocument {
