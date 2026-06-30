@@ -26,9 +26,11 @@ const Rewards           = lazy(() => import('./screens/Rewards'));
 const CarbonCalculator  = lazy(() => import('./screens/CarbonCalculator'));
 const LeyREP            = lazy(() => import('./screens/LeyREP'));
 
+// Pure-CSS spinner (no icon font): avoids the raw "progress_activity" ligature
+// text flashing/spinning before Material Symbols loads on first paint.
 const PageLoader = () => (
   <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950 flex items-center justify-center">
-    <span className="animate-spin material-symbols-outlined text-primary text-5xl">progress_activity</span>
+    <div className="size-10 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
   </div>
 );
 
