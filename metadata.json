@@ -1,7 +1,7 @@
 
 {
-  "name": "Econexo - AI Environmental Management",
-  "description": "A sophisticated environmental management platform featuring AI-powered waste analysis, document tracking, and real-time sustainability impact reporting.",
+  "name": "Econexo - Plataforma de Trazabilidad Ambiental",
+  "description": "Plataforma de trazabilidad ambiental con análisis de residuos, gestión documental y reportes de impacto de sostenibilidad en tiempo real.",
   "requestFramePermissions": [
     "camera"
   ]

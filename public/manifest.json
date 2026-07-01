@@ -1,7 +1,7 @@
 {
-    "name": "Econexo - Gestión Ambiental",
+    "name": "Econexo - Plataforma de Trazabilidad Ambiental",
     "short_name": "Econexo",
-    "description": "Plataforma de gestión ambiental y reciclaje inteligente",
+    "description": "Plataforma de trazabilidad ambiental y reciclaje inteligente",
     "start_url": "/",
     "display": "standalone",
     "display_override": [
