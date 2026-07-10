@@ -5,6 +5,18 @@ import { materialFactors, normalizeMaterialType } from '../utils/materialCalcula
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import { createNotification } from '../services/notificationService';
+import { getDocEmisor, Emisor } from '../utils/documentEmisor';
+
+// Types an admin can assign to an uploaded/scanned document.
+const DOC_TYPE_OPTIONS: { value: string; label: string }[] = [
+    { value: 'guia',          label: 'Guía' },
+    { value: 'oc',            label: 'Orden de Compra (OC)' },
+    { value: 'ticket_pesaje', label: 'Ticket de Pesaje' },
+    { value: 'cdf',           label: 'Certificado Disposición Final (CDF)' },
+    { value: 'declaration',   label: 'Declaración / Certificado' },
+    { value: 'legal',         label: 'Documento Legal' },
+    { value: 'custom',        label: 'Otro' },
+];
 
 interface UserProfile {
     id: string;
@@ -48,6 +60,12 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
 
     const [loading, setLoading] = useState(true);
     const [documents, setDocuments] = useState<any[]>([]);
+
+    // Inline document editor (change tipo + emisor) — admin only.
+    const [editingDocId, setEditingDocId] = useState<string | null>(null);
+    const [editType, setEditType] = useState<string>('guia');
+    const [editEmisor, setEditEmisor] = useState<Emisor>('econexo');
+    const [savingDocEdit, setSavingDocEdit] = useState(false);
     const [ecoPoints, setEcoPoints] = useState(0);
 
     // Computed stats
@@ -254,6 +272,31 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         const { data, error } = await supabase.storage.from('scanned-docs').createSignedUrl(url, 60);
         if (error || !data?.signedUrl) { toast.error('No se pudo abrir el documento escaneado.'); return; }
         window.open(data.signedUrl, '_blank');
+    };
+
+    const startEditDoc = (doc: any) => {
+        setEditingDocId(doc.id);
+        setEditType(doc.type || 'guia');
+        setEditEmisor(getDocEmisor(doc));
+    };
+
+    const saveDocEdit = async (doc: any) => {
+        setSavingDocEdit(true);
+        try {
+            const newMeta = { ...(doc.metadata || {}), emisor: editEmisor };
+            const { error } = await supabase
+                .from('documents')
+                .update({ type: editType, metadata: newMeta })
+                .eq('id', doc.id);
+            if (error) throw error;
+            toast.success('Documento actualizado.');
+            setEditingDocId(null);
+            fetchClientData();
+        } catch (err: any) {
+            toast.error('No se pudo actualizar: ' + (err.message || 'error'));
+        } finally {
+            setSavingDocEdit(false);
+        }
     };
 
     const fmtKg = (n: number) => {
@@ -469,29 +512,88 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                 {recentDocs.length === 0 ? (
                                     <p className="text-xs text-gray-400 font-bold text-center py-4">Sin documentos</p>
                                 ) : (
-                                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                        {recentDocs.map(doc => (
-                                            <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl">
-                                                <div className="size-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 shrink-0">
-                                                    <span className="material-symbols-outlined text-base">
-                                                        {doc.type === 'CR' ? 'verified' : doc.type === 'CGM' ? 'calendar_today' : doc.type === 'pdf' || doc.type === 'report' ? 'bar_chart' : 'description'}
-                                                    </span>
+                                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                                        {recentDocs.map(doc => {
+                                            const emisor = getDocEmisor(doc);
+                                            const isGenerated = !!doc.metadata?.waste_details;
+                                            return (
+                                            <div key={doc.id} className="bg-gray-50 border border-gray-100 rounded-xl">
+                                                <div className="flex items-center gap-3 p-3">
+                                                    <div className="size-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                        <span className="material-symbols-outlined text-base">
+                                                            {doc.type === 'CR' ? 'verified' : doc.type === 'CGM' ? 'calendar_today' : doc.type === 'pdf' || doc.type === 'report' ? 'bar_chart' : 'description'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold text-gray-900 truncate">{doc.title}</p>
+                                                        <p className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1.5 flex-wrap">
+                                                            <span>{new Date(doc.created_at).toLocaleDateString()}</span>
+                                                            <span className="text-primary">{doc.type}</span>
+                                                            <span className={`px-1.5 py-0.5 rounded-full text-[8px] ${emisor === 'econexo' ? 'bg-primary/10 text-primary' : 'bg-blue-100 text-blue-600'}`}>
+                                                                {emisor === 'econexo' ? 'EcoNexo' : 'Gestor'}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                    {!isGenerated && (
+                                                        <button
+                                                            onClick={() => editingDocId === doc.id ? setEditingDocId(null) : startEditDoc(doc)}
+                                                            title="Editar tipo / emisor"
+                                                            className="size-8 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors shrink-0"
+                                                        >
+                                                            <span className="material-symbols-outlined text-base">edit</span>
+                                                        </button>
+                                                    )}
+                                                    {(isGenerated || doc.content_url) && (
+                                                        <button
+                                                            onClick={() => handleViewDoc(doc)}
+                                                            title="Abrir documento"
+                                                            className="size-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center hover:bg-primary/20 transition-colors shrink-0"
+                                                        >
+                                                            <span className="material-symbols-outlined text-base">{doc.content_url && !isGenerated ? 'open_in_new' : 'visibility'}</span>
+                                                        </button>
+                                                    )}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-bold text-gray-900 truncate">{doc.title}</p>
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase">{new Date(doc.created_at).toLocaleDateString()} · <span className="text-primary">{doc.type}</span></p>
-                                                </div>
-                                                {(doc.metadata?.waste_details || doc.content_url) && (
-                                                    <button
-                                                        onClick={() => handleViewDoc(doc)}
-                                                        title="Abrir documento"
-                                                        className="size-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center hover:bg-primary/20 transition-colors shrink-0"
-                                                    >
-                                                        <span className="material-symbols-outlined text-base">{doc.content_url && !doc.metadata?.waste_details ? 'open_in_new' : 'visibility'}</span>
-                                                    </button>
+                                                {editingDocId === doc.id && (
+                                                    <div className="px-3 pb-3 pt-1 border-t border-gray-200/70 space-y-2">
+                                                        <div>
+                                                            <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Tipo</label>
+                                                            <select
+                                                                value={editType}
+                                                                onChange={(e) => setEditType(e.target.value)}
+                                                                className="w-full mt-0.5 bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs font-bold text-gray-900 outline-none focus:border-primary/50"
+                                                            >
+                                                                {DOC_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Emisor</label>
+                                                            <div className="flex gap-2 mt-0.5">
+                                                                <button
+                                                                    onClick={() => setEditEmisor('econexo')}
+                                                                    className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${editEmisor === 'econexo' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-500 border-gray-200'}`}
+                                                                >EcoNexo</button>
+                                                                <button
+                                                                    onClick={() => setEditEmisor('gestor')}
+                                                                    className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${editEmisor === 'gestor' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'}`}
+                                                                >Gestor</button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2 pt-1">
+                                                            <button
+                                                                onClick={() => saveDocEdit(doc)}
+                                                                disabled={savingDocEdit}
+                                                                className="flex-1 py-2 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                                                            >{savingDocEdit ? 'Guardando...' : 'Guardar'}</button>
+                                                            <button
+                                                                onClick={() => setEditingDocId(null)}
+                                                                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                                                            >Cancelar</button>
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>

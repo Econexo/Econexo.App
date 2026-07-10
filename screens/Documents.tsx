@@ -7,6 +7,7 @@ import { supabase } from '../services/supabase';
 import { createNotification } from '../services/notificationService';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
+import { getDocEmisor, sectionToEmisor } from '../utils/documentEmisor';
 
 interface Document {
   id: string;
@@ -116,7 +117,7 @@ const Documents: React.FC = () => {
       typesToCheck = [...typesToCheck, 'CR'];
     }
 
-    const folderDocs = documents.filter(doc => typesToCheck.includes(doc.type));
+    const folderDocs = documents.filter(doc => typesToCheck.includes(doc.type) && getDocEmisor(doc) === sectionToEmisor(currentSection));
     const years = [...new Set(folderDocs.map(doc => new Date(doc.created_at).getFullYear()))];
     return years.sort((a, b) => b - a);
   };
@@ -132,6 +133,7 @@ const Documents: React.FC = () => {
 
     const yearDocs = documents.filter(doc =>
       typesToCheck.includes(doc.type) &&
+      getDocEmisor(doc) === sectionToEmisor(currentSection) &&
       new Date(doc.created_at).getFullYear() === selectedYear
     );
     const months = [...new Set(yearDocs.map(doc => new Date(doc.created_at).getMonth()))];
@@ -342,6 +344,8 @@ const Documents: React.FC = () => {
       }
       const folder = getFolderConfig(selectedFolder);
       if (!folder?.types.includes(doc.type)) return false;
+      // Only show documents whose emisor matches the current section (EcoNexo vs Gestor).
+      if (getDocEmisor(doc) !== sectionToEmisor(currentSection)) return false;
 
       const date = new Date(doc.created_at);
 
@@ -686,7 +690,7 @@ const Documents: React.FC = () => {
               <div className="grid grid-cols-1 gap-4 pt-2 animate-in slide-in-from-right-4 duration-300">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Carpetas</h3>
                 {getCurrentFolders().map(folder => {
-                  const count = documents.filter(doc => folder.types.includes(doc.type)).length;
+                  const count = documents.filter(doc => folder.types.includes(doc.type) && getDocEmisor(doc) === sectionToEmisor(currentSection)).length;
                   return (
                     <button
                       key={folder.id}
