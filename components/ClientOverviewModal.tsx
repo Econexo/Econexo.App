@@ -232,20 +232,28 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         setShowReportModal(false);
     };
 
+    // Opens any document: generated PDFs (with waste_details) are re-rendered;
+    // uploaded/scanned files are opened from content_url — a full public URL
+    // (bucket "documents") or a storage path (bucket "scanned-docs") via signed URL.
     const handleViewDoc = async (doc: any) => {
         const client = { company_name: user.company_name, rut: user.rut, address: user.address || 'Chile' };
-        if (!doc.metadata?.waste_details) {
-            toast.warning('Este documento no tiene detalles de residuos para previsualizar.');
+        if (doc.metadata?.waste_details && ['CR', 'CGM', 'pdf', 'report'].includes(doc.type)) {
+            const { generateCR, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
+            if (doc.type === 'CGM') {
+                generateCGM(client, doc.metadata.waste_details, doc.metadata.month || 'Mes', doc.metadata.year || new Date().getFullYear(), 'preview', doc.metadata?.cgm_number, doc.metadata?.destinations);
+            } else if (doc.type === 'pdf' || doc.type === 'report') {
+                generateEcoReport(client, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte', 'preview');
+            } else {
+                generateCR(client, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, 'preview');
+            }
             return;
         }
-        const { generateCR, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
-        if (doc.type === 'CGM') {
-            generateCGM(client, doc.metadata.waste_details, doc.metadata.month || 'Mes', doc.metadata.year || new Date().getFullYear(), 'preview', doc.metadata?.cgm_number);
-        } else if (doc.type === 'pdf' || doc.type === 'report') {
-            generateEcoReport(client, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte', 'preview');
-        } else {
-            generateCR(client, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, 'preview');
-        }
+        const url = doc.content_url;
+        if (!url) { toast.warning('Este documento no tiene un archivo para abrir.'); return; }
+        if (/^https?:\/\//i.test(url)) { window.open(url, '_blank'); return; }
+        const { data, error } = await supabase.storage.from('scanned-docs').createSignedUrl(url, 60);
+        if (error || !data?.signedUrl) { toast.error('No se pudo abrir el documento escaneado.'); return; }
+        window.open(data.signedUrl, '_blank');
     };
 
     const fmtKg = (n: number) => {
@@ -253,7 +261,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         return (Math.round(n * 10) / 10).toLocaleString('es-CL', { maximumFractionDigits: 1 });
     };
 
-    const recentDocs = documents.slice(0, 6);
+    const recentDocs = documents;
 
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -452,16 +460,16 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                 </div>
                             )}
 
-                            {/* ── Recent Documents ── */}
+                            {/* ── All Documents ── */}
                             <div>
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Documentos Recientes</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Documentos de la Empresa</h3>
                                     <span className="text-[10px] font-bold text-gray-400">{documents.length} total</span>
                                 </div>
                                 {recentDocs.length === 0 ? (
                                     <p className="text-xs text-gray-400 font-bold text-center py-4">Sin documentos</p>
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                                         {recentDocs.map(doc => (
                                             <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl">
                                                 <div className="size-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 shrink-0">
@@ -473,23 +481,14 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                     <p className="text-xs font-bold text-gray-900 truncate">{doc.title}</p>
                                                     <p className="text-[10px] text-gray-400 font-bold uppercase">{new Date(doc.created_at).toLocaleDateString()} · <span className="text-primary">{doc.type}</span></p>
                                                 </div>
-                                                {doc.metadata?.waste_details && (
+                                                {(doc.metadata?.waste_details || doc.content_url) && (
                                                     <button
                                                         onClick={() => handleViewDoc(doc)}
+                                                        title="Abrir documento"
                                                         className="size-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center hover:bg-primary/20 transition-colors shrink-0"
                                                     >
-                                                        <span className="material-symbols-outlined text-base">visibility</span>
+                                                        <span className="material-symbols-outlined text-base">{doc.content_url && !doc.metadata?.waste_details ? 'open_in_new' : 'visibility'}</span>
                                                     </button>
-                                                )}
-                                                {doc.file_url && (
-                                                    <a
-                                                        href={doc.file_url}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="size-8 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors shrink-0"
-                                                    >
-                                                        <span className="material-symbols-outlined text-base">download</span>
-                                                    </a>
                                                 )}
                                             </div>
                                         ))}

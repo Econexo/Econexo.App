@@ -22,6 +22,7 @@ export interface AdminDocument {
     verified: boolean;
     created_at: string;
     type?: string;
+    content_url?: string;
     metadata?: any;
     profiles?: {
         company_name: string;
