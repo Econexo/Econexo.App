@@ -106,7 +106,7 @@ const Admin: React.FC = () => {
             const { data: tickets } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
             const finalTickets = (tickets || []).map((t: any) => ({ ...t, profiles: profileMap.get(t.user_id) || null }));
 
-            const { data: certs } = await supabase.from('documents').select('*').in('type', ['CR', 'report', 'pdf', 'custom', 'CGM']).order('created_at', { ascending: false });
+            const { data: certs } = await supabase.from('documents').select('*').in('type', ['CR', 'report', 'pdf', 'custom', 'CGM', 'guia', 'oc', 'ticket_pesaje', 'cdf', 'declaration', 'legal']).order('created_at', { ascending: false });
 
             const { data: unregDocs } = await supabase.from('documents').select('id, metadata').eq('type', 'UNREGISTERED_CLIENT');
             const unregClients = (unregDocs || []).map((d: any) => ({
@@ -236,8 +236,22 @@ const Admin: React.FC = () => {
         }
     };
 
+    // Opens an uploaded/scanned file: content_url is either a full public URL
+    // (bucket "documents") or a storage path (bucket "scanned-docs") needing a signed URL.
+    const openStoredFile = async (contentUrl?: string) => {
+        if (!contentUrl) { toast.warning('Este documento no tiene un archivo para abrir.'); return; }
+        if (/^https?:\/\//i.test(contentUrl)) { window.open(contentUrl, '_blank'); return; }
+        const { data, error } = await supabase.storage.from('scanned-docs').createSignedUrl(contentUrl, 60);
+        if (error || !data?.signedUrl) { toast.error('No se pudo abrir el documento escaneado.'); return; }
+        window.open(data.signedUrl, '_blank');
+    };
+
     const handleViewCertificate = async (doc: AdminDocument, action: 'preview' | 'save' = 'preview') => {
-        if (!doc.metadata?.waste_details) return;
+        // Uploaded/scanned documents have no waste_details — open the stored file instead.
+        if (!doc.metadata?.waste_details) {
+            await openStoredFile((doc as any).content_url);
+            return;
+        }
 
         let profileData: { company_name: string; rut: string; address: string };
         if (doc._isUnregistered || doc.metadata?.unregistered_client_id) {

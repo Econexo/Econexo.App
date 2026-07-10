@@ -21,6 +21,8 @@ const TYPE_LABELS: Record<string, { label: string; color: string }> = {
     oc:            { label: 'OC',     color: 'bg-indigo-100 text-indigo-700' },
     ticket_pesaje: { label: 'Pesaje', color: 'bg-amber-100 text-amber-700' },
     cdf:           { label: 'CDF',    color: 'bg-rose-100 text-rose-700' },
+    declaration:   { label: 'Declaración', color: 'bg-slate-100 text-slate-700' },
+    legal:         { label: 'Legal',  color: 'bg-slate-100 text-slate-700' },
     custom:  { label: 'Especial',color: 'bg-gray-100 text-gray-600' },
 };
 
