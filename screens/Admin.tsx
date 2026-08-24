@@ -302,6 +302,13 @@ const Admin: React.FC = () => {
             }
             const { error } = await supabase.from('documents').delete().eq('id', doc.id);
             if (error) throw error;
+
+            // Sin esto el PDF sigue en el bucket para siempre, sin fila que lo referencie.
+            // Solo aplica a las rutas privadas; las URL absolutas son del bucket público antiguo.
+            if (doc.content_url && !/^https?:\/\//i.test(doc.content_url)) {
+                await supabase.storage.from('scanned-docs').remove([doc.content_url]);
+            }
+
             fetchAdminData();
         } catch (err: any) {
             console.error('Error deleting document:', err);
@@ -317,16 +324,18 @@ const Admin: React.FC = () => {
             const cleanFileName = uploadFile.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
             const fileName = `${selectedUser.id}/${timestamp}_${cleanFileName}`;
 
-            const { error: uploadError } = await supabase.storage.from('documents').upload(fileName, uploadFile);
+            // Bucket PRIVADO: se guarda la ruta, no una URL pública. El cliente abre
+            // el archivo con una URL firmada de 60 s (ver Documents.handleDownload).
+            const { error: uploadError } = await supabase.storage
+                .from('scanned-docs')
+                .upload(fileName, uploadFile, { contentType: uploadFile.type || 'application/octet-stream' });
             if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(fileName);
 
             const { error: dbError } = await supabase.rpc('create_admin_document', {
                 _user_id: selectedUser.id,
                 _title: uploadFile.name,
                 _type: uploadType,
-                _content_url: publicUrl,
+                _content_url: fileName,
                 _created_at: new Date(uploadDate).toISOString(),
                 _metadata: { original_name: uploadFile.name, size: uploadFile.size, mime_type: uploadFile.type, uploaded_by: 'admin', source: uploadSource }
             });

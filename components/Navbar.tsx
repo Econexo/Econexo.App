@@ -49,6 +49,7 @@ const Navbar: React.FC = () => {
   const navItems: NavItem[] = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
+    { path: '/panel-mensual', label: 'Panel Mensual', icon: 'monitoring' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
     { path: '/news', label: 'Noticias', icon: 'newspaper' },
     ...(isAdmin ? [adminItem] : []),

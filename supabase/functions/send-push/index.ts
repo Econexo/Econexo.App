@@ -49,13 +49,22 @@ async function buildVapidJWT(
     return `${signingInput}.${base64urlEncode(signature)}`;
 }
 
+// Orígenes autorizados a invocar esta función desde el navegador.
+const ALLOWED_ORIGINS = [
+    'https://econexo.cl',
+    'https://www.econexo.cl',
+    'http://localhost:3000',
+];
+
 // --- Main handler ---
 
 Deno.serve(async (req: Request) => {
-    // CORS headers
+    const origin = req.headers.get('Origin') ?? '';
     const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-trigger-secret',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Vary': 'Origin',
     };
 
     if (req.method === 'OPTIONS') {
@@ -63,29 +72,47 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-        // Verify caller identity from JWT — userId must match the authenticated user
-        const authHeader = req.headers.get('Authorization');
-        if (!authHeader) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-                status: 401,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-        }
-        const callerClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-            { global: { headers: { Authorization: authHeader } } }
-        );
-        const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
-        if (authError || !caller) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-                status: 401,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-        }
+        const payload = await req.json();
+        const { title, body, url, data } = payload;
 
-        const { title, body, url, data } = await req.json();
-        const userId = caller.id; // always derived from the verified JWT
+        // Autorización: o un JWT de usuario (destinatario = dueño del token), o el
+        // secreto interno (llamadas del cron / otra Edge Function, destinatario en el cuerpo).
+        const TRIGGER_SECRET = Deno.env.get('TRIGGER_SECRET') ?? '';
+        const isInternal = TRIGGER_SECRET.length > 0 &&
+            (req.headers.get('x-trigger-secret') ?? '') === TRIGGER_SECRET;
+
+        let userId: string;
+
+        if (isInternal) {
+            userId = payload.userId;
+            if (!userId) {
+                return new Response(JSON.stringify({ error: 'Missing userId' }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+        } else {
+            const authHeader = req.headers.get('Authorization');
+            if (!authHeader) {
+                return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                    status: 401,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+            const callerClient = createClient(
+                Deno.env.get('SUPABASE_URL') ?? '',
+                Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+                { global: { headers: { Authorization: authHeader } } }
+            );
+            const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
+            if (authError || !caller) {
+                return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                    status: 401,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+            userId = caller.id; // always derived from the verified JWT
+        }
 
         if (!title || !body) {
             return new Response(JSON.stringify({ error: 'Missing required fields: title, body' }), {

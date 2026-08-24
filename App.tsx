@@ -16,6 +16,7 @@ const Dashboard    = lazy(() => import('./screens/Dashboard'));
 const Documents    = lazy(() => import('./screens/Documents'));
 const News         = lazy(() => import('./screens/News'));
 const Impact       = lazy(() => import('./screens/Impact'));
+const MonthlyPanel = lazy(() => import('./screens/MonthlyPanel'));
 const Notifications = lazy(() => import('./screens/Notifications'));
 const Profile      = lazy(() => import('./screens/Profile'));
 const Analyze      = lazy(() => import('./screens/Analyze'));
@@ -134,6 +135,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/documents"     element={isAuthenticated ? <div className="lg:ml-64"><Documents /></div> : <Navigate to="/" />} />
           <Route path="/news"          element={isAuthenticated ? <div className="lg:ml-64"><News /></div> : <Navigate to="/" />} />
           <Route path="/impact"        element={isAuthenticated ? <div className="lg:ml-64"><Impact isLeyRep={isLeyRepUser} /></div> : <Navigate to="/" />} />
+          <Route path="/panel-mensual" element={isAuthenticated ? <div className="lg:ml-64"><MonthlyPanel /></div> : <Navigate to="/" />} />
           <Route path="/notifications" element={isAuthenticated ? <div className="lg:ml-64"><Notifications /></div> : <Navigate to="/" />} />
           <Route path="/profile"       element={isAuthenticated ? <div className="lg:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
           <Route path="/analyze"       element={isAuthenticated ? <div className="lg:ml-64"><Analyze /></div> : <Navigate to="/" />} />

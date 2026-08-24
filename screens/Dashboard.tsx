@@ -1066,6 +1066,19 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             </div>
           </div>
 
+          {/* Acceso al desglose mensual por material */}
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate('/panel-mensual'); }}
+            className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/5 hover:bg-primary/10 border border-primary/15 transition-all active:scale-[0.99] text-left"
+          >
+            <span className="material-symbols-outlined text-primary text-xl shrink-0">monitoring</span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-xs font-black text-gray-900 dark:text-white">Panel mensual de residuos</span>
+              <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-bold">Desglose por material e impacto, mes a mes</span>
+            </span>
+            <span className="material-symbols-outlined text-primary text-base shrink-0">chevron_right</span>
+          </button>
+
           {/* Impact Grid - NESTED */}
           <div className="grid grid-cols-2 gap-3">
             {impactStats.map((stat) => (

@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { supabase } from '../services/supabase';
-import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
+import { normalizeMaterialType, materialFactors, CO2_PER_TREE, MATERIAL_COLORS } from '../utils/materialCalculations';
 import { useToast } from '../components/ui/Toast';
 import { useCountUp } from '../hooks/useCountUp';
 
@@ -698,21 +698,6 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
 
           {/* Material Breakdown Donut */}
           {materialBreakdown.length > 0 && (() => {
-            const MATERIAL_COLORS: Record<string, string> = {
-              'Plásticos':   '#eab308', // amarillo
-              'Papel/Cartón':'#3b82f6', // azul
-              'Aluminio':    '#9ca3af', // gris claro
-              'Vidrio':      '#22c55e', // verde
-              'Metales':     '#6b7280', // gris
-              'Electrónicos':'#ec4899', // rosa
-              'Orgánicos':   '#84cc16', // verde lima
-              'Peligrosos':  '#ef4444', // rojo
-              'Aceites':     '#f97316', // naranja
-              'Madera':      '#a16207', // café
-              'Textiles':    '#14b8a6', // teal
-              'Neumáticos':  '#374151', // gris oscuro
-              'Otros':       '#94a3b8', // gris suave
-            };
             const totalDonut = materialBreakdown.reduce((s, d) => s + d.value, 0);
             return (
               <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6 space-y-4">
