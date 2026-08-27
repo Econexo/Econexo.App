@@ -1,13 +1,14 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Correos adicionales por empresa + sistema de recordatorios
 -- ═══════════════════════════════════════════════════════════════════════════
--- Ejecutar UNA vez en Supabase → SQL Editor.
--- Idempotente: se puede volver a correr sin romper nada.
+-- PARTE 1 de 2 · solo esquema. No necesita extensiones ni permisos especiales.
+-- Ejecutar UNA vez en Supabase → SQL Editor. Idempotente.
 --
--- ⚠️  Antes de correr la sección 4 (pg_cron) reemplaza:
---       <PROJECT_REF>      → la referencia de tu proyecto Supabase
---       <TRIGGER_SECRET>   → el mismo secreto que configures en
---                            Edge Functions → Secrets → TRIGGER_SECRET
+-- El job diario que dispara los recordatorios va en el archivo siguiente:
+--   20260824_reminders_cron.sql
+-- Va aparte a propósito: pg_cron hay que habilitarlo desde el panel, y el SQL
+-- Editor corre cada script en UNA transacción — si falla ahí, se revierte todo
+-- lo de este archivo también.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 
@@ -100,55 +101,3 @@ CREATE POLICY "Users view own reminder log"
 CREATE INDEX IF NOT EXISTS idx_documents_scheduled_date
   ON public.documents ((metadata->>'scheduled_date'))
   WHERE type = 'SCHEDULED';
-
-
--- ─────────────────────────────────────────────────────────────────────────
--- 4 · Job diario (pg_cron + pg_net → Edge Function send-reminders)
--- ─────────────────────────────────────────────────────────────────────────
--- ⚠️  Reemplaza <PROJECT_REF> y <TRIGGER_SECRET> antes de ejecutar.
-
-CREATE EXTENSION IF NOT EXISTS pg_net;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-
-CREATE SCHEMA IF NOT EXISTS private;
-REVOKE ALL ON SCHEMA private FROM public, anon, authenticated;
-
--- El secreto vive dentro de una función SECURITY DEFINER en un esquema privado.
--- (En Supabase no se puede usar ALTER DATABASE ... SET: requiere superusuario.)
-CREATE OR REPLACE FUNCTION private.call_send_reminders()
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = private, public, extensions
-AS $fn$
-DECLARE
-  v_url    text := 'https://<PROJECT_REF>.supabase.co/functions/v1/send-reminders';
-  v_secret text := '<TRIGGER_SECRET>';
-BEGIN
-  PERFORM net.http_post(
-    url     := v_url,
-    body    := jsonb_build_object('source', 'cron'),
-    headers := jsonb_build_object(
-      'Content-Type',     'application/json',
-      'x-trigger-secret', v_secret
-    )
-  );
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING '[send-reminders] pg_net falló: %', SQLERRM;
-END;
-$fn$;
-
--- 12:00 UTC = 08:00/09:00 en Chile según horario de verano.
-SELECT cron.unschedule('econexo-daily-reminders')
-  WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'econexo-daily-reminders');
-
-SELECT cron.schedule(
-  'econexo-daily-reminders',
-  '0 12 * * *',
-  $$ SELECT private.call_send_reminders(); $$
-);
-
--- Para probar sin esperar al cron:
---   SELECT private.call_send_reminders();
--- Para ver el historial del job:
---   SELECT * FROM cron.job_run_details WHERE jobname = 'econexo-daily-reminders' ORDER BY start_time DESC LIMIT 10;
