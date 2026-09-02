@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import { monthRange } from '../utils/dateRange';
+import { issueReceptionCertificate } from '../services/certificateService';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import Navbar from '../components/Navbar';
@@ -177,62 +179,31 @@ const Admin: React.FC = () => {
     const handleGenerateCR = async () => {
         if (!selectedUser || wasteItems.length === 0) { toast.warning('Debes agregar al menos un ítem.'); return; }
 
-        const { data: allCRs } = await supabase.from('documents').select('metadata, title').eq('type', 'CR');
-        let nextNum = 1;
-        if (allCRs && allCRs.length > 0) {
-            const nums = allCRs.map(d => {
-                const match = (d.metadata?.cert_number || d.title || '').match(/CR N°:(\d+)/);
-                return match ? parseInt(match[1]) : 0;
-            }).filter(n => n > 0);
-            if (nums.length > 0) nextNum = Math.max(...nums) + 1;
-        }
+        try {
+            const { certNumber, pointsAwarded, totalKg } = await issueReceptionCertificate({
+                client: {
+                    id: selectedUser.id,
+                    company_name: selectedUser.company_name,
+                    rut: selectedUser.rut,
+                    address: selectedUser.address,
+                    full_name: (selectedUser as any).full_name,
+                    company_email: selectedUser.company_email,
+                    is_unregistered: selectedUser.is_unregistered,
+                },
+                items: wasteItems,
+                withdrawalDate,
+                issuedFrom: 'admin',
+            });
 
-        const certNumber = `CR N°:${nextNum.toString().padStart(3, '0')}`;
-        const docTitle = `Certificado de Recepción ${certNumber}`;
-
-        generateCR(
-            {
-                company_name: selectedUser.company_name,
-                rut: selectedUser.rut,
-                address: selectedUser.address || 'Chile',
-                contact_name: (selectedUser as any).full_name || '',
-                contact_email: (selectedUser as any).company_email || '',
-            },
-            wasteItems, certNumber, 'save', withdrawalDate
-        );
-
-        const isUnregistered = selectedUser.is_unregistered === true;
-        const actualUserId = isUnregistered ? (await supabase.auth.getUser()).data.user?.id : selectedUser.id;
-
-        const { error } = await supabase.from('documents').insert([{
-            user_id: actualUserId,
-            title: docTitle,
-            type: 'CR',
-            verified: true,
-            created_at: withdrawalDate ? new Date(withdrawalDate + 'T12:00:00').toISOString() : new Date().toISOString(),
-            metadata: {
-                cert_number: certNumber,
-                generated_by: 'Admin Panel',
-                waste_details: wasteItems,
-                withdrawal_date: withdrawalDate,
-                unregistered_client_id: isUnregistered ? selectedUser.id : undefined,
-                address: isUnregistered ? (selectedUser.address || '') : undefined
-            }
-        }]);
-
-        if (!error) {
-            const totalWeight = wasteItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
-            const pointsToAward = Math.round(totalWeight * 2);
-
-            if (!isUnregistered) {
-                await supabase.rpc('increment_points', { user_id_param: selectedUser.id, amount_param: pointsToAward });
-                await supabase.from('points_transactions').insert([{ user_id: selectedUser.id, amount: pointsToAward, reason: `Generación de Certificado ${certNumber}` }]);
-                await createNotification({ userId: selectedUser.id, title: '🏆 Nuevo Certificado Emitido', message: `Se ha generado el ${certNumber}. Has recibido ${pointsToAward} Eco-Puntos.`, type: 'certificate', metadata: { cert_number: certNumber, points: pointsToAward } });
-            }
             setShowCRModal(false);
             setWasteItems([]);
             fetchAdminData();
-            toast.success(`Certificado generado y ${pointsToAward} Eco-Puntos otorgados.`);
+            toast.success(
+                `${certNumber} generado por ${totalKg.toLocaleString('es-CL')} kg` +
+                (pointsAwarded > 0 ? ` y ${pointsAwarded} Eco-Puntos otorgados.` : '.')
+            );
+        } catch (err: any) {
+            toast.error('Error al emitir el certificado: ' + (err.message || 'desconocido'));
         }
     };
 
@@ -302,6 +273,13 @@ const Admin: React.FC = () => {
             }
             const { error } = await supabase.from('documents').delete().eq('id', doc.id);
             if (error) throw error;
+
+            // Sin esto el PDF sigue en el bucket para siempre, sin fila que lo referencie.
+            // Solo aplica a las rutas privadas; las URL absolutas son del bucket público antiguo.
+            if (doc.content_url && !/^https?:\/\//i.test(doc.content_url)) {
+                await supabase.storage.from('scanned-docs').remove([doc.content_url]);
+            }
+
             fetchAdminData();
         } catch (err: any) {
             console.error('Error deleting document:', err);
@@ -317,16 +295,18 @@ const Admin: React.FC = () => {
             const cleanFileName = uploadFile.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
             const fileName = `${selectedUser.id}/${timestamp}_${cleanFileName}`;
 
-            const { error: uploadError } = await supabase.storage.from('documents').upload(fileName, uploadFile);
+            // Bucket PRIVADO: se guarda la ruta, no una URL pública. El cliente abre
+            // el archivo con una URL firmada de 60 s (ver Documents.handleDownload).
+            const { error: uploadError } = await supabase.storage
+                .from('scanned-docs')
+                .upload(fileName, uploadFile, { contentType: uploadFile.type || 'application/octet-stream' });
             if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(fileName);
 
             const { error: dbError } = await supabase.rpc('create_admin_document', {
                 _user_id: selectedUser.id,
                 _title: uploadFile.name,
                 _type: uploadType,
-                _content_url: publicUrl,
+                _content_url: fileName,
                 _created_at: new Date(uploadDate).toISOString(),
                 _metadata: { original_name: uploadFile.name, size: uploadFile.size, mime_type: uploadFile.type, uploaded_by: 'admin', source: uploadSource }
             });
@@ -352,10 +332,12 @@ const Admin: React.FC = () => {
     const handleGenerateMonthlyReports = async () => {
         setLoading(true);
         try {
-            const startDate = new Date(selectedYearGen, selectedMonthGen, 1).toISOString();
-            const endDate = new Date(selectedYearGen, selectedMonthGen + 1, 0).toISOString();
+            // Límite superior EXCLUSIVO (primer instante del mes siguiente). Con
+            // `new Date(y, m + 1, 0)` se obtenía el último día a las 00:00 y los
+            // retiros de ese día quedaban fuera del certificado — pasaba cada mes.
+            const { startISO, endExclusiveISO } = monthRange(selectedYearGen, selectedMonthGen);
 
-            const { data: crDocs, error } = await supabase.from('documents').select('*').eq('type', 'CR').gte('created_at', startDate).lte('created_at', endDate);
+            const { data: crDocs, error } = await supabase.from('documents').select('*').eq('type', 'CR').gte('created_at', startISO).lt('created_at', endExclusiveISO);
             if (error) throw error;
             if (!crDocs || crDocs.length === 0) { toast.warning('No se encontraron Certificados de Recepción (CR) para este período.'); setLoading(false); return; }
 
@@ -420,7 +402,7 @@ const Admin: React.FC = () => {
     };
 
     return (
-        <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
+        <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
             {/* Decorative Background */}
             <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
             <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>

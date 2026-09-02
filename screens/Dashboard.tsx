@@ -7,7 +7,9 @@ import NotificationBell from '../components/NotificationBell';
 
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
-import { createNotification } from '../services/notificationService';
+import { issueReceptionCertificate } from '../services/certificateService';
+import { WASTE_CATEGORIES } from '../components/admin/types';
+import { summarizeByDestination, WASTE_DESTINATIONS, defaultDestinationFor, isValorized } from '../utils/wasteClassification';
 import { useToast } from '../components/ui/Toast';
 import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
@@ -16,6 +18,11 @@ import { useCountUp } from '../hooks/useCountUp';
 interface DashboardProps {
   isLeyRep: boolean;
 }
+
+const MONTH_LABELS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
 
 const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [showDetail, setShowDetail] = useState(false);
@@ -29,6 +36,12 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     breakdown: []
   });
 
+  // Kilos separados por destino. `valorizacion` es la cifra que importa y NO
+  // incluye lo que fue a relleno sanitario ni los escombros.
+  const [destinationTotals, setDestinationTotals] = useState({
+    total: 0, valorizacion: 0, relleno_sanitario: 0, rescon: 0, tasaValorizacion: 0,
+  });
+
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -38,14 +51,19 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [selectedClient, setSelectedClient] = useState<any>(null);
   // State for multiple items
   const [wasteItems, setWasteItems] = useState<any[]>([]);
-  const [currentWaste, setCurrentWaste] = useState({
+  const [currentWaste, setCurrentWaste] = useState<{
+    waste_type: string; description: string; quantity: string; unit: string; destination?: string;
+  }>({
     waste_type: '',
     description: '',
     quantity: '',
     unit: 'Kg'
   });
   const [avatarUrl, setAvatarUrl] = useState<string>("https://picsum.photos/seed/user123/100/100");
-  const [selectedYear, setSelectedYear] = useState<number | 'all' | 'range'>(new Date().getFullYear());
+  // 'month' = un mes concreto, elegido con los dos selectores de abajo.
+  const [selectedYear, setSelectedYear] = useState<number | 'all' | 'range' | 'month'>(new Date().getFullYear());
+  const [monthYear, setMonthYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()]);
   const [rangeStart, setRangeStart] = useState<number>(new Date().getFullYear() - 1);
   const [rangeEnd, setRangeEnd] = useState<number>(new Date().getFullYear());
@@ -64,20 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const animatedCO2 = useCountUp(Math.round(stats.co2Evitado));
   const animatedPoints = useCountUp(stats.ecoPoints);
 
-  const categories = [
-    { label: 'Plásticos', value: 'Plásticos' },
-    { label: 'Papel/Cartón', value: 'Papel/Cartón' },
-    { label: 'Vidrio', value: 'Vidrio' },
-    { label: 'Metales', value: 'Metales' },
-    { label: 'Electrónicos (RAEE)', value: 'Electrónicos' },
-    { label: 'Peligrosos', value: 'Peligrosos' },
-    { label: 'Orgánicos', value: 'Orgánicos' },
-    { label: 'Aceites', value: 'Aceites' },
-    { label: 'Madera', value: 'Madera' },
-    { label: 'Textiles', value: 'Textiles' },
-    { label: 'Neumáticos/Caucho', value: 'Neumáticos' },
-    { label: 'Otros', value: 'Otros' }
-  ];
+  const categories = WASTE_CATEGORIES;
 
   useEffect(() => {
     if (showComparison && typeof selectedYear === 'number') {
@@ -134,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       }
     };
     initPush();
-  }, [selectedYear, rangeStart, rangeEnd]);
+  }, [selectedYear, rangeStart, rangeEnd, monthYear, selectedMonth]);
 
   const fetchClients = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -172,77 +177,27 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       return;
     }
 
-    const certNumber = `CR-${Math.floor(1000 + Math.random() * 9000)}`;
-    const docTitle = `Certificado de Recepción ${certNumber}`;
+    try {
+      // Mismo servicio que usa el panel Admin: misma numeración correlativa,
+      // mismos metadatos y mismo aviso al cliente desde los dos botones.
+      const { certNumber, pointsAwarded, totalKg } = await issueReceptionCertificate({
+        client: selectedClient,
+        items: wasteItems,
+        withdrawalDate,
+        issuedFrom: 'dashboard',
+        updateClientProfile: true,
+      });
 
-    // Update client data first if changed in modal
-    await supabase.from('profiles').update({
-      company_name: selectedClient.company_name,
-      rut: selectedClient.rut,
-      address: selectedClient.address
-    }).eq('id', selectedClient.id);
-
-    // Generate PDF
-    import('../services/pdfGenerator').then(({ generateCR }) => {
-      generateCR(
-        {
-          company_name: selectedClient.company_name,
-          rut: selectedClient.rut,
-          address: selectedClient.address || 'Chile'
-        },
-        wasteItems, // Pass the array of items
-        certNumber,
-        'save',
-        withdrawalDate // Pass custom date
+      toast.success(
+        `Retiro registrado. ${certNumber} generado por ${totalKg.toLocaleString('es-CL')} kg` +
+        (pointsAwarded > 0 ? `. ${pointsAwarded} Eco-Puntos otorgados.` : '.')
       );
-    });
-
-    // Save Record
-    const { error } = await supabase.from('documents').insert([{
-      user_id: selectedClient.id,
-      title: docTitle,
-      type: 'CR',
-      verified: true,
-      created_at: withdrawalDate ? new Date(withdrawalDate + 'T12:00:00').toISOString() : new Date().toISOString(), // Use custom date for DB (T12:00:00 prevents timezone shift)
-      metadata: {
-        cert_number: certNumber,
-        generated_by: 'Dashboard Operator',
-        waste_details: wasteItems
-      }
-    }]);
-
-    if (!error) {
-      // Award Eco-Puntos: 2 points per 1kg
-      const totalWeight = wasteItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
-      const pointsToAward = Math.round(totalWeight * 2);
-
-      await supabase.rpc('increment_points', {
-        user_id_param: selectedClient.id,
-        amount_param: pointsToAward
-      });
-
-      await supabase.from('points_transactions').insert([{
-        user_id: selectedClient.id,
-        amount: pointsToAward,
-        reason: `Generación de Certificado ${certNumber} (Operario)`
-      }]);
-
-      // Create notification for client
-      await createNotification({
-        userId: selectedClient.id,
-        title: 'Nuevo Certificado',
-        message: `Se ha generado el certificado ${certNumber}. Has recibido ${pointsToAward} Eco-Puntos.`,
-        type: 'certificate',
-        metadata: { cert_number: certNumber, points: pointsToAward }
-      });
-
-      toast.success(`Retiro registrado. Certificado ${certNumber} generado. ${pointsToAward} Eco-Puntos otorgados.`);
       setShowWithdrawalModal(false);
       setWasteItems([]);
       setSelectedClient(null);
       loadStats();
-    } else {
-      toast.error('Error al guardar registro: ' + error.message);
+    } catch (err: any) {
+      toast.error('Error al emitir el certificado: ' + (err.message || 'desconocido'));
     }
   };
 
@@ -298,6 +253,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       let total = 0;
       const trendData: Record<string, number> = {};
       const wasteByType: Record<string, number> = {};
+      // Todos los ítems del período, para separarlos después por destino.
+      const periodItems: any[] = [];
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
       const uniqueYears = new Set<number>([new Date().getFullYear()]);
@@ -305,55 +262,63 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       if (docs && docs.length > 0) {
         docs.forEach((doc: any) => {
           const date = new Date(doc.created_at);
-          if (!isNaN(date.getTime())) {
-            const docYear = date.getFullYear();
-            uniqueYears.add(docYear);
+          if (isNaN(date.getTime())) return;
 
-            // Filter based on selection ('all', specific year, or range)
-            const inRange = selectedYear === 'range' && docYear >= rangeStart && docYear <= rangeEnd;
-            if (selectedYear === 'all' || docYear === selectedYear || inRange) {
-              const details = doc.metadata?.waste_details;
-              let items = [];
+          const docYear = date.getFullYear();
+          const docMonth = date.getMonth();
+          uniqueYears.add(docYear);
 
-              if (Array.isArray(details)) {
-                items = details;
-              } else if (details) {
-                items = [details];
-              }
+          const details = doc.metadata?.waste_details;
+          const items: any[] = Array.isArray(details) ? details : details ? [details] : [];
+          const docTotal = items.reduce((acc: number, i: any) => acc + (Number(i.quantity) || 0), 0);
 
-              let docTotal = 0;
-              items.forEach((item: any) => {
-                const qty = Number(item.quantity) || 0;
-                docTotal += qty;
-
-                // Usar función compartida de normalización
-                const finalType = normalizeMaterialType(item);
-                wasteByType[finalType] = Number(((wasteByType[finalType] || 0) + qty).toFixed(2));
-              });
-
-              // Suma total y por tipo con formateo
-              total = Number((total + docTotal).toFixed(2));
-
-              if (selectedYear === 'all' || selectedYear === 'range') {
-                // Agrupar por AÑO para el gráfico histórico / por rango
-                const yKey = docYear.toString();
-                trendData[yKey] = Number(((trendData[yKey] || 0) + docTotal).toFixed(2));
-              } else {
-                // Agrupar por MES para el gráfico anual
-                const mName = monthNames[date.getMonth()];
-                trendData[mName] = Number(((trendData[mName] || 0) + docTotal).toFixed(2));
-              }
+          // ── Serie del gráfico ──
+          // Al mirar un mes concreto el gráfico sigue mostrando los doce meses
+          // del año: sin ese contexto una sola barra no dice nada.
+          if (selectedYear === 'all' || selectedYear === 'range') {
+            if (selectedYear === 'all' || (docYear >= rangeStart && docYear <= rangeEnd)) {
+              const yKey = docYear.toString();
+              trendData[yKey] = Number(((trendData[yKey] || 0) + docTotal).toFixed(2));
+            }
+          } else {
+            const chartYear = selectedYear === 'month' ? monthYear : selectedYear;
+            if (docYear === chartYear) {
+              const mName = monthNames[docMonth];
+              trendData[mName] = Number(((trendData[mName] || 0) + docTotal).toFixed(2));
             }
           }
+
+          // ── Totales, desglose por material y destinos ──
+          const included =
+            selectedYear === 'all'
+            || (typeof selectedYear === 'number' && docYear === selectedYear)
+            || (selectedYear === 'range' && docYear >= rangeStart && docYear <= rangeEnd)
+            || (selectedYear === 'month' && docYear === monthYear && docMonth === selectedMonth);
+          if (!included) return;
+
+          items.forEach((item: any) => {
+            const qty = Number(item.quantity) || 0;
+            const finalType = normalizeMaterialType(item);
+            wasteByType[finalType] = Number(((wasteByType[finalType] || 0) + qty).toFixed(2));
+          });
+
+          periodItems.push(...items);
+          total = Number((total + docTotal).toFixed(2));
         });
       }
 
       setAvailableYears(Array.from(uniqueYears).sort((a, b) => b - a));
 
-      // Calcular CO₂ usando factores específicos por material
+      const destTotals = summarizeByDestination(periodItems);
+      setDestinationTotals(destTotals);
+
+      // CO₂ evitado solo por lo que se valoriza. Un residuo que va a relleno
+      // sanitario no ahorra emisiones, y contarlo inflaría la cifra ambiental.
       let totalCO2 = 0;
-      Object.entries(wasteByType).forEach(([material, qty]) => {
-        const factor = materialFactors[material] || materialFactors['Otros'];
+      periodItems.forEach((item: any) => {
+        if (!isValorized(item)) return;
+        const qty = Number(item.quantity) || 0;
+        const factor = materialFactors[normalizeMaterialType(item)] || materialFactors['Otros'];
         totalCO2 += qty * factor.co2;
       });
 
@@ -630,7 +595,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   ];
 
   return (
-    <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 lg:pb-8 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
+    <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 md:pb-8 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
       {/* Decorative Background Blobs for Glassmorphism */}
       <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -738,10 +703,30 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
                   {/* Add Item Form */}
                   <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 border-dashed space-y-4">
-                    <select className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.waste_type} onChange={(e) => setCurrentWaste({ ...currentWaste, waste_type: e.target.value })}>
+                    <select className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.waste_type} onChange={(e) => setCurrentWaste({ ...currentWaste, waste_type: e.target.value, destination: defaultDestinationFor(e.target.value) })}>
                       <option value="" disabled>Seleccionar...</option>
                       {categories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
                     </select>
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Destino</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {WASTE_DESTINATIONS.map(d => {
+                          const active = (currentWaste.destination || defaultDestinationFor(currentWaste.waste_type)) === d.value;
+                          return (
+                            <button
+                              key={d.value}
+                              type="button"
+                              title={d.description}
+                              onClick={() => setCurrentWaste({ ...currentWaste, destination: d.value })}
+                              className={`py-2 px-1 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${active ? 'text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}`}
+                              style={active ? { backgroundColor: d.color } : undefined}
+                            >
+                              {d.short}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                     <input type="text" placeholder="Descripción" className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.description} onChange={(e) => setCurrentWaste({ ...currentWaste, description: e.target.value })} />
                     <div className="grid grid-cols-2 gap-3">
                       <input type="number" placeholder="Cant." className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.quantity} onChange={(e) => setCurrentWaste({ ...currentWaste, quantity: e.target.value })} />
@@ -826,7 +811,12 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           <div className="flex items-center gap-4 relative z-10">
             <span className="material-symbols-outlined text-5xl text-[#b4d351] font-black drop-shadow-sm group-hover:scale-110 transition-transform">recycling</span>
             <div className="flex flex-col gap-0.5">
-              <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">Total Residuos Recuperados</span>
+              <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">
+                Total Residuos Gestionados
+                {selectedYear === 'month' && ` · ${MONTH_LABELS[selectedMonth]} ${monthYear}`}
+                {typeof selectedYear === 'number' && ` · ${selectedYear}`}
+                {selectedYear === 'range' && ` · ${rangeStart}–${rangeEnd}`}
+              </span>
               <div className="flex items-baseline gap-1.5">
                 <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{animatedKg.toLocaleString()}</h3>
                 <span className="text-sm font-bold text-white/90">KG</span>
@@ -849,6 +839,55 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             </div>
           )}
         </button>
+
+        {/* Desglose por destino. El valorizado es la cifra que cuenta para la
+            Ley REP; relleno sanitario y RESCON van aparte y NO se le suman. */}
+        {destinationTotals.total > 0 && (
+          <div className="grid grid-cols-3 gap-2.5">
+            {WASTE_DESTINATIONS.map(d => {
+              const kg = destinationTotals[d.value];
+              const principal = d.value === 'valorizacion';
+              const share = destinationTotals.total > 0
+                ? Math.round((kg / destinationTotals.total) * 100)
+                : 0;
+              return (
+                <div
+                  key={d.value}
+                  title={d.description}
+                  className={`rounded-[18px] p-3.5 border transition-all ${principal
+                    ? 'bg-white dark:bg-slate-900 border-primary/30 shadow-md shadow-primary/10'
+                    : 'bg-white/60 dark:bg-slate-900/60 border-white/80 dark:border-white/10'}`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span
+                      className="material-symbols-outlined text-base shrink-0"
+                      style={{ color: d.color }}
+                    >
+                      {d.icon}
+                    </span>
+                    {principal && (
+                      <span className="text-[8px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        Ley REP
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={`font-display font-black leading-none tracking-tight tabular-nums ${principal ? 'text-2xl' : 'text-xl'}`}
+                    style={{ color: principal ? d.color : undefined }}
+                  >
+                    {kg.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                  </p>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
+                    kg · {share}%
+                  </p>
+                  <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 leading-tight mt-1">
+                    {d.label}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Breakdown Panel (Only if Expanded) */}
         {showDetail && stats.breakdown && (
@@ -922,6 +961,23 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           </div>
         </section>
 
+        {/* Asistente de declaración */}
+        <button
+          onClick={() => navigate('/ley-rep')}
+          className="w-full flex items-center gap-3.5 px-5 py-4 rounded-[20px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:border-primary/30 transition-all active:scale-[0.99] text-left"
+        >
+          <span className="size-10 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+            <span className="material-symbols-outlined">assignment_turned_in</span>
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-black text-gray-900 dark:text-white">¿Debo declarar este año?</span>
+            <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
+              Revisa tus kilos contra los umbrales de RETC, SINADER y SIDREP
+            </span>
+          </span>
+          <span className="material-symbols-outlined text-gray-300 shrink-0">chevron_right</span>
+        </button>
+
         {/* Chart Section - ENCAPSULATED */}
         <section className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[28px] p-6 border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] flex flex-col gap-4 transition-all">
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -930,13 +986,16 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               value={selectedYear}
               onChange={(e) => {
                 const v = e.target.value;
-                setSelectedYear(v === 'all' ? 'all' : v === 'range' ? 'range' : Number(v));
+                setSelectedYear(
+                  v === 'all' ? 'all' : v === 'range' ? 'range' : v === 'month' ? 'month' : Number(v)
+                );
                 setShowComparison(false);
               }}
               className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
             >
               <option value="all">Todos los años</option>
               <option value="range">Por rango</option>
+              <option value="month">Mes específico</option>
               {availableYears.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
@@ -962,6 +1021,29 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               >
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
+            </div>
+          )}
+
+          {/* Month picker — lets the client see what was managed in one month */}
+          {selectedYear === 'month' && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              >
+                {MONTH_LABELS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+              </select>
+              <select
+                value={monthYear}
+                onChange={(e) => setMonthYear(Number(e.target.value))}
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              >
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <span className="text-[10px] font-bold text-gray-400">
+                El gráfico muestra el año completo; el resto del panel, solo ese mes.
+              </span>
             </div>
           )}
 
@@ -1065,6 +1147,19 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               <span className="material-symbols-outlined text-base">arrow_forward</span>
             </div>
           </div>
+
+          {/* Acceso al desglose mensual por material */}
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate('/panel-mensual'); }}
+            className="w-full mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/5 hover:bg-primary/10 border border-primary/15 transition-all active:scale-[0.99] text-left"
+          >
+            <span className="material-symbols-outlined text-primary text-xl shrink-0">monitoring</span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-xs font-black text-gray-900 dark:text-white">Panel mensual de residuos</span>
+              <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-bold">Desglose por material e impacto, mes a mes</span>
+            </span>
+            <span className="material-symbols-outlined text-primary text-base shrink-0">chevron_right</span>
+          </button>
 
           {/* Impact Grid - NESTED */}
           <div className="grid grid-cols-2 gap-3">

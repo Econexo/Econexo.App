@@ -49,6 +49,7 @@ const Navbar: React.FC = () => {
   const navItems: NavItem[] = [
     { path: '/dashboard', label: 'Inicio', icon: 'home' },
     { path: '/documents', label: 'Documentos', icon: 'description' },
+    { path: '/panel-mensual', label: 'Panel Mensual', icon: 'monitoring' },
     { path: '/chat', label: 'Chat', icon: 'chat', primary: true },
     { path: '/news', label: 'Noticias', icon: 'newspaper' },
     ...(isAdmin ? [adminItem] : []),
@@ -72,7 +73,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       {/* ─── MOBILE / TABLET: bottom bar ─── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 w-full bg-white dark:bg-slate-900 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 pb-6 pt-3 px-4 z-50 shadow-[0_-4px_20px_rgba(31,38,135,0.08)] transition-colors duration-300">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-white dark:bg-slate-900 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 pb-6 pt-3 px-4 z-50 shadow-[0_-4px_20px_rgba(31,38,135,0.08)] transition-colors duration-300">
         <ul className="flex justify-between items-center w-full">
           {mobileItems.map((item) => (
             <li key={item.path} className="flex-1">
@@ -103,13 +104,13 @@ const Navbar: React.FC = () => {
       </nav>
 
       {/* ─── DESKTOP: left sidebar ─── */}
-      <aside className="hidden lg:flex flex-col fixed top-0 left-0 h-full w-64 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-white/60 dark:border-white/10 shadow-xl z-50 py-8 px-4 gap-1">
+      <aside className="hidden md:flex flex-col fixed top-0 left-0 h-full w-20 xl:w-64 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-white/60 dark:border-white/10 shadow-xl z-50 py-8 px-3 xl:px-4 gap-1 transition-[width] duration-200">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 mb-8">
-          <div className="size-9 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/30">
+        <div className="flex items-center justify-center xl:justify-start gap-3 px-0 xl:px-4 mb-8">
+          <div className="size-9 shrink-0 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/30">
             <span className="material-symbols-outlined text-white text-xl">eco</span>
           </div>
-          <div>
+          <div className="hidden xl:block">
             <p className="font-black text-gray-900 dark:text-white text-sm leading-none">EcoNexo</p>
             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Panel</p>
           </div>
@@ -121,7 +122,8 @@ const Navbar: React.FC = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm
+              title={item.label}
+              className={`flex items-center justify-center xl:justify-start gap-3 px-0 xl:px-4 py-3 rounded-2xl transition-all font-bold text-sm
                 ${isActive(item.path)
                   ? 'bg-primary text-white shadow-lg shadow-primary/25'
                   : `text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white${item.primary ? ' bg-primary/10 text-primary' : ''}`
@@ -138,18 +140,18 @@ const Navbar: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span>{item.label}</span>
+              <span className="hidden xl:inline">{item.label}</span>
               {item.primary && !isActive(item.path) && (
-                <span className="ml-auto size-2 rounded-full bg-primary animate-pulse" />
+                <span className="hidden xl:block ml-auto size-2 rounded-full bg-primary animate-pulse" />
               )}
             </Link>
           ))}
         </nav>
 
         {/* Footer info */}
-        <div className="px-4 pt-4 border-t border-gray-100 dark:border-white/10">
+        <div className="hidden xl:block px-4 pt-4 border-t border-gray-100 dark:border-white/10">
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">EcoNexo SpA</p>
-          <p className="text-[10px] text-gray-300">v1.6.8</p>
+          <p className="text-[10px] text-gray-300">v1.6.9</p>
         </div>
       </aside>
     </>

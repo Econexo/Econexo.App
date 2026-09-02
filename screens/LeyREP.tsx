@@ -1,5 +1,6 @@
 // screens/LeyREP.tsx
 import React, { useState, useEffect, useCallback } from 'react';
+import DeclarationAdvisor from '../components/DeclarationAdvisor';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
@@ -400,6 +401,12 @@ const LeyREP: React.FC = () => {
             })}
           </div>
         </div>
+
+        {/* Asistente de declaración: lo primero que quiere saber el cliente
+            es si le corresponde declarar, antes que el detalle de las metas. */}
+        <section className="mb-6">
+          <DeclarationAdvisor year={selectedYear} />
+        </section>
 
         {/* ── DS 12/2021 — Envases y Embalajes ── */}
         <section className="mb-6">

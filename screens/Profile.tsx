@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { UserProfile, CompanyProfile } from '../types';
+import { UserProfile, CompanyProfile, ReminderPrefs, DEFAULT_REMINDER_PREFS } from '../types';
 import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
@@ -12,6 +12,9 @@ import ProfileHeader from '../components/profile/ProfileHeader';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import UserDataSection from '../components/profile/UserDataSection';
 import CompanyDataSection from '../components/profile/CompanyDataSection';
+import NotificationEmailsSection from '../components/profile/NotificationEmailsSection';
+import RemindersSection from '../components/profile/RemindersSection';
+import RepProducerSection, { DEFAULT_REP_PRODUCER, type RepProducerData } from '../components/profile/RepProducerSection';
 import SettingsModal from '../components/profile/SettingsModal';
 import SupportTicketModal from '../components/profile/SupportTicketModal';
 import EmailUpdateModal from '../components/profile/EmailUpdateModal';
@@ -49,6 +52,14 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Correos adicionales de aviso (máx. 2) y preferencias de recordatorios
+  const [notificationEmails, setNotificationEmails] = useState<string[]>([]);
+  const [reminderPrefs, setReminderPrefs] = useState<ReminderPrefs>(DEFAULT_REMINDER_PREFS);
+  const [savingEmails, setSavingEmails] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [repProducer, setRepProducer] = useState<RepProducerData>(DEFAULT_REP_PRODUCER);
+  const [savingRep, setSavingRep] = useState(false);
+
   const [userData, setUserData] = useState<UserProfile>({ name: '', email: '', role: '', phone: '' });
   const [companyData, setCompanyData] = useState<CompanyProfile>({
     name: '', rut: '', address: '', industry: 'General', declaroLeyRep: isLeyRep,
@@ -81,6 +92,9 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
         });
         if (profile.avatar_url) setProfileImage(profile.avatar_url);
         setIsAdmin(profile.is_admin || false);
+        setNotificationEmails(profile.notification_emails || []);
+        setReminderPrefs({ ...DEFAULT_REMINDER_PREFS, ...(profile.reminder_prefs || {}) });
+        setRepProducer({ ...DEFAULT_REP_PRODUCER, ...(profile.rep_producer_data || {}) });
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -120,6 +134,74 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
       else { console.error("Error saving company:", error); toast.error('Error al guardar datos de empresa: ' + error.message); }
     }
     setLoading(false);
+  };
+
+  const saveNotificationEmails = async (emails: string[]) => {
+    setSavingEmails(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sesión no válida.');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ notification_emails: emails })
+        .eq('id', user.id);
+      if (error) throw error;
+      setNotificationEmails(emails);
+      toast.success(
+        emails.length
+          ? `Guardado. ${emails.length === 1 ? 'Ese correo recibirá' : 'Esos correos recibirán'} copia de los avisos.`
+          : 'Correos de aviso eliminados.'
+      );
+    } catch (err: any) {
+      console.error('Error saving notification emails:', err);
+      toast.error('Error al guardar los correos: ' + err.message);
+    } finally {
+      setSavingEmails(false);
+    }
+  };
+
+  // Se guarda al vuelo: el usuario no debería tener que pulsar "guardar" para un toggle.
+  const saveReminderPrefs = async (prefs: ReminderPrefs) => {
+    const previous = reminderPrefs;
+    setReminderPrefs(prefs);
+    setSavingPrefs(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sesión no válida.');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ reminder_prefs: prefs })
+        .eq('id', user.id);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Error saving reminder prefs:', err);
+      setReminderPrefs(previous);
+      toast.error('No se pudieron guardar los recordatorios: ' + err.message);
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
+  // Se guarda al vuelo, igual que las preferencias de recordatorios.
+  const saveRepProducer = async (data: RepProducerData) => {
+    const previous = repProducer;
+    setRepProducer(data);
+    setSavingRep(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sesión no válida.');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ rep_producer_data: data })
+        .eq('id', user.id);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Error saving REP producer data:', err);
+      setRepProducer(previous);
+      toast.error('No se pudo guardar el perfil REP: ' + err.message);
+    } finally {
+      setSavingRep(false);
+    }
   };
 
   const handleLeyRepToggle = async (checked: boolean) => {
@@ -250,7 +332,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
   };
 
   return (
-    <div className="relative font-sans bg-[#f0f4f0] dark:bg-slate-950 min-h-screen text-slate-900 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden transition-colors duration-300">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-slate-950 min-h-screen text-slate-900 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden transition-colors duration-300">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -309,6 +391,25 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
           isEditing={isEditingCompany}
           onToggleEdit={() => setIsEditingCompany(true)}
           onSave={saveCompany}
+        />
+
+        <RepProducerSection
+          data={repProducer}
+          saving={savingRep}
+          onChange={saveRepProducer}
+        />
+
+        <NotificationEmailsSection
+          emails={notificationEmails}
+          ownerEmail={userData.email}
+          saving={savingEmails}
+          onSave={saveNotificationEmails}
+        />
+
+        <RemindersSection
+          prefs={reminderPrefs}
+          saving={savingPrefs}
+          onChange={saveReminderPrefs}
         />
 
         {/* Install App Card */}

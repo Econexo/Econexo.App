@@ -5,7 +5,8 @@ import { jsPDF } from 'jspdf';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { supabase } from '../services/supabase';
-import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
+import { normalizeMaterialType, materialFactors, CO2_PER_TREE, MATERIAL_COLORS } from '../utils/materialCalculations';
+import { isValorized } from '../utils/wasteClassification';
 import { useToast } from '../components/ui/Toast';
 import { useCountUp } from '../hooks/useCountUp';
 
@@ -120,6 +121,9 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
 
       let totalKg = 0;
       const materialBreakdown: { [key: string]: number } = {};
+      // Solo lo valorizado genera impacto evitado; lo enterrado suma kilos
+      // gestionados pero no ahorra agua, energía ni emisiones.
+      const valorizedBreakdown: { [key: string]: number } = {};
 
       if (docs) {
         const yearDocs = docs.filter((doc: any) => {
@@ -143,6 +147,9 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
             // Usar función compartida de normalización
             const category = normalizeMaterialType(item);
             materialBreakdown[category] = Number(((materialBreakdown[category] || 0) + qty).toFixed(2));
+            if (isValorized(item)) {
+              valorizedBreakdown[category] = Number(((valorizedBreakdown[category] || 0) + qty).toFixed(2));
+            }
           });
         });
       }
@@ -152,8 +159,8 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
       let waterSaved = 0;
       let energySaved = 0;
 
-      Object.keys(materialBreakdown).forEach(material => {
-        const qty = materialBreakdown[material];
+      Object.keys(valorizedBreakdown).forEach(material => {
+        const qty = valorizedBreakdown[material];
         const factors = materialFactors[material] || materialFactors['Otros'];
 
         co2AvoidedKg += qty * factors.co2;
@@ -396,7 +403,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
   const animatedEnergia = useCountUp(stats.energiaAhorrada);
 
   return (
-    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -698,21 +705,6 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
 
           {/* Material Breakdown Donut */}
           {materialBreakdown.length > 0 && (() => {
-            const MATERIAL_COLORS: Record<string, string> = {
-              'Plásticos':   '#eab308', // amarillo
-              'Papel/Cartón':'#3b82f6', // azul
-              'Aluminio':    '#9ca3af', // gris claro
-              'Vidrio':      '#22c55e', // verde
-              'Metales':     '#6b7280', // gris
-              'Electrónicos':'#ec4899', // rosa
-              'Orgánicos':   '#84cc16', // verde lima
-              'Peligrosos':  '#ef4444', // rojo
-              'Aceites':     '#f97316', // naranja
-              'Madera':      '#a16207', // café
-              'Textiles':    '#14b8a6', // teal
-              'Neumáticos':  '#374151', // gris oscuro
-              'Otros':       '#94a3b8', // gris suave
-            };
             const totalDonut = materialBreakdown.reduce((s, d) => s + d.value, 0);
             return (
               <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6 space-y-4">
