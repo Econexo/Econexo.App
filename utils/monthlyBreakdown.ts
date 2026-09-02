@@ -3,6 +3,7 @@
 
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from './materialCalculations';
 import { mapToRepCategory, REP_CATEGORY_LABELS } from './materialMapping';
+import { isValorized, summarizeByDestination, type DestinationTotals } from './wasteClassification';
 import type { MonthlyMaterialRow } from '../types';
 
 export const MONTH_NAMES = [
@@ -27,6 +28,8 @@ export interface MonthlySummary {
   /** Clave 'YYYY-MM' del período. */
   periodKey: string;
   totalKg: number;
+  /** Kilos separados por destino. `valorizacion` es la cifra principal. */
+  destinations: DestinationTotals;
   materials: MonthlyMaterialRow[];
   impact: MonthlyImpact;
   /** Nº de certificados de recepción que componen el mes. */
@@ -60,7 +63,13 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
  * los kilos, su participación y el impacto ambiental evitado.
  */
 export function buildMonthlyBreakdown(docs: CrDoc[]): Map<string, MonthlySummary> {
-  const byPeriod = new Map<string, { kg: Record<string, number>; docs: Set<number> }>();
+  const byPeriod = new Map<string, {
+    kg: Record<string, number>;
+    // Kilos valorizados por material: solo estos generan impacto evitado.
+    valorizedKg: Record<string, number>;
+    items: any[];
+    docs: Set<number>;
+  }>();
 
   docs.forEach((doc, index) => {
     const key = periodKeyOf(doc.created_at);
@@ -68,7 +77,7 @@ export function buildMonthlyBreakdown(docs: CrDoc[]): Map<string, MonthlySummary
 
     let bucket = byPeriod.get(key);
     if (!bucket) {
-      bucket = { kg: {}, docs: new Set() };
+      bucket = { kg: {}, valorizedKg: {}, items: [], docs: new Set() };
       byPeriod.set(key, bucket);
     }
 
@@ -81,6 +90,10 @@ export function buildMonthlyBreakdown(docs: CrDoc[]): Map<string, MonthlySummary
       if (qty <= 0) continue;
       const material = normalizeMaterialType(item);
       bucket.kg[material] = round2((bucket.kg[material] ?? 0) + qty);
+      if (isValorized(item)) {
+        bucket.valorizedKg[material] = round2((bucket.valorizedKg[material] ?? 0) + qty);
+      }
+      bucket.items.push(item);
     }
   });
 
@@ -96,9 +109,12 @@ export function buildMonthlyBreakdown(docs: CrDoc[]): Map<string, MonthlySummary
       .sort(([, a], [, b]) => b - a)
       .map(([material, kg]) => {
         const f = materialFactors[material] ?? materialFactors['Otros'];
-        const co2 = round2(kg * f.co2);
-        const water = round2(kg * f.water);
-        const energy = round2(kg * f.energy);
+        // El impacto se acredita solo sobre los kilos valorizados de ese
+        // material: lo que se enterró no ahorra agua, energía ni emisiones.
+        const valorizado = bucket.valorizedKg[material] ?? 0;
+        const co2 = round2(valorizado * f.co2);
+        const water = round2(valorizado * f.water);
+        const energy = round2(valorizado * f.energy);
 
         impact.co2 += co2;
         impact.water += water;
@@ -125,6 +141,7 @@ export function buildMonthlyBreakdown(docs: CrDoc[]): Map<string, MonthlySummary
     result.set(periodKey, {
       periodKey,
       totalKg,
+      destinations: summarizeByDestination(bucket.items),
       materials,
       impact,
       docCount: bucket.docs.size,
@@ -139,6 +156,7 @@ export function emptySummary(periodKey: string): MonthlySummary {
   return {
     periodKey,
     totalKg: 0,
+    destinations: { total: 0, valorizacion: 0, relleno_sanitario: 0, rescon: 0, tasaValorizacion: 0 },
     materials: [],
     impact: { co2: 0, water: 0, energy: 0, trees: 0 },
     docCount: 0,

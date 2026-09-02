@@ -1217,6 +1217,10 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         { key: 'Peligrosos',   label: 'PELIGROSOS',     color: [198,  40,  40], textMain: [255, 255, 255] }, // rojo
         { key: 'Aceites',      label: 'ACEITES',        color: [245, 127,  23], textMain: [0,   0,   0  ] }, // ámbar
         { key: 'Textiles',     label: 'TEXTILES',       color: [106,  27, 154], textMain: [255, 255, 255] }, // morado
+        // Estas dos no se valorizan. Necesitan fila propia: si caen en "OTROS"
+        // la basura domiciliaria se mezcla con el reciclaje en el certificado.
+        { key: 'Domiciliarios', label: 'RSD Y ASIMILABLES', color: [120, 113, 108], textMain: [255, 255, 255] }, // piedra
+        { key: 'RESCON',       label: 'RESCON',         color: [161,  98,   7], textMain: [255, 255, 255] }, // tierra
         { key: 'Otros',        label: 'OTROS',          color: [200, 200, 200], textMain: [0,   0,   0  ] }, // gris claro
     ];
 

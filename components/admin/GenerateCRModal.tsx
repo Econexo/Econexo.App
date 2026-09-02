@@ -1,11 +1,14 @@
 import React from 'react';
 import { AdminUserProfile, WasteItem, WASTE_CATEGORIES } from './types';
+import { WASTE_DESTINATIONS, defaultDestinationFor, DESTINATION_LABELS } from '../../utils/wasteClassification';
+import type { WasteDestination } from '../../utils/wasteClassification';
 
 interface CurrentWaste {
     waste_type: string;
     description: string;
     quantity: string;
     unit: string;
+    destination?: string;
 }
 
 interface GenerateCRModalProps {
@@ -90,7 +93,11 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                                     <div key={idx} className="flex justify-between items-center p-3 border-b border-gray-100 last:border-0 text-xs">
                                         <div>
                                             <p className="font-bold text-gray-900">{item.quantity} {item.unit} - {item.waste_type}</p>
-                                            <p className="text-gray-500 text-[10px]">{item.description}</p>
+                                            <p className="text-gray-500 text-[10px]">
+                                                {DESTINATION_LABELS[(item as any).destination as WasteDestination]
+                                                    ?? DESTINATION_LABELS[defaultDestinationFor(item.waste_type)]}
+                                                {item.description ? ` · ${item.description}` : ''}
+                                            </p>
                                         </div>
                                         <button
                                             onClick={() => onRemoveItem(idx)}
@@ -108,13 +115,40 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                             <select
                                 className="w-full bg-transparent border border-gray-300 rounded-xl px-4 py-3 outline-none font-bold text-gray-900"
                                 value={currentWaste.waste_type}
-                                onChange={(e) => onCurrentWasteChange({ ...currentWaste, waste_type: e.target.value })}
+                                onChange={(e) => onCurrentWasteChange({
+                                    ...currentWaste,
+                                    waste_type: e.target.value,
+                                    destination: defaultDestinationFor(e.target.value),
+                                })}
                             >
                                 <option value="">Seleccionar...</option>
                                 {WASTE_CATEGORIES.map(cat => (
                                     <option key={cat.value} value={cat.value}>{cat.label}</option>
                                 ))}
                             </select>
+                            <div className="space-y-1.5">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Destino</p>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    {WASTE_DESTINATIONS.map(d => {
+                                        const active = (currentWaste.destination
+                                            || defaultDestinationFor(currentWaste.waste_type)) === d.value;
+                                        return (
+                                            <button
+                                                key={d.value}
+                                                type="button"
+                                                title={d.description}
+                                                onClick={() => onCurrentWasteChange({ ...currentWaste, destination: d.value })}
+                                                className={`py-2 px-1 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${active
+                                                    ? 'text-white border-transparent'
+                                                    : 'bg-white/60 text-gray-500 border-gray-200'}`}
+                                                style={active ? { backgroundColor: d.color } : undefined}
+                                            >
+                                                {d.short}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                             <input
                                 className="w-full bg-transparent border border-gray-300 rounded-xl px-4 py-3 outline-none font-bold text-gray-900"
                                 placeholder="Descripción"

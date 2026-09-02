@@ -75,6 +75,10 @@ export const WASTE_CATEGORIES = [
     { label: 'Textiles', value: 'Textiles' },
     { label: 'Neumáticos/Caucho', value: 'Neumáticos' },
     { label: 'Otros', value: 'Otros' },
+    // Estas dos no se valorizan: alimentan "relleno sanitario" y "RESCON",
+    // no el total reciclado. Ver utils/wasteClassification.ts
+    { label: 'Residuos Sólidos Domiciliarios y Asimilables', value: 'Domiciliarios' },
+    { label: 'RESCON (Construcción y Demolición)', value: 'RESCON' },
 ];
 
 export const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];

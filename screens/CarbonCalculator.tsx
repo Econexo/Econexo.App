@@ -185,7 +185,7 @@ const CarbonCalculator: React.FC = () => {
   const benchmark = getBenchmark();
 
   return (
-    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 overflow-hidden">
+    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
       {/* Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
       <div className="absolute bottom-[20%] right-[-15%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-yellow-400/10 rounded-full blur-[80px] pointer-events-none" />

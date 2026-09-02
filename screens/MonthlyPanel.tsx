@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
 import { materialColor } from '../utils/materialCalculations';
+import { WASTE_DESTINATIONS } from '../utils/wasteClassification';
 import {
     buildMonthlyBreakdown,
     breakdownToCsv,
@@ -207,7 +208,7 @@ const MonthlyPanel: React.FC = () => {
     };
 
     return (
-        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto pb-28 lg:pb-8 animate-in fade-in duration-500 overflow-hidden">
+        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 animate-in fade-in duration-500 overflow-hidden">
             {/* Fondos decorativos */}
             <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute top-[35%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none" />
@@ -309,6 +310,43 @@ const MonthlyPanel: React.FC = () => {
                                 {delta !== null && ` · mes anterior: ${fmt(previous.totalKg, 0)} kg`}
                             </p>
                         </div>
+
+                        {/* Destino de los residuos del mes. El valorizado no
+                            incluye relleno sanitario ni RESCON. */}
+                        {summary.totalKg > 0 && (
+                            <div className="grid grid-cols-3 gap-3">
+                                {WASTE_DESTINATIONS.map(d => {
+                                    const kg = summary.destinations[d.value];
+                                    const principal = d.value === 'valorizacion';
+                                    const share = summary.totalKg > 0 ? Math.round((kg / summary.totalKg) * 100) : 0;
+                                    return (
+                                        <div
+                                            key={d.value}
+                                            title={d.description}
+                                            className={`rounded-[22px] p-4 border backdrop-blur-2xl transition-all ${principal
+                                                ? 'bg-white/80 dark:bg-slate-800/80 border-primary/30 shadow-md shadow-primary/10'
+                                                : 'bg-white/50 dark:bg-slate-800/50 border-white/70 dark:border-slate-600/40'}`}
+                                        >
+                                            <span className="material-symbols-outlined text-lg" style={{ color: d.color }}>
+                                                {d.icon}
+                                            </span>
+                                            <p
+                                                className={`font-display font-black leading-none tracking-tight tabular-nums mt-1.5 ${principal ? 'text-2xl' : 'text-xl'}`}
+                                                style={{ color: principal ? d.color : undefined }}
+                                            >
+                                                {fmt(kg, kg < 100 ? 1 : 0)}
+                                            </p>
+                                            <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
+                                                kg · {share}%
+                                            </p>
+                                            <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 leading-tight mt-1">
+                                                {d.label}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         {summary.materials.length === 0 ? (
                             <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-dashed border-gray-200 dark:border-white/10 p-10 text-center space-y-3">

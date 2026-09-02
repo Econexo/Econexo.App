@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { monthRange, yearRange, isWithin } from '../utils/dateRange';
 import { supabase } from '../services/supabase';
 // pdfGenerator is loaded on-demand to defer 1.6 MB of PDF assets until needed
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
@@ -210,17 +211,14 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
 
     const handleGenerateEcoReport = async () => {
         // Gather items from CR docs in the selected period
-        const startDate = reportPeriodType === 'month'
-            ? new Date(reportYear, reportMonth, 1)
-            : new Date(reportYear, 0, 1);
-        const endDate = reportPeriodType === 'month'
-            ? new Date(reportYear, reportMonth + 1, 0)
-            : new Date(reportYear, 11, 31);
+        // Mismo criterio que el CGM: límite superior exclusivo, para no perder
+        // los retiros del último día del mes ni los del 31 de diciembre.
+        const range = reportPeriodType === 'month'
+            ? monthRange(reportYear, reportMonth)
+            : yearRange(reportYear);
 
         const crDocs = documents.filter((d: any) =>
-            d.type === 'CR' && d.metadata?.waste_details &&
-            new Date(d.created_at) >= startDate &&
-            new Date(d.created_at) <= endDate
+            d.type === 'CR' && d.metadata?.waste_details && isWithin(d.created_at, range)
         );
 
         if (crDocs.length === 0) {

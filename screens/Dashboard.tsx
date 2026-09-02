@@ -7,7 +7,9 @@ import NotificationBell from '../components/NotificationBell';
 
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
-import { createNotification } from '../services/notificationService';
+import { issueReceptionCertificate } from '../services/certificateService';
+import { WASTE_CATEGORIES } from '../components/admin/types';
+import { summarizeByDestination, WASTE_DESTINATIONS, defaultDestinationFor, isValorized } from '../utils/wasteClassification';
 import { useToast } from '../components/ui/Toast';
 import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
@@ -29,6 +31,12 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     breakdown: []
   });
 
+  // Kilos separados por destino. `valorizacion` es la cifra que importa y NO
+  // incluye lo que fue a relleno sanitario ni los escombros.
+  const [destinationTotals, setDestinationTotals] = useState({
+    total: 0, valorizacion: 0, relleno_sanitario: 0, rescon: 0, tasaValorizacion: 0,
+  });
+
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -38,7 +46,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [selectedClient, setSelectedClient] = useState<any>(null);
   // State for multiple items
   const [wasteItems, setWasteItems] = useState<any[]>([]);
-  const [currentWaste, setCurrentWaste] = useState({
+  const [currentWaste, setCurrentWaste] = useState<{
+    waste_type: string; description: string; quantity: string; unit: string; destination?: string;
+  }>({
     waste_type: '',
     description: '',
     quantity: '',
@@ -64,20 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const animatedCO2 = useCountUp(Math.round(stats.co2Evitado));
   const animatedPoints = useCountUp(stats.ecoPoints);
 
-  const categories = [
-    { label: 'Plásticos', value: 'Plásticos' },
-    { label: 'Papel/Cartón', value: 'Papel/Cartón' },
-    { label: 'Vidrio', value: 'Vidrio' },
-    { label: 'Metales', value: 'Metales' },
-    { label: 'Electrónicos (RAEE)', value: 'Electrónicos' },
-    { label: 'Peligrosos', value: 'Peligrosos' },
-    { label: 'Orgánicos', value: 'Orgánicos' },
-    { label: 'Aceites', value: 'Aceites' },
-    { label: 'Madera', value: 'Madera' },
-    { label: 'Textiles', value: 'Textiles' },
-    { label: 'Neumáticos/Caucho', value: 'Neumáticos' },
-    { label: 'Otros', value: 'Otros' }
-  ];
+  const categories = WASTE_CATEGORIES;
 
   useEffect(() => {
     if (showComparison && typeof selectedYear === 'number') {
@@ -172,77 +169,27 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       return;
     }
 
-    const certNumber = `CR-${Math.floor(1000 + Math.random() * 9000)}`;
-    const docTitle = `Certificado de Recepción ${certNumber}`;
+    try {
+      // Mismo servicio que usa el panel Admin: misma numeración correlativa,
+      // mismos metadatos y mismo aviso al cliente desde los dos botones.
+      const { certNumber, pointsAwarded, totalKg } = await issueReceptionCertificate({
+        client: selectedClient,
+        items: wasteItems,
+        withdrawalDate,
+        issuedFrom: 'dashboard',
+        updateClientProfile: true,
+      });
 
-    // Update client data first if changed in modal
-    await supabase.from('profiles').update({
-      company_name: selectedClient.company_name,
-      rut: selectedClient.rut,
-      address: selectedClient.address
-    }).eq('id', selectedClient.id);
-
-    // Generate PDF
-    import('../services/pdfGenerator').then(({ generateCR }) => {
-      generateCR(
-        {
-          company_name: selectedClient.company_name,
-          rut: selectedClient.rut,
-          address: selectedClient.address || 'Chile'
-        },
-        wasteItems, // Pass the array of items
-        certNumber,
-        'save',
-        withdrawalDate // Pass custom date
+      toast.success(
+        `Retiro registrado. ${certNumber} generado por ${totalKg.toLocaleString('es-CL')} kg` +
+        (pointsAwarded > 0 ? `. ${pointsAwarded} Eco-Puntos otorgados.` : '.')
       );
-    });
-
-    // Save Record
-    const { error } = await supabase.from('documents').insert([{
-      user_id: selectedClient.id,
-      title: docTitle,
-      type: 'CR',
-      verified: true,
-      created_at: withdrawalDate ? new Date(withdrawalDate + 'T12:00:00').toISOString() : new Date().toISOString(), // Use custom date for DB (T12:00:00 prevents timezone shift)
-      metadata: {
-        cert_number: certNumber,
-        generated_by: 'Dashboard Operator',
-        waste_details: wasteItems
-      }
-    }]);
-
-    if (!error) {
-      // Award Eco-Puntos: 2 points per 1kg
-      const totalWeight = wasteItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
-      const pointsToAward = Math.round(totalWeight * 2);
-
-      await supabase.rpc('increment_points', {
-        user_id_param: selectedClient.id,
-        amount_param: pointsToAward
-      });
-
-      await supabase.from('points_transactions').insert([{
-        user_id: selectedClient.id,
-        amount: pointsToAward,
-        reason: `Generación de Certificado ${certNumber} (Operario)`
-      }]);
-
-      // Create notification for client
-      await createNotification({
-        userId: selectedClient.id,
-        title: 'Nuevo Certificado',
-        message: `Se ha generado el certificado ${certNumber}. Has recibido ${pointsToAward} Eco-Puntos.`,
-        type: 'certificate',
-        metadata: { cert_number: certNumber, points: pointsToAward }
-      });
-
-      toast.success(`Retiro registrado. Certificado ${certNumber} generado. ${pointsToAward} Eco-Puntos otorgados.`);
       setShowWithdrawalModal(false);
       setWasteItems([]);
       setSelectedClient(null);
       loadStats();
-    } else {
-      toast.error('Error al guardar registro: ' + error.message);
+    } catch (err: any) {
+      toast.error('Error al emitir el certificado: ' + (err.message || 'desconocido'));
     }
   };
 
@@ -298,6 +245,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       let total = 0;
       const trendData: Record<string, number> = {};
       const wasteByType: Record<string, number> = {};
+      // Todos los ítems del período, para separarlos después por destino.
+      const periodItems: any[] = [];
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
       const uniqueYears = new Set<number>([new Date().getFullYear()]);
@@ -331,6 +280,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 wasteByType[finalType] = Number(((wasteByType[finalType] || 0) + qty).toFixed(2));
               });
 
+              periodItems.push(...items);
+
               // Suma total y por tipo con formateo
               total = Number((total + docTotal).toFixed(2));
 
@@ -350,10 +301,16 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
       setAvailableYears(Array.from(uniqueYears).sort((a, b) => b - a));
 
-      // Calcular CO₂ usando factores específicos por material
+      const destTotals = summarizeByDestination(periodItems);
+      setDestinationTotals(destTotals);
+
+      // CO₂ evitado solo por lo que se valoriza. Un residuo que va a relleno
+      // sanitario no ahorra emisiones, y contarlo inflaría la cifra ambiental.
       let totalCO2 = 0;
-      Object.entries(wasteByType).forEach(([material, qty]) => {
-        const factor = materialFactors[material] || materialFactors['Otros'];
+      periodItems.forEach((item: any) => {
+        if (!isValorized(item)) return;
+        const qty = Number(item.quantity) || 0;
+        const factor = materialFactors[normalizeMaterialType(item)] || materialFactors['Otros'];
         totalCO2 += qty * factor.co2;
       });
 
@@ -630,7 +587,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   ];
 
   return (
-    <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 lg:pb-8 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
+    <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 md:pb-8 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
       {/* Decorative Background Blobs for Glassmorphism */}
       <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -738,10 +695,30 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
                   {/* Add Item Form */}
                   <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 border-dashed space-y-4">
-                    <select className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.waste_type} onChange={(e) => setCurrentWaste({ ...currentWaste, waste_type: e.target.value })}>
+                    <select className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.waste_type} onChange={(e) => setCurrentWaste({ ...currentWaste, waste_type: e.target.value, destination: defaultDestinationFor(e.target.value) })}>
                       <option value="" disabled>Seleccionar...</option>
                       {categories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
                     </select>
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Destino</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {WASTE_DESTINATIONS.map(d => {
+                          const active = (currentWaste.destination || defaultDestinationFor(currentWaste.waste_type)) === d.value;
+                          return (
+                            <button
+                              key={d.value}
+                              type="button"
+                              title={d.description}
+                              onClick={() => setCurrentWaste({ ...currentWaste, destination: d.value })}
+                              className={`py-2 px-1 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${active ? 'text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}`}
+                              style={active ? { backgroundColor: d.color } : undefined}
+                            >
+                              {d.short}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                     <input type="text" placeholder="Descripción" className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.description} onChange={(e) => setCurrentWaste({ ...currentWaste, description: e.target.value })} />
                     <div className="grid grid-cols-2 gap-3">
                       <input type="number" placeholder="Cant." className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.quantity} onChange={(e) => setCurrentWaste({ ...currentWaste, quantity: e.target.value })} />
@@ -826,7 +803,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           <div className="flex items-center gap-4 relative z-10">
             <span className="material-symbols-outlined text-5xl text-[#b4d351] font-black drop-shadow-sm group-hover:scale-110 transition-transform">recycling</span>
             <div className="flex flex-col gap-0.5">
-              <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">Total Residuos Recuperados</span>
+              <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">Total Residuos Gestionados</span>
               <div className="flex items-baseline gap-1.5">
                 <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{animatedKg.toLocaleString()}</h3>
                 <span className="text-sm font-bold text-white/90">KG</span>
@@ -849,6 +826,55 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             </div>
           )}
         </button>
+
+        {/* Desglose por destino. El valorizado es la cifra que cuenta para la
+            Ley REP; relleno sanitario y RESCON van aparte y NO se le suman. */}
+        {destinationTotals.total > 0 && (
+          <div className="grid grid-cols-3 gap-2.5">
+            {WASTE_DESTINATIONS.map(d => {
+              const kg = destinationTotals[d.value];
+              const principal = d.value === 'valorizacion';
+              const share = destinationTotals.total > 0
+                ? Math.round((kg / destinationTotals.total) * 100)
+                : 0;
+              return (
+                <div
+                  key={d.value}
+                  title={d.description}
+                  className={`rounded-[18px] p-3.5 border transition-all ${principal
+                    ? 'bg-white dark:bg-slate-900 border-primary/30 shadow-md shadow-primary/10'
+                    : 'bg-white/60 dark:bg-slate-900/60 border-white/80 dark:border-white/10'}`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span
+                      className="material-symbols-outlined text-base shrink-0"
+                      style={{ color: d.color }}
+                    >
+                      {d.icon}
+                    </span>
+                    {principal && (
+                      <span className="text-[8px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        Ley REP
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={`font-display font-black leading-none tracking-tight tabular-nums ${principal ? 'text-2xl' : 'text-xl'}`}
+                    style={{ color: principal ? d.color : undefined }}
+                  >
+                    {kg.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                  </p>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
+                    kg · {share}%
+                  </p>
+                  <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 leading-tight mt-1">
+                    {d.label}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Breakdown Panel (Only if Expanded) */}
         {showDetail && stats.breakdown && (

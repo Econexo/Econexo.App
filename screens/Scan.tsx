@@ -485,7 +485,7 @@ const Scan: React.FC = () => {
   };
 
   return (
-    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto pb-28 lg:pb-8 overflow-hidden">
+    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-4xl mx-auto pb-28 md:pb-8 overflow-hidden">
       <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/40 dark:border-slate-700/40 p-4 flex items-center justify-between shadow-sm">
         <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm text-gray-700 dark:text-gray-300">
           <span className="material-symbols-outlined">arrow_back</span>

@@ -10,7 +10,15 @@ export const normalizeMaterialType = (item: any): string => {
     const normalize = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const combined = normalize(`${typeStr} ${descStr}`);
 
-    // Clasificación por orden de prioridad (más específico primero)
+    // Clasificación por orden de prioridad (más específico primero).
+    //
+    // Domiciliarios y RESCON van antes que todo lo demás a propósito: si el
+    // operario eligió esa categoría, manda ella aunque la descripción mencione
+    // plásticos o metales ("residuos domiciliarios con envases", "escombros con
+    // fierro"). Lo que importa ahí es a dónde va el residuo, no de qué es.
+    if (combined.includes('domicil') || combined.includes('asimilable') || combined.includes('rsd')) return 'Domiciliarios';
+    if (combined.includes('rescon') || combined.includes('escombro') || combined.includes('demolici') || combined.includes('construcci')) return 'RESCON';
+
     if (combined.includes('aluminio')) return 'Aluminio';
     if (combined.includes('plast') || combined.includes('pet') || combined.includes('poliet') || combined.includes('poliprop')) return 'Plásticos';
     if (combined.includes('papel') || combined.includes('cart')) return 'Papel/Cartón';
@@ -67,6 +75,11 @@ export const materialFactors: { [key: string]: { co2: number; water: number; ene
     // EPA WARM v16: ~0.20 - 0.50 range depending on method.
     'Orgánicos': { co2: 0.5, water: 8.0, energy: 1.0 },
 
+    // Destino final: no hay impacto evitado. Un residuo enterrado no ahorra
+    // nada, así que aunque alguien los sume por error aportan cero.
+    'Domiciliarios': { co2: 0, water: 0, energy: 0 },
+    'RESCON':        { co2: 0, water: 0, energy: 0 },
+
     // Others / Fallbacks
     'Peligrosos': { co2: 5.0, water: 20.0, energy: 10.0 }, // Estimate for handling avoidance
     'Aceites': { co2: 2.8, water: 10.0, energy: 8.0 },
@@ -95,6 +108,8 @@ export const MATERIAL_COLORS: Record<string, string> = {
     'Madera':       '#a16207', // café
     'Textiles':     '#14b8a6', // teal
     'Neumáticos':   '#374151', // gris oscuro
+    'Domiciliarios': '#78716c', // piedra — va a relleno
+    'RESCON':        '#a16207', // tierra — escombros
     'Otros':        '#94a3b8', // gris suave
 };
 

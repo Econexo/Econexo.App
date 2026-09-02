@@ -148,3 +148,60 @@ describe('breakdownToCsv', () => {
     expect(breakdownToCsv(mes)).toContain('"Vidrio ""verde"""');
   });
 });
+
+describe('destinos dentro del mes', () => {
+  it('separa los kilos por destino sin perder nada', () => {
+    const mes = buildMonthlyBreakdown([
+      doc('2026-08-10T10:00:00', [
+        { waste_type: 'Cartón', quantity: 300 },
+        { waste_type: 'Domiciliarios', quantity: 400 },
+        { waste_type: 'RESCON', quantity: 100 },
+      ]),
+    ]).get('2026-08')!;
+
+    expect(mes.totalKg).toBe(800);
+    expect(mes.destinations.valorizacion).toBe(300);
+    expect(mes.destinations.relleno_sanitario).toBe(400);
+    expect(mes.destinations.rescon).toBe(100);
+  });
+
+  it('no acredita impacto a lo que va a relleno sanitario', () => {
+    // Mismo material y misma cantidad; solo cambia el destino.
+    const valorizado = buildMonthlyBreakdown([
+      doc('2026-08-10T10:00:00', [{ waste_type: 'Aluminio', quantity: 10 }]),
+    ]).get('2026-08')!;
+
+    const enterrado = buildMonthlyBreakdown([
+      doc('2026-08-10T10:00:00', [
+        { waste_type: 'Aluminio', quantity: 10, destination: 'relleno_sanitario' },
+      ]),
+    ]).get('2026-08')!;
+
+    expect(valorizado.impact.co2).toBeCloseTo(91.3, 2);
+    expect(enterrado.impact.co2).toBe(0);
+    // Los kilos sí se contabilizan en ambos casos: se gestionaron igual.
+    expect(enterrado.totalKg).toBe(10);
+  });
+
+  it('acredita solo la parte valorizada cuando un material va a dos destinos', () => {
+    const mes = buildMonthlyBreakdown([
+      doc('2026-08-10T10:00:00', [
+        { waste_type: 'Aluminio', quantity: 6 },
+        { waste_type: 'Aluminio', quantity: 4, destination: 'relleno_sanitario' },
+      ]),
+    ]).get('2026-08')!;
+
+    expect(mes.totalKg).toBe(10);
+    expect(mes.materials[0].kg).toBe(10);            // el desglose muestra el total
+    expect(mes.materials[0].co2).toBeCloseTo(54.78, 2); // 6 kg × 9.13, no 10
+  });
+
+  it('los residuos domiciliarios no inflan el impacto ambiental', () => {
+    const mes = buildMonthlyBreakdown([
+      doc('2026-08-10T10:00:00', [{ waste_type: 'Domiciliarios', quantity: 5000 }]),
+    ]).get('2026-08')!;
+
+    expect(mes.totalKg).toBe(5000);
+    expect(mes.impact).toMatchObject({ co2: 0, water: 0, energy: 0, trees: 0 });
+  });
+});
