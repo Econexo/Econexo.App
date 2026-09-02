@@ -99,7 +99,7 @@ export function summarizeByDestination(items: any[]): DestinationTotals {
   };
 
   for (const item of items ?? []) {
-    const qty = Number(item?.quantity) || 0;
+    const qty = parseQuantity(item?.quantity);
     if (qty <= 0) continue;
     out.total += qty;
     out[destinationOf(item)] += qty;
@@ -120,4 +120,37 @@ export function wasteItemsOf(doc: any): any[] {
   if (Array.isArray(details)) return details;
   if (details) return [details];
   return [];
+}
+
+/**
+ * Lee la cantidad de un ítem tolerando que venga como texto.
+ *
+ * `Number("9,4")` es NaN, y en Chile la coma es el separador decimal: si un
+ * dato entró como texto con coma, ese ítem sumaba cero y desaparecía del total
+ * sin dejar rastro. También aguanta unidades pegadas ("9,4 kg").
+ */
+export function parseQuantity(raw: unknown): number {
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : 0;
+  if (typeof raw !== 'string') return 0;
+
+  const limpio = raw.trim().replace(/[^\d.,-]/g, '');
+  if (!limpio) return 0;
+
+  const ultimaComa = limpio.lastIndexOf(',');
+  const ultimoPunto = limpio.lastIndexOf('.');
+
+  let normalizado: string;
+  if (ultimaComa >= 0 && ultimoPunto >= 0) {
+    // Con ambos, el que va último es el separador decimal.
+    const decimal = ultimaComa > ultimoPunto ? ',' : '.';
+    const miles = decimal === ',' ? '.' : ',';
+    normalizado = limpio.split(miles).join('').replace(decimal, '.');
+  } else if (ultimaComa >= 0) {
+    normalizado = limpio.replace(',', '.');
+  } else {
+    normalizado = limpio;
+  }
+
+  const n = Number(normalizado);
+  return Number.isFinite(n) ? n : 0;
 }

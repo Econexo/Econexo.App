@@ -3,7 +3,7 @@
 
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from './materialCalculations';
 import { mapToRepCategory, REP_CATEGORY_LABELS } from './materialMapping';
-import { isValorized, summarizeByDestination, type DestinationTotals } from './wasteClassification';
+import { isValorized, summarizeByDestination, parseQuantity, type DestinationTotals } from './wasteClassification';
 import type { MonthlyMaterialRow } from '../types';
 
 export const MONTH_NAMES = [
@@ -86,7 +86,7 @@ export function buildMonthlyBreakdown(docs: CrDoc[]): Map<string, MonthlySummary
     bucket.docs.add(index);
 
     for (const item of items) {
-      const qty = Number(item?.quantity) || 0;
+      const qty = parseQuantity(item?.quantity);
       if (qty <= 0) continue;
       const material = normalizeMaterialType(item);
       bucket.kg[material] = round2((bucket.kg[material] ?? 0) + qty);

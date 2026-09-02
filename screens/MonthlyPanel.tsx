@@ -41,7 +41,12 @@ const MonthlyPanel: React.FC = () => {
 
     const [loading, setLoading] = useState(true);
     const [companyName, setCompanyName] = useState('');
-    const [byPeriod, setByPeriod] = useState<Map<string, MonthlySummary>>(new Map());
+    // Un admin ve todas las empresas, igual que en el Dashboard, y puede
+    // filtrar por una. Un cliente solo ve la suya.
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+    const [companyFilter, setCompanyFilter] = useState<string>('all');
+    const [allDocs, setAllDocs] = useState<any[]>([]);
     const [period, setPeriod] = useState(currentPeriodKey);
     const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -53,19 +58,41 @@ const MonthlyPanel: React.FC = () => {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) return;
 
-                const [{ data: profile }, { data: docs }] = await Promise.all([
-                    supabase.from('profiles').select('company_name').eq('id', user.id).single(),
-                    supabase
-                        .from('documents')
-                        .select('created_at, metadata')
-                        .eq('user_id', user.id)
-                        .in('type', ['CR', 'COMMUNITY_CR'])
-                        .eq('verified', true)
-                        .order('created_at', { ascending: false }),
-                ]);
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('company_name, is_admin')
+                    .eq('id', user.id)
+                    .single();
 
+                const admin = !!profile?.is_admin;
+                setIsAdmin(admin);
                 setCompanyName(profile?.company_name || '');
-                setByPeriod(buildMonthlyBreakdown((docs ?? []) as CrDoc[]));
+
+                let query = supabase
+                    .from('documents')
+                    .select('user_id, created_at, metadata')
+                    .in('type', ['CR', 'COMMUNITY_CR'])
+                    .eq('verified', true)
+                    .order('created_at', { ascending: false });
+
+                // Mismo criterio que el Dashboard: el admin ve todo.
+                if (!admin) query = query.eq('user_id', user.id);
+
+                const { data: docs } = await query;
+                setAllDocs((docs ?? []) as any[]);
+
+                if (admin) {
+                    const { data: perfiles } = await supabase
+                        .from('profiles')
+                        .select('id, company_name')
+                        .order('company_name');
+                    setCompanies(
+                        (perfiles ?? []).map((p: any) => ({
+                            id: p.id,
+                            name: p.company_name || 'Sin nombre',
+                        })),
+                    );
+                }
             } catch (err) {
                 console.error('Error loading monthly panel:', err);
                 toast.error('No se pudo cargar el panel mensual.');
@@ -75,6 +102,13 @@ const MonthlyPanel: React.FC = () => {
         };
         load();
     }, []);
+
+    const byPeriod = useMemo(() => {
+        const visibles = companyFilter === 'all'
+            ? allDocs
+            : allDocs.filter(d => d.user_id === companyFilter);
+        return buildMonthlyBreakdown(visibles as CrDoc[]);
+    }, [allDocs, companyFilter]);
 
     const summary = byPeriod.get(period) ?? emptySummary(period);
     const previous = byPeriod.get(previousPeriod(period)) ?? emptySummary(previousPeriod(period));
@@ -126,7 +160,12 @@ const MonthlyPanel: React.FC = () => {
         doc.text('Panel Mensual de Residuos', 14, 15);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(`${periodLabel(period)}${companyName ? ` · ${companyName}` : ''}`, 14, 23);
+        const etiqueta = isAdmin
+            ? (companyFilter === 'all'
+                ? 'Todas las empresas'
+                : companies.find(c => c.id === companyFilter)?.name ?? '')
+            : companyName;
+        doc.text(`${periodLabel(period)}${etiqueta ? ` · ${etiqueta}` : ''}`, 14, 23);
 
         doc.setTextColor(30, 30, 30);
         doc.setFont('helvetica', 'bold');
@@ -203,7 +242,7 @@ const MonthlyPanel: React.FC = () => {
             14, 287,
         );
 
-        doc.save(`EcoNexo_Panel_${period}.pdf`);
+        doc.save(`EcoNexo_Panel_${period}${companyFilter !== 'all' ? '_' + companyFilter.slice(0, 8) : ''}.pdf`);
         toast.success('PDF descargado.');
     };
 
@@ -240,6 +279,20 @@ const MonthlyPanel: React.FC = () => {
             </header>
 
             <div className="px-4 py-6 space-y-5 relative z-10">
+                {/* Selector de empresa — solo para el admin */}
+                {isAdmin && companies.length > 0 && (
+                    <select
+                        value={companyFilter}
+                        onChange={e => setCompanyFilter(e.target.value)}
+                        className="w-full h-11 bg-white/70 dark:bg-slate-800/70 border border-white/80 dark:border-white/10 rounded-2xl px-4 text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-primary shadow-sm"
+                    >
+                        <option value="all">Todas las empresas</option>
+                        {companies.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                )}
+
                 {/* ── Selector de mes ── */}
                 <div className="flex items-center gap-2">
                     <button
