@@ -14,6 +14,7 @@ import UserDataSection from '../components/profile/UserDataSection';
 import CompanyDataSection from '../components/profile/CompanyDataSection';
 import NotificationEmailsSection from '../components/profile/NotificationEmailsSection';
 import RemindersSection from '../components/profile/RemindersSection';
+import RepProducerSection, { DEFAULT_REP_PRODUCER, type RepProducerData } from '../components/profile/RepProducerSection';
 import SettingsModal from '../components/profile/SettingsModal';
 import SupportTicketModal from '../components/profile/SupportTicketModal';
 import EmailUpdateModal from '../components/profile/EmailUpdateModal';
@@ -56,6 +57,8 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
   const [reminderPrefs, setReminderPrefs] = useState<ReminderPrefs>(DEFAULT_REMINDER_PREFS);
   const [savingEmails, setSavingEmails] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [repProducer, setRepProducer] = useState<RepProducerData>(DEFAULT_REP_PRODUCER);
+  const [savingRep, setSavingRep] = useState(false);
 
   const [userData, setUserData] = useState<UserProfile>({ name: '', email: '', role: '', phone: '' });
   const [companyData, setCompanyData] = useState<CompanyProfile>({
@@ -91,6 +94,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
         setIsAdmin(profile.is_admin || false);
         setNotificationEmails(profile.notification_emails || []);
         setReminderPrefs({ ...DEFAULT_REMINDER_PREFS, ...(profile.reminder_prefs || {}) });
+        setRepProducer({ ...DEFAULT_REP_PRODUCER, ...(profile.rep_producer_data || {}) });
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -175,6 +179,28 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
       toast.error('No se pudieron guardar los recordatorios: ' + err.message);
     } finally {
       setSavingPrefs(false);
+    }
+  };
+
+  // Se guarda al vuelo, igual que las preferencias de recordatorios.
+  const saveRepProducer = async (data: RepProducerData) => {
+    const previous = repProducer;
+    setRepProducer(data);
+    setSavingRep(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sesión no válida.');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ rep_producer_data: data })
+        .eq('id', user.id);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Error saving REP producer data:', err);
+      setRepProducer(previous);
+      toast.error('No se pudo guardar el perfil REP: ' + err.message);
+    } finally {
+      setSavingRep(false);
     }
   };
 
@@ -365,6 +391,12 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
           isEditing={isEditingCompany}
           onToggleEdit={() => setIsEditingCompany(true)}
           onSave={saveCompany}
+        />
+
+        <RepProducerSection
+          data={repProducer}
+          saving={savingRep}
+          onChange={saveRepProducer}
         />
 
         <NotificationEmailsSection

@@ -9,31 +9,42 @@ interface DeclarationAdvisorProps {
 }
 
 const VERDICT_STYLE: Record<Verdict, {
-  label: string; icon: string; chip: string; bar: string;
+  label: string; icon: string; chip: string; bar: string; iconColor: string;
 }> = {
-  corresponde: {
-    label: 'Corresponde revisar',
+  obligatorio: {
+    label: 'Debes declarar',
     icon: 'flag',
     chip: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
     bar: 'bg-amber-500',
+    iconColor: 'text-amber-600',
   },
   cerca: {
     label: 'Cerca del umbral',
     icon: 'trending_up',
     chip: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
     bar: 'bg-blue-500',
+    iconColor: 'text-blue-600',
   },
-  no_corresponde: {
-    label: 'Bajo el umbral',
+  faltan_datos: {
+    label: 'Falta un dato',
+    icon: 'edit_note',
+    chip: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
+    bar: 'bg-violet-500',
+    iconColor: 'text-violet-600',
+  },
+  no_obligatorio: {
+    label: 'No es obligatorio',
     icon: 'check_circle',
     chip: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
     bar: 'bg-green-500',
+    iconColor: 'text-green-600',
   },
-  sin_datos: {
-    label: 'Sin movimientos',
-    icon: 'remove',
+  no_aplica: {
+    label: 'No te aplica',
+    icon: 'do_not_disturb_on',
     chip: 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400',
     bar: 'bg-gray-300',
+    iconColor: 'text-gray-400',
   },
 };
 
@@ -49,6 +60,10 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
   const targetYear = year ?? new Date().getFullYear();
 
   const [items, setItems] = useState<any[]>([]);
+  const [repProfile, setRepProfile] = useState<{
+    is_priority_producer: boolean;
+    market_kg_by_year: Record<string, number>;
+  }>({ is_priority_producer: false, market_kg_by_year: {} });
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -61,14 +76,23 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: docs } = await supabase
-          .from('documents')
-          .select('created_at, metadata')
-          .eq('user_id', user.id)
-          .in('type', ['CR', 'COMMUNITY_CR'])
-          .eq('verified', true);
+        const [{ data: profile }, { data: docs }] = await Promise.all([
+          supabase.from('profiles').select('rep_producer_data').eq('id', user.id).single(),
+          supabase
+            .from('documents')
+            .select('created_at, metadata')
+            .eq('user_id', user.id)
+            .in('type', ['CR', 'COMMUNITY_CR'])
+            .eq('verified', true),
+        ]);
 
         if (cancelled) return;
+
+        const rep = (profile as any)?.rep_producer_data ?? {};
+        setRepProfile({
+          is_priority_producer: rep.is_priority_producer === true,
+          market_kg_by_year: rep.market_kg_by_year ?? {},
+        });
 
         const delAnio = (docs ?? []).filter(
           (d: any) => new Date(d.created_at).getFullYear() === targetYear,
@@ -85,10 +109,15 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
     return () => { cancelled = true; };
   }, [targetYear]);
 
-  const summary = useMemo(
-    () => evaluateDeclarations({ items, year: targetYear }),
-    [items, targetYear],
-  );
+  const summary = useMemo(() => {
+    const market = repProfile.market_kg_by_year?.[String(targetYear)];
+    return evaluateDeclarations({
+      items,
+      year: targetYear,
+      isPriorityProducer: repProfile.is_priority_producer,
+      packagingPlacedOnMarketKg: typeof market === 'number' ? market : null,
+    });
+  }, [items, targetYear, repProfile]);
 
   if (loading) {
     return (
@@ -113,9 +142,13 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
             RETC · Ventanilla Única · SINADER · SIDREP — {targetYear}
           </p>
         </div>
-        {summary.actionableCount > 0 && (
+        {summary.actionableCount > 0 ? (
           <span className="shrink-0 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider">
-            {summary.actionableCount} por revisar
+            {summary.actionableCount} por resolver
+          </span>
+        ) : (
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-[10px] font-black uppercase tracking-wider">
+            Sin pendientes
           </span>
         )}
       </div>
@@ -138,7 +171,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
                 className="w-full text-left p-4 space-y-2"
               >
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className={`material-symbols-outlined text-lg shrink-0 ${f.verdict === 'corresponde' ? 'text-amber-600' : f.verdict === 'cerca' ? 'text-blue-600' : 'text-gray-400'}`}>
+                  <span className={`material-symbols-outlined text-lg shrink-0 ${style.iconColor}`}>
                     {style.icon}
                   </span>
                   <span className="text-sm font-black text-gray-900 dark:text-white flex-1 min-w-0">
@@ -185,6 +218,16 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
                       {f.action}
                     </p>
                   </div>
+                  {f.trigger && (
+                    <div className="rounded-xl bg-blue-50/70 dark:bg-blue-900/15 border border-blue-100 dark:border-blue-700/25 p-3">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70 mb-1">
+                        Cuándo cambiaría
+                      </p>
+                      <p className="text-xs text-blue-900 dark:text-blue-200/90 font-medium leading-relaxed">
+                        {f.trigger}
+                      </p>
+                    </div>
+                  )}
                   <div className="rounded-xl bg-gray-50/80 dark:bg-slate-900/40 border border-gray-100 dark:border-white/5 p-3">
                     <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
                       En qué se basa · {f.systemLabel}
@@ -204,13 +247,15 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
       <div className="m-6 mt-3 p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-900/15 border border-amber-200/60 dark:border-amber-700/30 flex gap-2.5">
         <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base shrink-0">info</span>
         <p className="text-[11px] text-amber-900 dark:text-amber-200/90 font-medium leading-relaxed">
-          Esto es <strong className="font-black">orientación, no asesoría legal</strong>. EcoNexo solo
-          conoce los kilos que retiró y gestionó, mientras que la obligación REP se mide sobre lo que
-          tu empresa <strong className="font-black">pone en el mercado</strong>. Trata estas cifras como
-          un piso, no como el dato definitivo, y confirma los umbrales vigentes con la autoridad antes
+          Esto es <strong className="font-black">orientación, no asesoría legal</strong>. SINADER se
+          calcula con lo que EcoNexo retiró, que es exactamente lo que ese régimen mide. La Ley REP,
+          en cambio, se mide sobre lo que tu empresa{' '}
+          <strong className="font-black">pone en el mercado</strong>: ese dato lo declaras tú en
+          Perfil, y sin él no se afirma nada. Confirma los umbrales vigentes con la autoridad antes
           de declarar.
         </p>
       </div>
+
     </section>
   );
 };

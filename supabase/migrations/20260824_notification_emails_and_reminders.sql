@@ -101,3 +101,25 @@ CREATE POLICY "Users view own reminder log"
 CREATE INDEX IF NOT EXISTS idx_documents_scheduled_date
   ON public.documents ((metadata->>'scheduled_date'))
   WHERE type = 'SCHEDULED';
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- 4 · Perfil REP de la empresa
+-- ─────────────────────────────────────────────────────────────────────────
+-- El asistente de declaración necesita saber si la empresa es PRODUCTOR de
+-- productos prioritarios o solo GENERADORA de residuos. Es la distinción que
+-- decide si la Ley REP la alcanza: un generador no entra al régimen por muchos
+-- kilos de cartón que bote.
+--
+-- market_kg_by_year guarda los kilos de envases puestos en el mercado por año.
+-- Ese dato lo tiene la empresa; la app solo conoce lo que retiró, que es otra
+-- cosa, así que no se puede deducir.
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS rep_producer_data jsonb NOT NULL DEFAULT jsonb_build_object(
+    'is_priority_producer', false,
+    'market_kg_by_year',    '{}'::jsonb
+  );
+
+COMMENT ON COLUMN public.profiles.rep_producer_data IS
+  'Perfil Ley REP: si la empresa es productor prioritario y los kg de envases puestos en el mercado por año.';
