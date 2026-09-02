@@ -6,7 +6,8 @@ import {
   summarizeByDestination,
   wasteItemsOf,
 } from './wasteClassification';
-import { normalizeMaterialType, materialFactors } from './materialCalculations';
+import { normalizeMaterialType, materialFactors, familyOf } from './materialCalculations';
+import { mapToRepCategory } from './materialMapping';
 
 describe('normalizeMaterialType con las categorías nuevas', () => {
   it('reconoce los residuos domiciliarios y asimilables', () => {
@@ -36,9 +37,9 @@ describe('normalizeMaterialType con las categorías nuevas', () => {
   });
 
   it('no se traga las categorías que ya existían', () => {
-    expect(normalizeMaterialType({ waste_type: 'Cartón corrugado' })).toBe('Papel/Cartón');
-    expect(normalizeMaterialType({ waste_type: 'PET' })).toBe('Plásticos');
+    expect(normalizeMaterialType({ waste_type: 'Vidrio' })).toBe('Vidrio');
     expect(normalizeMaterialType({ waste_type: 'Aluminio' })).toBe('Aluminio');
+    expect(normalizeMaterialType({ waste_type: 'Chatarra' })).toBe('Metales');
   });
 });
 
@@ -136,5 +137,66 @@ describe('wasteItemsOf', () => {
     expect(wasteItemsOf({ metadata: { waste_details: { quantity: 1 } } })).toHaveLength(1);
     expect(wasteItemsOf({ metadata: {} })).toHaveLength(0);
     expect(wasteItemsOf(null)).toHaveLength(0);
+  });
+});
+
+describe('papel y cartón por separado', () => {
+  it('distingue cartón de papel', () => {
+    expect(normalizeMaterialType({ waste_type: 'Cartón' })).toBe('Cartón');
+    expect(normalizeMaterialType({ waste_type: 'Cartón corrugado' })).toBe('Cartón');
+    expect(normalizeMaterialType({ waste_type: 'Papel' })).toBe('Papel');
+    expect(normalizeMaterialType({ waste_type: 'Papel blanco de oficina' })).toBe('Papel');
+    expect(normalizeMaterialType({ waste_type: 'Diarios y revistas' })).toBe('Papel');
+  });
+
+  it('conserva la categoría mixta cuando vienen juntos', () => {
+    expect(normalizeMaterialType({ waste_type: 'Papel/Cartón' })).toBe('Papel/Cartón');
+    expect(normalizeMaterialType({ waste_type: 'Papel y cartón mezclados' })).toBe('Papel/Cartón');
+  });
+
+  it('los tres siguen contando para la meta REP de papel', () => {
+    for (const t of ['Papel', 'Cartón', 'Papel/Cartón']) {
+      expect(mapToRepCategory(t)).toBe('ds12_papel');
+    }
+  });
+});
+
+describe('plásticos por resina', () => {
+  it('separa cada resina', () => {
+    expect(normalizeMaterialType({ waste_type: 'PET' })).toBe('PET');
+    expect(normalizeMaterialType({ waste_type: 'Botellas PET' })).toBe('PET');
+    expect(normalizeMaterialType({ waste_type: 'HDPE' })).toBe('Plástico HDPE');
+    expect(normalizeMaterialType({ waste_type: 'PEAD' })).toBe('Plástico HDPE');
+    expect(normalizeMaterialType({ waste_type: 'Film LDPE' })).toBe('Plástico Film');
+    expect(normalizeMaterialType({ waste_type: 'Polipropileno' })).toBe('Plástico PP');
+  });
+
+  it('deja los mixtos en la categoría genérica', () => {
+    expect(normalizeMaterialType({ waste_type: 'Plásticos' })).toBe('Plásticos');
+    expect(normalizeMaterialType({ waste_type: 'Plástico mixto' })).toBe('Plásticos');
+  });
+
+  it('todas las resinas cuentan para la meta REP de plástico', () => {
+    for (const t of ['PET', 'Plástico HDPE', 'Plástico Film', 'Plástico PP', 'Plásticos']) {
+      expect(mapToRepCategory(t)).toBe('ds12_plastico');
+    }
+  });
+
+  it('"pet" dentro de otra palabra ya no clasifica como plástico', () => {
+    // Regresión: con `includes('pet')`, una carpeta de cartón caía en plásticos.
+    expect(normalizeMaterialType({ waste_type: 'Carpetas de cartón' })).toBe('Cartón');
+  });
+});
+
+describe('familyOf', () => {
+  it('agrupa los subtipos bajo su familia', () => {
+    expect(familyOf('Cartón')).toBe('Papel y Cartón');
+    expect(familyOf('Papel')).toBe('Papel y Cartón');
+    expect(familyOf('PET')).toBe('Plásticos');
+    expect(familyOf('Aluminio')).toBe('Metales');
+  });
+
+  it('deja intactos los materiales sin familia', () => {
+    expect(familyOf('Vidrio')).toBe('Vidrio');
   });
 });

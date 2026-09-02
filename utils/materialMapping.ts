@@ -36,19 +36,24 @@ export function mapToRepCategory(wasteType: string, description = ''): RepCatego
     combined.includes('goma')
   ) return 'ds8_neumaticos';
 
-  // DS 12/2021 — Plástico
+  // DS 12/2021 — Plástico. Cubre la categoría genérica y las resinas por
+  // separado (PET, HDPE, Film, PP), que desde ahora se contabilizan aparte.
   if (
     combined.includes('plast') ||
-    combined.includes('pet') ||
+    /(^|[^a-z0-9])pet([^a-z0-9]|$)/.test(combined) ||
     combined.includes('hdpe') ||
+    combined.includes('pead') ||
+    combined.includes('ldpe') ||
+    combined.includes('pebd') ||
+    combined.includes('film') ||
     combined.includes('poliet') ||
     combined.includes('poliprop') ||
-    combined.includes(' pp ') ||
-    combined.includes(' ps ')
+    /(^|[^a-z0-9])pp([^a-z0-9]|$)/.test(combined) ||
+    /(^|[^a-z0-9])ps([^a-z0-9]|$)/.test(combined)
   ) return 'ds12_plastico';
 
-  // DS 12/2021 — Papel/Cartón
-  if (combined.includes('papel') || combined.includes('cart')) return 'ds12_papel';
+  // DS 12/2021 — Papel y cartón, juntos o por separado.
+  if (combined.includes('papel') || combined.includes('cart') || combined.includes('corrugado')) return 'ds12_papel';
 
   // DS 12/2021 — Vidrio
   if (combined.includes('vidr') || combined.includes('cristal')) return 'ds12_vidrio';

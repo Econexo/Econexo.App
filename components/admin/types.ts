@@ -63,8 +63,16 @@ export interface AdminPath {
 }
 
 export const WASTE_CATEGORIES = [
-    { label: 'Plásticos', value: 'Plásticos' },
-    { label: 'Papel/Cartón', value: 'Papel/Cartón' },
+    // Papel y plástico van desglosados: si el operario precisa el subtipo, se
+    // contabiliza aparte — igual que el aluminio frente a la chatarra.
+    { label: 'Cartón', value: 'Cartón' },
+    { label: 'Papel', value: 'Papel' },
+    { label: 'Papel/Cartón (mixto)', value: 'Papel/Cartón' },
+    { label: 'PET', value: 'PET' },
+    { label: 'Plástico HDPE / PEAD', value: 'Plástico HDPE' },
+    { label: 'Plástico Film / LDPE', value: 'Plástico Film' },
+    { label: 'Plástico PP', value: 'Plástico PP' },
+    { label: 'Plásticos (mixto)', value: 'Plásticos' },
     { label: 'Vidrio', value: 'Vidrio' },
     { label: 'Metales', value: 'Metales' },
     { label: 'Electrónicos (RAEE)', value: 'Electrónicos' },

@@ -1205,8 +1205,14 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // ── Complete material catalogue: color + text contrast + display label ──
     // Order defines rendering priority in the table
     const MATERIAL_DEFS: { key: string; label: string; color: number[]; textMain: number[] }[] = [
-        { key: 'Plásticos',    label: 'PLÁSTICOS',     color: [255, 225, 100], textMain: [0,   0,   0  ] }, // amarillo
-        { key: 'Papel/Cartón', label: 'PAPEL/CARTÓN',  color: [0,   85,  165], textMain: [255, 255, 255] }, // azul
+        { key: 'PET',          label: 'PET',            color: [245, 158,  11], textMain: [0,   0,   0  ] }, // ámbar
+        { key: 'Plástico HDPE',label: 'PLÁSTICO HDPE',  color: [251, 191,  36], textMain: [0,   0,   0  ] }, // ámbar claro
+        { key: 'Plástico Film',label: 'PLÁSTICO FILM',  color: [253, 230, 138], textMain: [0,   0,   0  ] }, // ámbar pálido
+        { key: 'Plástico PP',  label: 'PLÁSTICO PP',    color: [217, 119,   6], textMain: [255, 255, 255] }, // ámbar oscuro
+        { key: 'Plásticos',    label: 'PLÁSTICOS',      color: [255, 225, 100], textMain: [0,   0,   0  ] }, // amarillo
+        { key: 'Cartón',       label: 'CARTÓN',         color: [37,  99,  235], textMain: [255, 255, 255] }, // azul intenso
+        { key: 'Papel',        label: 'PAPEL',          color: [147, 197, 253], textMain: [0,   0,   0  ] }, // azul claro
+        { key: 'Papel/Cartón', label: 'PAPEL/CARTÓN',   color: [0,   85,  165], textMain: [255, 255, 255] }, // azul
         { key: 'Vidrio',       label: 'VIDRIO',         color: [56,  142,  60], textMain: [255, 255, 255] }, // verde
         { key: 'Metales',      label: 'METALES',        color: [120, 120, 120], textMain: [255, 255, 255] }, // gris
         { key: 'Aluminio',     label: 'ALUMINIO',       color: [190, 190, 190], textMain: [0,   0,   0  ] }, // gris claro

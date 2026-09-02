@@ -19,6 +19,11 @@ interface DashboardProps {
   isLeyRep: boolean;
 }
 
+const MONTH_LABELS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
 const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [showDetail, setShowDetail] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -55,7 +60,10 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     unit: 'Kg'
   });
   const [avatarUrl, setAvatarUrl] = useState<string>("https://picsum.photos/seed/user123/100/100");
-  const [selectedYear, setSelectedYear] = useState<number | 'all' | 'range'>(new Date().getFullYear());
+  // 'month' = un mes concreto, elegido con los dos selectores de abajo.
+  const [selectedYear, setSelectedYear] = useState<number | 'all' | 'range' | 'month'>(new Date().getFullYear());
+  const [monthYear, setMonthYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()]);
   const [rangeStart, setRangeStart] = useState<number>(new Date().getFullYear() - 1);
   const [rangeEnd, setRangeEnd] = useState<number>(new Date().getFullYear());
@@ -131,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       }
     };
     initPush();
-  }, [selectedYear, rangeStart, rangeEnd]);
+  }, [selectedYear, rangeStart, rangeEnd, monthYear, selectedMonth]);
 
   const fetchClients = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -254,48 +262,48 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       if (docs && docs.length > 0) {
         docs.forEach((doc: any) => {
           const date = new Date(doc.created_at);
-          if (!isNaN(date.getTime())) {
-            const docYear = date.getFullYear();
-            uniqueYears.add(docYear);
+          if (isNaN(date.getTime())) return;
 
-            // Filter based on selection ('all', specific year, or range)
-            const inRange = selectedYear === 'range' && docYear >= rangeStart && docYear <= rangeEnd;
-            if (selectedYear === 'all' || docYear === selectedYear || inRange) {
-              const details = doc.metadata?.waste_details;
-              let items = [];
+          const docYear = date.getFullYear();
+          const docMonth = date.getMonth();
+          uniqueYears.add(docYear);
 
-              if (Array.isArray(details)) {
-                items = details;
-              } else if (details) {
-                items = [details];
-              }
+          const details = doc.metadata?.waste_details;
+          const items: any[] = Array.isArray(details) ? details : details ? [details] : [];
+          const docTotal = items.reduce((acc: number, i: any) => acc + (Number(i.quantity) || 0), 0);
 
-              let docTotal = 0;
-              items.forEach((item: any) => {
-                const qty = Number(item.quantity) || 0;
-                docTotal += qty;
-
-                // Usar función compartida de normalización
-                const finalType = normalizeMaterialType(item);
-                wasteByType[finalType] = Number(((wasteByType[finalType] || 0) + qty).toFixed(2));
-              });
-
-              periodItems.push(...items);
-
-              // Suma total y por tipo con formateo
-              total = Number((total + docTotal).toFixed(2));
-
-              if (selectedYear === 'all' || selectedYear === 'range') {
-                // Agrupar por AÑO para el gráfico histórico / por rango
-                const yKey = docYear.toString();
-                trendData[yKey] = Number(((trendData[yKey] || 0) + docTotal).toFixed(2));
-              } else {
-                // Agrupar por MES para el gráfico anual
-                const mName = monthNames[date.getMonth()];
-                trendData[mName] = Number(((trendData[mName] || 0) + docTotal).toFixed(2));
-              }
+          // ── Serie del gráfico ──
+          // Al mirar un mes concreto el gráfico sigue mostrando los doce meses
+          // del año: sin ese contexto una sola barra no dice nada.
+          if (selectedYear === 'all' || selectedYear === 'range') {
+            if (selectedYear === 'all' || (docYear >= rangeStart && docYear <= rangeEnd)) {
+              const yKey = docYear.toString();
+              trendData[yKey] = Number(((trendData[yKey] || 0) + docTotal).toFixed(2));
+            }
+          } else {
+            const chartYear = selectedYear === 'month' ? monthYear : selectedYear;
+            if (docYear === chartYear) {
+              const mName = monthNames[docMonth];
+              trendData[mName] = Number(((trendData[mName] || 0) + docTotal).toFixed(2));
             }
           }
+
+          // ── Totales, desglose por material y destinos ──
+          const included =
+            selectedYear === 'all'
+            || (typeof selectedYear === 'number' && docYear === selectedYear)
+            || (selectedYear === 'range' && docYear >= rangeStart && docYear <= rangeEnd)
+            || (selectedYear === 'month' && docYear === monthYear && docMonth === selectedMonth);
+          if (!included) return;
+
+          items.forEach((item: any) => {
+            const qty = Number(item.quantity) || 0;
+            const finalType = normalizeMaterialType(item);
+            wasteByType[finalType] = Number(((wasteByType[finalType] || 0) + qty).toFixed(2));
+          });
+
+          periodItems.push(...items);
+          total = Number((total + docTotal).toFixed(2));
         });
       }
 
@@ -803,7 +811,12 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           <div className="flex items-center gap-4 relative z-10">
             <span className="material-symbols-outlined text-5xl text-[#b4d351] font-black drop-shadow-sm group-hover:scale-110 transition-transform">recycling</span>
             <div className="flex flex-col gap-0.5">
-              <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">Total Residuos Gestionados</span>
+              <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">
+                Total Residuos Gestionados
+                {selectedYear === 'month' && ` · ${MONTH_LABELS[selectedMonth]} ${monthYear}`}
+                {typeof selectedYear === 'number' && ` · ${selectedYear}`}
+                {selectedYear === 'range' && ` · ${rangeStart}–${rangeEnd}`}
+              </span>
               <div className="flex items-baseline gap-1.5">
                 <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{animatedKg.toLocaleString()}</h3>
                 <span className="text-sm font-bold text-white/90">KG</span>
@@ -948,6 +961,23 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           </div>
         </section>
 
+        {/* Asistente de declaración */}
+        <button
+          onClick={() => navigate('/ley-rep')}
+          className="w-full flex items-center gap-3.5 px-5 py-4 rounded-[20px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:border-primary/30 transition-all active:scale-[0.99] text-left"
+        >
+          <span className="size-10 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+            <span className="material-symbols-outlined">assignment_turned_in</span>
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-black text-gray-900 dark:text-white">¿Debo declarar este año?</span>
+            <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
+              Revisa tus kilos contra los umbrales de RETC, SINADER y SIDREP
+            </span>
+          </span>
+          <span className="material-symbols-outlined text-gray-300 shrink-0">chevron_right</span>
+        </button>
+
         {/* Chart Section - ENCAPSULATED */}
         <section className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[28px] p-6 border border-white/80 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] flex flex-col gap-4 transition-all">
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -956,13 +986,16 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               value={selectedYear}
               onChange={(e) => {
                 const v = e.target.value;
-                setSelectedYear(v === 'all' ? 'all' : v === 'range' ? 'range' : Number(v));
+                setSelectedYear(
+                  v === 'all' ? 'all' : v === 'range' ? 'range' : v === 'month' ? 'month' : Number(v)
+                );
                 setShowComparison(false);
               }}
               className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
             >
               <option value="all">Todos los años</option>
               <option value="range">Por rango</option>
+              <option value="month">Mes específico</option>
               {availableYears.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
@@ -988,6 +1021,29 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               >
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
+            </div>
+          )}
+
+          {/* Month picker — lets the client see what was managed in one month */}
+          {selectedYear === 'month' && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              >
+                {MONTH_LABELS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+              </select>
+              <select
+                value={monthYear}
+                onChange={(e) => setMonthYear(Number(e.target.value))}
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              >
+                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <span className="text-[10px] font-bold text-gray-400">
+                El gráfico muestra el año completo; el resto del panel, solo ese mes.
+              </span>
             </div>
           )}
 

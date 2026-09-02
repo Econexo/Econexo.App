@@ -38,8 +38,12 @@ describe('buildMonthlyBreakdown', () => {
     const julio = result.get('2026-07')!;
     expect(julio.totalKg).toBe(190);
     expect(julio.docCount).toBe(2);
-    expect(julio.materials[0]).toMatchObject({ material: 'Papel/Cartón', kg: 140 });
-    expect(julio.materials[1]).toMatchObject({ material: 'Plásticos', kg: 50 });
+    // Cartón y papel se contabilizan por separado, que es justo lo que la
+    // clienta no podía ver cuando salían juntos.
+    const porMaterial = Object.fromEntries(julio.materials.map(m => [m.material, m.kg]));
+    expect(porMaterial['Cartón']).toBe(100);
+    expect(porMaterial['Papel']).toBe(40);
+    expect(porMaterial['PET']).toBe(50);
 
     expect(result.get('2026-08')!.totalKg).toBe(10);
   });
