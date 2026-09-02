@@ -11,6 +11,15 @@
 --      superusuario. Si lo intentas, falla y el SQL Editor revierte el script
 --      completo, incluso las partes que sí habrían funcionado.
 --
+--   a.bis) Desplegar send-reminders SIN verificación de JWT:
+--            supabase functions deploy send-reminders --no-verify-jwt
+--          El gateway de Supabase exige un encabezado Authorization y pg_net
+--          solo manda x-trigger-secret, así que con verify_jwt activo la
+--          llamada rebota antes de llegar a la función, con
+--          UNAUTHORIZED_NO_AUTH_HEADER. La autorización la hace la función por
+--          dentro con el secreto compartido. Lo mismo para send-email y
+--          send-push, que send-reminders invoca por la vía interna.
+--
 --   b) Reemplazar abajo:
 --        <PROJECT_REF>      → la referencia de tu proyecto (Settings → General)
 --        <TRIGGER_SECRET>   → el mismo valor que pongas en

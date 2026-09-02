@@ -380,3 +380,31 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Edge Functions llamadas desde dentro (cron / otra función)
+# ─────────────────────────────────────────────────────────────────────────────
+# El gateway de Supabase exige un encabezado Authorization antes de dejar pasar
+# la petición. pg_net solo manda `x-trigger-secret`, así que con verify_jwt
+# activo el cron nunca llega a la función: rebota con
+# UNAUTHORIZED_NO_AUTH_HEADER.
+#
+# Se desactiva la verificación del gateway y la autorización la hace el código
+# de cada función, que acepta DOS caminos:
+#   · JWT de usuario  → el destinatario es el dueño del token
+#   · x-trigger-secret → llamada interna, el destinatario viene en el cuerpo
+#
+# Sin secreto configurado no entra nadie (fail-secure), así que la función no
+# queda abierta: solo deja de depender del gateway para decidirlo.
+
+[functions.send-reminders]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.send-push]
+verify_jwt = false
+
+# gemini-proxy se queda con verify_jwt = true: solo lo llama el navegador con
+# una sesión real, y no tiene ruta interna.
