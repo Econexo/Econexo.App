@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { formatKg as fmtKg, sumTruncated } from '../utils/formatKg';
 import autoTable from 'jspdf-autotable';
 import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2, ECONEXO_LOGO_CGM, CGM_FOOTER_BAR } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
@@ -151,7 +152,7 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
 
     // ── MATERIALS TABLE ──
     const tableStartY = titleY + 8;
-    const fmtQty = (n: number) => Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const fmtQty = (n: number) => fmtKg(n);
     const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
     const receptionStr = `${dd}-${mm}-${yyyy}`;
 
@@ -376,7 +377,7 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
     const tableStyles: any = {}; // To store row-specific styles if needed
 
     // Helper to format numbers
-    const fmt = (n: number) => n.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const fmt = (n: number) => fmtKg(n);
 
     // Build Data Rows dynamically
     Object.entries(materialData).forEach(([material, data]) => {
@@ -519,7 +520,7 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
         doc.setFont('helvetica', 'italic');
-        doc.text(`* Esto equivale a evitar el envío de ${trucks.toFixed(2)} camiones de basura al relleno sanitario.`, 14 + 5, currentY + summaryBoxHeight - 5);
+        doc.text(`* Esto equivale a evitar el envío de ${fmtKg(trucks)} camiones de basura al relleno sanitario.`, 14 + 5, currentY + summaryBoxHeight - 5);
     }
 
     // --- SABÍAS QUE SECTION (Page 1) ---
@@ -641,7 +642,7 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
     doc.setFont('helvetica', 'normal');
 
     // Dynamic Paragraph 1
-    const p1 = `Durante el periodo reportado (${periodo}), ${client.company_name} (RUT ${client.rut}), en alianza con EcoNexo (RUT 77.855.394-5), ha logrado recuperar y gestionar un total de ${totalKg.toFixed(2)} kg de residuos, los cuales fueron enviados a gestores locales autorizados para su valorización y tratamiento final.`;
+    const p1 = `Durante el periodo reportado (${periodo}), ${client.company_name} (RUT ${client.rut}), en alianza con EcoNexo (RUT 77.855.394-5), ha logrado recuperar y gestionar un total de ${fmtKg(totalKg)} kg de residuos, los cuales fueron enviados a gestores locales autorizados para su valorización y tratamiento final.`;
     const splitP1 = doc.splitTextToSize(p1, pageWidth - 40);
     doc.text(splitP1, 20, currentY);
     currentY += (splitP1.length * 4.5) + 4;
@@ -687,7 +688,7 @@ export const generateEcoReport = (client: CompanyData, items: WasteItem[], perio
         const pctMin = (totalKg / baselineMin * 100).toFixed(1);
         const pctMax = (totalKg / baselineMax * 100).toFixed(1);
 
-        const p4 = `Frente a este escenario de referencia, los ${totalKg.toFixed(2)} kg recuperados representan:`;
+        const p4 = `Frente a este escenario de referencia, los ${fmtKg(totalKg)} kg recuperados representan:`;
         doc.text(p4, 20, currentY);
         currentY += 5;
 
@@ -1257,12 +1258,10 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // Disable stroke for solid colors
     doc.setLineWidth(0);
 
-    // Smart number formatter — removes unnecessary decimals (590,00 → 590, 12,60 → 12,6)
-    const formatKg = (n: number): string => {
-        const r = Math.round(n * 100) / 100;
-        if (r % 1 === 0) return r.toFixed(0);
-        return r.toFixed(2).replace('.', ',').replace(/0+$/, '');
-    };
+    // Un decimal, truncado y con separadores chilenos, igual que en la app.
+    // La versión anterior redondeaba a dos decimales y nunca ponía el punto de
+    // los miles: 1234,5 en vez de 1.234,5.
+    const formatKg = (n: number): string => fmtKg(n);
 
     // Table header
     doc.setFillColor(220, 220, 220);
@@ -1303,7 +1302,12 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     doc.setTextColor(0);
     doc.setFont('helvetica', 'bold');
     doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text(formatKg(totalKg), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
+    // Suma de lo impreso, no el total real: si no, la columna no cuadra al
+    // sumarla a mano contra el comprobante del gestor.
+    doc.text(
+        formatKg(sumTruncated(MATERIAL_DEFS.map(d => categories[d.key].qty))),
+        tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' },
+    );
     doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
 
     const pieX = 175;
@@ -1573,7 +1577,7 @@ export const generateCommunityCR = (
 
     // ── MATERIALS TABLE ──
     const tableStartY = titleY + 8;
-    const fmtQty = (n: number) => Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const fmtQty = (n: number) => fmtKg(n);
     const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
     const receptionStr = `${dd}-${mm}-${yyyy}`;
 
