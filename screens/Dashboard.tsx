@@ -43,6 +43,11 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     total: 0, valorizacion: 0, relleno_sanitario: 0, rescon: 0, tasaValorizacion: 0,
   });
 
+  // La Ley REP solo alcanza a quien introduce productos prioritarios al
+  // mercado. Sin esto, el distintivo aparecía sobre el total valorizado de
+  // cualquier empresa, incluida una generadora que no declara nada.
+  const [isPriorityProducer, setIsPriorityProducer] = useState(false);
+
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -102,11 +107,14 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         // Fetch profile data for all users, including super admin
         const { data: profile } = await supabase
           .from('profiles')
-          .select('is_admin, avatar_url, eco_points, full_name')
+          .select('is_admin, avatar_url, eco_points, full_name, rep_producer_data')
           .eq('id', user.id)
           .single();
 
         if (profile) {
+          setIsPriorityProducer(
+            (profile as any).rep_producer_data?.is_priority_producer === true,
+          );
           setStats(prev => ({ ...prev, ecoPoints: profile.eco_points || 0 }));
 
           const fullName = profile.full_name || user.user_metadata?.full_name;
@@ -434,13 +442,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         newAlerts.push({
           type: 'success',
           icon: 'verified',
-          message: `¡Meta ${currentYear} alcanzada! Reciclaste ${totalKgYear.toLocaleString()} kg de ${goalKg.toLocaleString()} kg objetivo.`
+          message: `¡Meta ${currentYear} alcanzada! Reciclaste ${totalKgYear.toLocaleString('es-CL')} kg de ${goalKg.toLocaleString('es-CL')} kg objetivo.`
         });
       } else if (pct >= 80) {
         newAlerts.push({
           type: 'info',
           icon: 'local_fire_department',
-          message: `¡Estás al ${pct}% de tu meta ${currentYear}! Solo faltan ${(goalKg - totalKgYear).toLocaleString()} kg.`
+          message: `¡Estás al ${pct}% de tu meta ${currentYear}! Solo faltan ${(goalKg - totalKgYear).toLocaleString('es-CL')} kg.`
         });
       }
     }
@@ -819,7 +827,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 {selectedYear === 'range' && ` · ${rangeStart}–${rangeEnd}`}
               </span>
               <div className="flex items-baseline gap-1.5">
-                <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{animatedKg.toLocaleString()}</h3>
+                <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{animatedKg.toLocaleString('es-CL')}</h3>
                 <span className="text-sm font-bold text-white/90">KG</span>
               </div>
             </div>
@@ -841,8 +849,10 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           )}
         </button>
 
-        {/* Desglose por destino. El valorizado es la cifra que cuenta para la
-            Ley REP; relleno sanitario y RESCON van aparte y NO se le suman. */}
+        {/* Desglose por destino. El valorizado nunca suma relleno sanitario ni
+            RESCON. El distintivo "Ley REP" solo aparece si la empresa es
+            productor prioritario: a una generadora ese régimen no la alcanza,
+            y etiquetarla así la haría creerse obligada a declarar. */}
         {destinationTotals.total > 0 && (
           <div className="grid grid-cols-3 gap-2.5">
             {WASTE_DESTINATIONS.map(d => {
@@ -866,8 +876,11 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                     >
                       {d.icon}
                     </span>
-                    {principal && (
-                      <span className="text-[8px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                    {principal && isPriorityProducer && (
+                      <span
+                        className="text-[8px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded"
+                        title="Tu empresa figura como productor de productos prioritarios"
+                      >
                         Ley REP
                       </span>
                     )}
@@ -919,7 +932,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               </div>
               <div>
                 <h3 className="text-gray-900 dark:text-white text-2xl font-display font-black tracking-tight flex items-center gap-2 transition-colors">
-                  {animatedPoints.toLocaleString()} <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mt-1">Pts</span>
+                  {animatedPoints.toLocaleString('es-CL')} <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mt-1">Pts</span>
                 </h3>
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight group-hover:text-yellow-600 transition-colors">
                   Próximo Nivel: {Math.floor(stats.ecoPoints / 1000) + 1}
@@ -1173,7 +1186,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 </div>
                 <div>
                   <p className="text-gray-600 dark:text-gray-300 text-[9px] font-bold uppercase tracking-wider mb-0.5 leading-tight">{stat.label}</p>
-                  <p className="text-lg font-display font-black text-gray-900 dark:text-white leading-none transition-colors">{stat.value.toLocaleString()}</p>
+                  <p className="text-lg font-display font-black text-gray-900 dark:text-white leading-none transition-colors">{stat.value.toLocaleString('es-CL')}</p>
                 </div>
               </div>
             ))}

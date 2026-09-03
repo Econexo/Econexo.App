@@ -380,7 +380,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                     <p className="text-[9px] font-black text-sky-500 uppercase tracking-widest mt-0.5">Kg CO₂ Evitado</p>
                                 </div>
                                 <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 text-center">
-                                    <p className="text-2xl font-black text-yellow-700">{ecoPoints.toLocaleString()}</p>
+                                    <p className="text-2xl font-black text-yellow-700">{ecoPoints.toLocaleString('es-CL')}</p>
                                     <p className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mt-0.5">Eco-Puntos</p>
                                 </div>
                             </div>

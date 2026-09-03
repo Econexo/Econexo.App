@@ -487,7 +487,7 @@ const MonthlyPanel: React.FC = () => {
                                                             ))}
                                                             {m.repCategory && (
                                                                 <p className="col-span-3 text-[10px] text-gray-400 font-bold pt-0.5">
-                                                                    Cuenta para la meta Ley REP · categoría {m.repCategory}
+                                                                    Categoría Ley REP: {m.repCategory}
                                                                 </p>
                                                             )}
                                                         </div>

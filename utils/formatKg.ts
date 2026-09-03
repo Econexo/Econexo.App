@@ -58,3 +58,19 @@ export function sumTruncated(values: number[], decimals = KG_DECIMALS): number {
     decimals,
   );
 }
+
+/**
+ * Cualquier número que no sean kilos: puntos, km, litros, unidades.
+ *
+ * Existe porque `toLocaleString()` SIN argumentos usa el idioma del navegador:
+ * a un visitante con el navegador en inglés le mostraba 1,234.5 — separadores
+ * invertidos respecto a la convención chilena. El idioma de las cifras lo fija
+ * la app, no la configuración del computador de quien mira.
+ */
+export function formatNumber(value: number, decimals = 0): string {
+  if (!Number.isFinite(value)) return '0';
+  return value.toLocaleString('es-CL', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
