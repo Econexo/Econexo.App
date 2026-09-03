@@ -208,24 +208,37 @@ describe('parseQuantity', () => {
     expect(parseQuantity(0)).toBe(0);
   });
 
-  it('entiende la coma decimal chilena', () => {
+  it('la coma es decimal, como en Chile', () => {
     // Number("9,4") es NaN: ese ítem sumaba cero y desaparecía del total.
     expect(parseQuantity('9,4')).toBe(9.4);
     expect(parseQuantity('1250,75')).toBe(1250.75);
+    expect(parseQuantity('1,234')).toBe(1.234);
   });
 
-  it('entiende el punto decimal', () => {
+  it('el punto separa miles cuando agrupa de tres', () => {
+    expect(parseQuantity('1.234')).toBe(1234);
+    expect(parseQuantity('12.500')).toBe(12500);
+  });
+
+  it('no se pierde con varios separadores de miles', () => {
+    // Regresión: "1.234.567" no es un número para Number() y devolvía 0.
+    expect(parseQuantity('1.234.567')).toBe(1234567);
+    expect(parseQuantity('1.234.567,89')).toBe(1234567.89);
+  });
+
+  it('respeta el punto decimal cuando no agrupa de tres', () => {
     expect(parseQuantity('9.4')).toBe(9.4);
+    expect(parseQuantity('12.50')).toBe(12.5);
+  });
+
+  it('resuelve miles y decimales mezclados por la posición del último', () => {
+    expect(parseQuantity('1.234,5')).toBe(1234.5);  // chileno
+    expect(parseQuantity('1,234.5')).toBe(1234.5);  // inglés
   });
 
   it('descarta la unidad pegada al número', () => {
     expect(parseQuantity('9,4 kg')).toBe(9.4);
     expect(parseQuantity('120 Kg')).toBe(120);
-  });
-
-  it('resuelve miles y decimales mezclados por la posición del separador', () => {
-    expect(parseQuantity('1.234,5')).toBe(1234.5);  // formato chileno
-    expect(parseQuantity('1,234.5')).toBe(1234.5);  // formato inglés
   });
 
   it('devuelve 0 con basura, sin propagar NaN', () => {
