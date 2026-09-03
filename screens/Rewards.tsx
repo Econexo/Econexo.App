@@ -125,13 +125,13 @@ const Rewards: React.FC = () => {
 
     const handleRedeem = async (reward: Reward) => {
         if (points < reward.cost) {
-            toast.warning(`Te faltan ${(reward.cost - points).toLocaleString()} puntos para canjear esta recompensa.`);
+            toast.warning(`Te faltan ${(reward.cost - points).toLocaleString('es-CL')} puntos para canjear esta recompensa.`);
             return;
         }
 
         const ok = await confirm({
             title: 'Confirmar canje',
-            message: `¿Canjear "${reward.title}" por ${reward.cost.toLocaleString()} puntos? Quedarás con ${(points - reward.cost).toLocaleString()} pts.`,
+            message: `¿Canjear "${reward.title}" por ${reward.cost.toLocaleString('es-CL')} puntos? Quedarás con ${(points - reward.cost).toLocaleString('es-CL')} pts.`,
             confirmLabel: 'Sí, canjear',
         });
         if (!ok) return;
@@ -208,7 +208,7 @@ const Rewards: React.FC = () => {
                             <div className="text-right">
                                 <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em]">Impacto</p>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-2xl font-display font-black text-white">{animatedPoints.toLocaleString()}</span>
+                                    <span className="text-2xl font-display font-black text-white">{animatedPoints.toLocaleString('es-CL')}</span>
                                     <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">pts</span>
                                 </div>
                             </div>
@@ -236,7 +236,7 @@ const Rewards: React.FC = () => {
 
                         <p className="text-white/80 text-[11px] font-bold leading-relaxed">
                             {nextLevel
-                                ? `Te faltan ${(nextLevel.min - points).toLocaleString()} puntos para convertirte en ${nextLevel.title}. ¡Sigue recuperando residuos!`
+                                ? `Te faltan ${(nextLevel.min - points).toLocaleString('es-CL')} puntos para convertirte en ${nextLevel.title}. ¡Sigue recuperando residuos!`
                                 : "Has alcanzado la cima de la sostenibilidad forestal. Eres un guardián de la economía circular."}
                         </p>
                     </div>
@@ -273,7 +273,7 @@ const Rewards: React.FC = () => {
                                     </div>
                                     <p className="text-[11px] text-gray-600 dark:text-gray-400 font-bold leading-tight line-clamp-2">{reward.description}</p>
                                     <div className="pt-2 flex items-center gap-2">
-                                        <span className="text-xs font-black text-primary bg-green-50/50 px-2 py-0.5 rounded-md border border-green-100 backdrop-blur-sm">{reward.cost.toLocaleString()} pts</span>
+                                        <span className="text-xs font-black text-primary bg-green-50/50 px-2 py-0.5 rounded-md border border-green-100 backdrop-blur-sm">{reward.cost.toLocaleString('es-CL')} pts</span>
                                     </div>
                                 </div>
                                 <button
@@ -284,7 +284,7 @@ const Rewards: React.FC = () => {
                                         : 'bg-white/20 text-gray-400 border border-white/10 cursor-not-allowed'
                                         }`}
                                 >
-                                    {redeeming ? '...' : points >= reward.cost ? 'Canjear' : `${(reward.cost - points).toLocaleString()} pts`}
+                                    {redeeming ? '...' : points >= reward.cost ? 'Canjear' : `${(reward.cost - points).toLocaleString('es-CL')} pts`}
                                 </button>
                             </div>
                         ))}
@@ -320,7 +320,7 @@ const Rewards: React.FC = () => {
                                         <p className="text-[9px] text-gray-500 dark:text-gray-400 font-black uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <span className={`font-display font-black text-sm ${t.amount > 0 ? 'text-primary' : 'text-red-400'}`}>
-                                        {t.amount > 0 ? '+' : ''}{t.amount.toLocaleString()}
+                                        {t.amount > 0 ? '+' : ''}{t.amount.toLocaleString('es-CL')}
                                     </span>
                                 </div>
                             ))}

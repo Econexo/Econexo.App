@@ -9,6 +9,7 @@ import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
 import { materialColor } from '../utils/materialCalculations';
 import { WASTE_DESTINATIONS } from '../utils/wasteClassification';
+import { formatKg, truncateTo, sumTruncated } from '../utils/formatKg';
 import {
     buildMonthlyBreakdown,
     breakdownToCsv,
@@ -32,8 +33,8 @@ const nextPeriod = (key: string) => {
     return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
 };
 
-const fmt = (n: number, decimals = 0) =>
-    n.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+// Un decimal y truncado, igual que el comprobante del gestor. Ver utils/formatKg.
+const fmt = (n: number, decimals = 1) => formatKg(n, decimals);
 
 const MonthlyPanel: React.FC = () => {
     const navigate = useNavigate();
@@ -170,7 +171,7 @@ const MonthlyPanel: React.FC = () => {
         doc.setTextColor(30, 30, 30);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(28);
-        doc.text(`${fmt(summary.totalKg, 1)} kg`, 14, 50);
+        doc.text(`${fmt(summary.totalKg)} kg`, 14, 50);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(110, 110, 110);
@@ -186,19 +187,21 @@ const MonthlyPanel: React.FC = () => {
             body: summary.materials.map(m => [
                 m.material,
                 fmt(m.kg, 1),
-                `${fmt(m.share, 1)}%`,
-                fmt(m.co2, 1),
-                fmt(m.water, 0),
-                fmt(m.energy, 1),
+                `${fmt(m.share)}%`,
+                fmt(m.co2),
+                fmt(m.water),
+                fmt(m.energy),
                 m.repCategory ?? '—',
             ]),
             foot: [[
                 'TOTAL',
-                fmt(summary.totalKg, 1),
+                // Suma de las filas ya truncadas: si se imprimiera el total real
+                // la columna no cuadraría con lo que el gestor va a sumar a mano.
+                fmt(sumTruncated(summary.materials.map(m => m.kg))),
                 '100%',
-                fmt(summary.impact.co2, 1),
-                fmt(summary.impact.water, 0),
-                fmt(summary.impact.energy, 1),
+                fmt(summary.impact.co2),
+                fmt(summary.impact.water),
+                fmt(summary.impact.energy),
                 '',
             ]],
             theme: 'striped',
@@ -215,10 +218,10 @@ const MonthlyPanel: React.FC = () => {
         doc.text('Impacto ambiental evitado', 14, afterTable + 14);
 
         const impacts = [
-            [`${fmt(summary.impact.co2, 1)} kg`, 'CO2e evitado'],
-            [`${fmt(summary.impact.water, 0)} L`, 'agua ahorrada'],
-            [`${fmt(summary.impact.energy, 1)} kWh`, 'energía ahorrada'],
-            [`${fmt(summary.impact.trees)}`, 'árboles equivalentes'],
+            [`${fmt(summary.impact.co2)} kg`, 'CO2e evitado'],
+            [`${fmt(summary.impact.water)} L`, 'agua ahorrada'],
+            [`${fmt(summary.impact.energy)} kWh`, 'energía ahorrada'],
+            [`${String(Math.trunc(summary.impact.trees))}`, 'árboles equivalentes'],
         ];
         impacts.forEach(([value, label], i) => {
             const x = 14 + (i % 2) * 92;
@@ -341,7 +344,7 @@ const MonthlyPanel: React.FC = () => {
                             </p>
                             <div className="flex items-end gap-3 mt-2 flex-wrap">
                                 <p className="text-5xl font-display font-black text-primary leading-none tracking-tighter">
-                                    {fmt(summary.totalKg, summary.totalKg < 100 ? 1 : 0)}
+                                    {fmt(summary.totalKg)}
                                 </p>
                                 <p className="text-lg font-black text-gray-400 dark:text-gray-500 mb-0.5">kg</p>
                                 {delta !== null && (
@@ -360,7 +363,7 @@ const MonthlyPanel: React.FC = () => {
                             </div>
                             <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold mt-2">
                                 {summary.docCount} certificado{summary.docCount === 1 ? '' : 's'} de recepción
-                                {delta !== null && ` · mes anterior: ${fmt(previous.totalKg, 0)} kg`}
+                                {delta !== null && ` · mes anterior: ${fmt(previous.totalKg)} kg`}
                             </p>
                         </div>
 
@@ -387,7 +390,7 @@ const MonthlyPanel: React.FC = () => {
                                                 className={`font-display font-black leading-none tracking-tight tabular-nums mt-1.5 ${principal ? 'text-2xl' : 'text-xl'}`}
                                                 style={{ color: principal ? d.color : undefined }}
                                             >
-                                                {fmt(kg, kg < 100 ? 1 : 0)}
+                                                {fmt(kg)}
                                             </p>
                                             <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
                                                 kg · {share}%
@@ -444,7 +447,7 @@ const MonthlyPanel: React.FC = () => {
                                                                 </span>
                                                             )}
                                                             <span className="text-sm font-black text-gray-900 dark:text-white shrink-0 tabular-nums">
-                                                                {fmt(m.kg, m.kg < 100 ? 1 : 0)} kg
+                                                                {fmt(m.kg)} kg
                                                             </span>
                                                             <span
                                                                 className="material-symbols-outlined text-gray-300 text-lg shrink-0 transition-transform"
@@ -462,7 +465,7 @@ const MonthlyPanel: React.FC = () => {
                                                                 />
                                                             </div>
                                                             <span className="text-[11px] font-black tabular-nums w-11 text-right" style={{ color }}>
-                                                                {fmt(m.share, 1)}%
+                                                                {fmt(m.share)}%
                                                             </span>
                                                         </div>
                                                     </button>
@@ -470,9 +473,9 @@ const MonthlyPanel: React.FC = () => {
                                                     {isOpen && (
                                                         <div className="px-3.5 pb-3.5 grid grid-cols-3 gap-2 animate-in fade-in duration-200">
                                                             {[
-                                                                { icon: 'cloud', value: `${fmt(m.co2, 1)} kg`, label: 'CO₂e evitado', tint: 'text-slate-600 dark:text-slate-300' },
-                                                                { icon: 'water_drop', value: `${fmt(m.water, 0)} L`, label: 'agua', tint: 'text-blue-600 dark:text-blue-400' },
-                                                                { icon: 'bolt', value: `${fmt(m.energy, 1)} kWh`, label: 'energía', tint: 'text-amber-600 dark:text-amber-400' },
+                                                                { icon: 'cloud', value: `${fmt(m.co2)} kg`, label: 'CO₂e evitado', tint: 'text-slate-600 dark:text-slate-300' },
+                                                                { icon: 'water_drop', value: `${fmt(m.water)} L`, label: 'agua', tint: 'text-blue-600 dark:text-blue-400' },
+                                                                { icon: 'bolt', value: `${fmt(m.energy)} kWh`, label: 'energía', tint: 'text-amber-600 dark:text-amber-400' },
                                                             ].map(cell => (
                                                                 <div key={cell.label} className="rounded-xl bg-white/70 dark:bg-slate-800/70 border border-white/80 dark:border-white/10 p-2.5">
                                                                     <span className={`material-symbols-outlined text-base ${cell.tint}`}>{cell.icon}</span>
@@ -484,7 +487,7 @@ const MonthlyPanel: React.FC = () => {
                                                             ))}
                                                             {m.repCategory && (
                                                                 <p className="col-span-3 text-[10px] text-gray-400 font-bold pt-0.5">
-                                                                    Cuenta para la meta Ley REP · categoría {m.repCategory}
+                                                                    Categoría Ley REP: {m.repCategory}
                                                                 </p>
                                                             )}
                                                         </div>
@@ -498,10 +501,10 @@ const MonthlyPanel: React.FC = () => {
                                 {/* ── Impacto del mes ── */}
                                 <section className="grid grid-cols-2 gap-3">
                                     {[
-                                        { icon: 'cloud', value: fmt(summary.impact.co2, 1), unit: 'kg CO₂e', label: 'Emisiones evitadas', ring: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
-                                        { icon: 'water_drop', value: fmt(summary.impact.water, 0), unit: 'litros', label: 'Agua ahorrada', ring: 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400' },
-                                        { icon: 'bolt', value: fmt(summary.impact.energy, 1), unit: 'kWh', label: 'Energía ahorrada', ring: 'bg-amber-50 text-amber-500 dark:bg-amber-900/30 dark:text-amber-400' },
-                                        { icon: 'park', value: fmt(summary.impact.trees), unit: 'árboles', label: 'Equivalente anual', ring: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' },
+                                        { icon: 'cloud', value: fmt(summary.impact.co2), unit: 'kg CO₂e', label: 'Emisiones evitadas', ring: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+                                        { icon: 'water_drop', value: fmt(summary.impact.water), unit: 'litros', label: 'Agua ahorrada', ring: 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400' },
+                                        { icon: 'bolt', value: fmt(summary.impact.energy), unit: 'kWh', label: 'Energía ahorrada', ring: 'bg-amber-50 text-amber-500 dark:bg-amber-900/30 dark:text-amber-400' },
+                                        { icon: 'park', value: String(Math.trunc(summary.impact.trees)), unit: 'árboles', label: 'Equivalente anual', ring: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' },
                                     ].map(card => (
                                         <div
                                             key={card.label}
@@ -540,7 +543,7 @@ const MonthlyPanel: React.FC = () => {
                                         />
                                         <Tooltip
                                             cursor={{ fill: 'rgba(50,97,5,0.06)' }}
-                                            formatter={(value: number) => [`${fmt(value, 1)} kg`, '']}
+                                            formatter={(value: number) => [`${fmt(value)} kg`, '']}
                                             labelFormatter={(_, payload) =>
                                                 payload?.[0] ? periodLabel((payload[0].payload as { key: string }).key) : ''
                                             }

@@ -4,6 +4,7 @@
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from './materialCalculations';
 import { mapToRepCategory, REP_CATEGORY_LABELS } from './materialMapping';
 import { isValorized, summarizeByDestination, parseQuantity, type DestinationTotals } from './wasteClassification';
+import { truncateTo, sumTruncated } from './formatKg';
 import type { MonthlyMaterialRow } from '../types';
 
 export const MONTH_NAMES = [
@@ -191,22 +192,26 @@ export function trailingPeriods(periodKey: string, count: number): string[] {
 /** Filas del desglose a CSV (separador ';' — Excel en es-CL lo abre en columnas). */
 export function breakdownToCsv(summary: MonthlySummary): string {
   const head = ['Material', 'Kg recuperados', '% del mes', 'CO2e evitado (kg)', 'Agua ahorrada (L)', 'Energía ahorrada (kWh)', 'Categoría Ley REP'];
+  // Un decimal y truncado, igual que en pantalla y que el comprobante del gestor.
+  const d1 = (n: number) => truncateTo(n).toFixed(1);
+
   const rows = summary.materials.map(r => [
     r.material,
-    r.kg.toFixed(2),
-    r.share.toFixed(1),
-    r.co2.toFixed(2),
-    r.water.toFixed(2),
-    r.energy.toFixed(2),
+    d1(r.kg),
+    d1(r.share),
+    d1(r.co2),
+    d1(r.water),
+    d1(r.energy),
     r.repCategory ?? 'No aplica',
   ]);
   const total = [
     'TOTAL',
-    summary.totalKg.toFixed(2),
+    // Suma de las filas ya truncadas, para que la columna cuadre.
+    d1(sumTruncated(summary.materials.map(m => m.kg))),
     '100.0',
-    summary.impact.co2.toFixed(2),
-    summary.impact.water.toFixed(2),
-    summary.impact.energy.toFixed(2),
+    d1(summary.impact.co2),
+    d1(summary.impact.water),
+    d1(summary.impact.energy),
     '',
   ];
   return [head, ...rows, total]

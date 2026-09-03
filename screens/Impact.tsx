@@ -96,7 +96,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
     setAnnualGoalKg(val);
     setShowGoalModal(false);
     setGoalInput('');
-    toast.success(`Meta ${selectedYear} establecida: ${val.toLocaleString()} kg`);
+    toast.success(`Meta ${selectedYear} establecida: ${val.toLocaleString('es-CL')} kg`);
   };
 
   const handleRemoveGoal = () => {
@@ -576,8 +576,8 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
             <div className="space-y-3">
               <div className="flex items-end justify-between">
                 <div>
-                  <span className="text-3xl font-display font-black text-gray-900 dark:text-white">{totalKg.toLocaleString()}</span>
-                  <span className="text-sm text-gray-400 dark:text-gray-500 font-bold ml-1">/ {annualGoalKg.toLocaleString()} kg</span>
+                  <span className="text-3xl font-display font-black text-gray-900 dark:text-white">{totalKg.toLocaleString('es-CL')}</span>
+                  <span className="text-sm text-gray-400 dark:text-gray-500 font-bold ml-1">/ {annualGoalKg.toLocaleString('es-CL')} kg</span>
                 </div>
                 <span className={`text-lg font-display font-black ${goalAchieved ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
                   {goalProgress}%
@@ -592,11 +592,11 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
               {goalAchieved ? (
                 <p className="text-xs text-primary font-black flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-sm filled">verified</span>
-                  ¡Meta alcanzada! Has reciclado {(totalKg - annualGoalKg).toLocaleString()} kg extra.
+                  ¡Meta alcanzada! Has reciclado {(totalKg - annualGoalKg).toLocaleString('es-CL')} kg extra.
                 </p>
               ) : (
                 <p className="text-xs text-gray-400 dark:text-gray-500 font-bold">
-                  Te faltan <span className="text-primary font-black">{(annualGoalKg - totalKg).toLocaleString()} kg</span> para alcanzar tu meta.
+                  Te faltan <span className="text-primary font-black">{(annualGoalKg - totalKg).toLocaleString('es-CL')} kg</span> para alcanzar tu meta.
                 </p>
               )}
             </div>
@@ -677,7 +677,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <span className="material-symbols-outlined text-2xl font-bold">water_drop</span>
                 </div>
                 <div>
-                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedAgua.toLocaleString()}</p>
+                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedAgua.toLocaleString('es-CL')}</p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">Lts Agua</p>
                 </div>
               </div>
@@ -696,7 +696,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <span className="material-symbols-outlined text-2xl font-bold">bolt</span>
                 </div>
                 <div>
-                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedEnergia.toLocaleString()}</p>
+                  <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedEnergia.toLocaleString('es-CL')}</p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">kWh Energía</p>
                 </div>
               </div>
@@ -757,10 +757,10 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
             <h4 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">Más equivalencias</h4>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: 'directions_car', color: 'bg-orange-50 text-orange-500 border-orange-100', value: stats.kmEvitados.toLocaleString(), unit: 'km en auto', label: 'evitados' },
-                { icon: 'home', color: 'bg-purple-50 text-purple-500 border-purple-100', value: stats.hogaresAbastecidos.toLocaleString(), unit: 'hogares', label: '1 día con energía' },
-                { icon: 'shower', color: 'bg-cyan-50 text-cyan-500 border-cyan-100', value: stats.duchasEquivalentes.toLocaleString(), unit: 'duchas', label: 'de agua ahorrada' },
-                { icon: 'flight', color: 'bg-rose-50 text-rose-500 border-rose-100', value: stats.vuelosEvitados.toLocaleString(), unit: 'vuelos', label: 'cortos evitados' },
+                { icon: 'directions_car', color: 'bg-orange-50 text-orange-500 border-orange-100', value: stats.kmEvitados.toLocaleString('es-CL'), unit: 'km en auto', label: 'evitados' },
+                { icon: 'home', color: 'bg-purple-50 text-purple-500 border-purple-100', value: stats.hogaresAbastecidos.toLocaleString('es-CL'), unit: 'hogares', label: '1 día con energía' },
+                { icon: 'shower', color: 'bg-cyan-50 text-cyan-500 border-cyan-100', value: stats.duchasEquivalentes.toLocaleString('es-CL'), unit: 'duchas', label: 'de agua ahorrada' },
+                { icon: 'flight', color: 'bg-rose-50 text-rose-500 border-rose-100', value: stats.vuelosEvitados.toLocaleString('es-CL'), unit: 'vuelos', label: 'cortos evitados' },
               ].map((item) => (
                 <div key={item.icon} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[24px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-5 flex flex-col gap-3 transition-all hover:scale-[1.02]">
                   <div className={`size-10 rounded-xl flex items-center justify-center border ${item.color}`}>
