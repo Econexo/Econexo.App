@@ -5,6 +5,7 @@ import {
   isValorized,
   summarizeByDestination,
   wasteItemsOf,
+  parseQuantity,
 } from './wasteClassification';
 import { normalizeMaterialType, materialFactors, familyOf } from './materialCalculations';
 import { mapToRepCategory } from './materialMapping';
@@ -198,5 +199,49 @@ describe('familyOf', () => {
 
   it('deja intactos los materiales sin familia', () => {
     expect(familyOf('Vidrio')).toBe('Vidrio');
+  });
+});
+
+describe('parseQuantity', () => {
+  it('deja pasar los números tal cual', () => {
+    expect(parseQuantity(9.4)).toBe(9.4);
+    expect(parseQuantity(0)).toBe(0);
+  });
+
+  it('entiende la coma decimal chilena', () => {
+    // Number("9,4") es NaN: ese ítem sumaba cero y desaparecía del total.
+    expect(parseQuantity('9,4')).toBe(9.4);
+    expect(parseQuantity('1250,75')).toBe(1250.75);
+  });
+
+  it('entiende el punto decimal', () => {
+    expect(parseQuantity('9.4')).toBe(9.4);
+  });
+
+  it('descarta la unidad pegada al número', () => {
+    expect(parseQuantity('9,4 kg')).toBe(9.4);
+    expect(parseQuantity('120 Kg')).toBe(120);
+  });
+
+  it('resuelve miles y decimales mezclados por la posición del separador', () => {
+    expect(parseQuantity('1.234,5')).toBe(1234.5);  // formato chileno
+    expect(parseQuantity('1,234.5')).toBe(1234.5);  // formato inglés
+  });
+
+  it('devuelve 0 con basura, sin propagar NaN', () => {
+    expect(parseQuantity('')).toBe(0);
+    expect(parseQuantity('mucho')).toBe(0);
+    expect(parseQuantity(null)).toBe(0);
+    expect(parseQuantity(undefined)).toBe(0);
+    expect(parseQuantity(NaN)).toBe(0);
+    expect(parseQuantity({})).toBe(0);
+  });
+
+  it('un total no se pierde por venir en texto', () => {
+    const t = summarizeByDestination([
+      { waste_type: 'Cartón', quantity: '9,4' },
+      { waste_type: 'Cartón', quantity: '15,6' },
+    ]);
+    expect(t.total).toBe(25);
   });
 });
