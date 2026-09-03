@@ -10,6 +10,7 @@ import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/m
 import { issueReceptionCertificate } from '../services/certificateService';
 import { WASTE_CATEGORIES } from '../components/admin/types';
 import { summarizeByDestination, WASTE_DESTINATIONS, defaultDestinationFor, isValorized } from '../utils/wasteClassification';
+import { formatKg } from '../utils/formatKg';
 import { useToast } from '../components/ui/Toast';
 import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
@@ -875,7 +876,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                     className={`font-display font-black leading-none tracking-tight tabular-nums ${principal ? 'text-2xl' : 'text-xl'}`}
                     style={{ color: principal ? d.color : undefined }}
                   >
-                    {kg.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                    {formatKg(kg)}
                   </p>
                   <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
                     kg · {share}%

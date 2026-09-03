@@ -136,16 +136,32 @@ export function parseQuantity(raw: unknown): number {
   const limpio = raw.trim().replace(/[^\d.,-]/g, '');
   if (!limpio) return 0;
 
-  const ultimaComa = limpio.lastIndexOf(',');
-  const ultimoPunto = limpio.lastIndexOf('.');
+  const puntos = (limpio.match(/\./g) ?? []).length;
+  const comas = (limpio.match(/,/g) ?? []).length;
+
+  const quitar = (texto: string, sep: string) => texto.split(sep).join('');
+  const aDecimal = (texto: string, sep: string) =>
+    sep === '.' ? texto : texto.replace(sep, '.');
 
   let normalizado: string;
-  if (ultimaComa >= 0 && ultimoPunto >= 0) {
-    // Con ambos, el que va último es el separador decimal.
-    const decimal = ultimaComa > ultimoPunto ? ',' : '.';
+
+  if (puntos > 0 && comas > 0) {
+    // Con los dos separadores presentes, el último es el decimal.
+    const decimal = limpio.lastIndexOf(',') > limpio.lastIndexOf('.') ? ',' : '.';
     const miles = decimal === ',' ? '.' : ',';
-    normalizado = limpio.split(miles).join('').replace(decimal, '.');
-  } else if (ultimaComa >= 0) {
+    normalizado = aDecimal(quitar(limpio, miles), decimal);
+  } else if (puntos > 1 || comas > 1) {
+    // Repetido no puede ser decimal: son separadores de miles. Este era el
+    // caso que devolvía 0 — "1.234.567" no es un número para Number().
+    normalizado = quitar(quitar(limpio, '.'), ',');
+  } else if (puntos === 1) {
+    // Convención chilena: el punto separa miles. Un punto seguido de
+    // exactamente tres dígitos es agrupación ("1.234" = mil doscientos treinta
+    // y cuatro); con cualquier otra cantidad de dígitos es alguien escribiendo
+    // decimales a la inglesa ("9.4", "12.50") y se respeta.
+    normalizado = /\.\d{3}$/.test(limpio) ? quitar(limpio, '.') : limpio;
+  } else if (comas === 1) {
+    // La coma siempre es decimal en Chile.
     normalizado = limpio.replace(',', '.');
   } else {
     normalizado = limpio;
