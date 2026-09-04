@@ -258,7 +258,9 @@ Deno.serve(async (req: Request) => {
                 .from('documents')
                 .select('user_id, type, verified, created_at')
                 .in('user_id', ids)
-                .in('type', ['CR', 'COMMUNITY_CR', 'CGM'])
+                // 'CR' es el código anterior del certificado de transporte;
+                // se lee por el histórico. Ver utils/documentTypes.ts.
+                .in('type', ['CT', 'CR', 'COMMUNITY_CR', 'CGM'])
                 .gte('created_at', periodStart)
                 .lt('created_at', periodEnd);
             if (docsError) throw docsError;

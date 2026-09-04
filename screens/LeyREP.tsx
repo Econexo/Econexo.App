@@ -1,5 +1,6 @@
 // screens/LeyREP.tsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { WASTE_DOC_TYPES } from '../utils/documentTypes';
 import DeclarationAdvisor from '../components/DeclarationAdvisor';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -129,7 +130,7 @@ const LeyREP: React.FC = () => {
       .from('documents')
       .select('metadata')
       .eq('user_id', userId)
-      .in('type', ['CR', 'COMMUNITY_CR'])
+      .in('type', WASTE_DOC_TYPES)
       .eq('verified', true)
       .gte('created_at', yearStart)
       .lte('created_at', yearEnd);

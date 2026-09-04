@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { WASTE_DOC_TYPES } from '../utils/documentTypes';
 import { supabase } from '../services/supabase';
 import { evaluateDeclarations, type Verdict } from '../utils/declarationAdvisor';
 import { wasteItemsOf } from '../utils/wasteClassification';
@@ -82,7 +83,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
             .from('documents')
             .select('created_at, metadata')
             .eq('user_id', user.id)
-            .in('type', ['CR', 'COMMUNITY_CR'])
+            .in('type', WASTE_DOC_TYPES)
             .eq('verified', true),
         ]);
 

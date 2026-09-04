@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { monthRange } from '../utils/dateRange';
-import { issueReceptionCertificate } from '../services/certificateService';
+import { issueTransportCertificate } from '../services/certificateService';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import Navbar from '../components/Navbar';
-import { generateCR, generateEcoReport, generateCGM } from '../services/pdfGenerator';
+import { generateCT, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import CommunityWithdrawalsManager from '../components/CommunityWithdrawalsManager';
 import DocumentEditor from '../components/DocumentEditor';
 import { createNotification } from '../services/notificationService';
@@ -108,7 +109,7 @@ const Admin: React.FC = () => {
             const { data: tickets } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
             const finalTickets = (tickets || []).map((t: any) => ({ ...t, profiles: profileMap.get(t.user_id) || null }));
 
-            const { data: certs } = await supabase.from('documents').select('*').in('type', ['CR', 'report', 'pdf', 'custom', 'CGM', 'guia', 'oc', 'ticket_pesaje', 'cdf', 'declaration', 'legal']).order('created_at', { ascending: false });
+            const { data: certs } = await supabase.from('documents').select('*').in('type', [...TRANSPORTE_TYPES, 'report', 'pdf', 'custom', 'CGM', 'guia', 'oc', 'ticket_pesaje', 'cdf', 'declaration', 'legal', DOC_TYPE.RECEPCION_ACOPIO]).order('created_at', { ascending: false });
 
             const { data: unregDocs } = await supabase.from('documents').select('id, metadata').eq('type', 'UNREGISTERED_CLIENT');
             const unregClients = (unregDocs || []).map((d: any) => ({
@@ -180,7 +181,7 @@ const Admin: React.FC = () => {
         if (!selectedUser || wasteItems.length === 0) { toast.warning('Debes agregar al menos un ítem.'); return; }
 
         try {
-            const { certNumber, pointsAwarded, totalKg } = await issueReceptionCertificate({
+            const { certNumber, pointsAwarded, totalKg } = await issueTransportCertificate({
                 client: {
                     id: selectedUser.id,
                     company_name: selectedUser.company_name,
@@ -252,7 +253,7 @@ const Admin: React.FC = () => {
         } else if (doc.type === 'CGM') {
             generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action, doc.metadata?.cgm_number, doc.metadata?.destinations);
         } else {
-            generateCR({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
+            generateCT({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
         }
     };
 
@@ -265,7 +266,7 @@ const Admin: React.FC = () => {
         });
         if (!ok) return;
         try {
-            if (doc.type === 'CR' && doc.metadata?.waste_details) {
+            if (isTransportDoc(doc.type) && doc.metadata?.waste_details) {
                 const totalWeight = doc.metadata.waste_details.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0);
                 const pointsToRevert = Math.round(totalWeight * 2);
                 await supabase.rpc('increment_points', { user_id_param: doc.user_id, amount_param: -pointsToRevert });
@@ -337,9 +338,9 @@ const Admin: React.FC = () => {
             // retiros de ese día quedaban fuera del certificado — pasaba cada mes.
             const { startISO, endExclusiveISO } = monthRange(selectedYearGen, selectedMonthGen);
 
-            const { data: crDocs, error } = await supabase.from('documents').select('*').eq('type', 'CR').gte('created_at', startISO).lt('created_at', endExclusiveISO);
+            const { data: crDocs, error } = await supabase.from('documents').select('*').in('type', TRANSPORTE_TYPES).gte('created_at', startISO).lt('created_at', endExclusiveISO);
             if (error) throw error;
-            if (!crDocs || crDocs.length === 0) { toast.warning('No se encontraron Certificados de Recepción (CR) para este período.'); setLoading(false); return; }
+            if (!crDocs || crDocs.length === 0) { toast.warning('No se encontraron Certificados de Transporte (CT) para este período.'); setLoading(false); return; }
 
             const userIds = Array.from(new Set(crDocs.map(d => d.user_id)));
             const { data: profiles } = await supabase.from('profiles').select('*').in('id', userIds);
@@ -454,7 +455,7 @@ const Admin: React.FC = () => {
                     uploadType={uploadType}
                     onTypeChange={setUploadType}
                     uploadSource={uploadSource}
-                    onSourceChange={(src) => { setUploadSource(src); setUploadType(src === 'econexo' ? 'CR' : 'declaration'); }}
+                    onSourceChange={(src) => { setUploadSource(src); setUploadType(src === 'econexo' ? DOC_TYPE.TRANSPORTE : 'declaration'); }}
                     onFileChange={setUploadFile}
                     loading={loading}
                     onUpload={handleUploadDocument}

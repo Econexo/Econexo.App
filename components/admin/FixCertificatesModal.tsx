@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { TRANSPORTE_TYPES, isTransportDoc } from '../../utils/documentTypes';
 import { supabase } from '../../services/supabase';
 import { useToast } from '../ui/Toast';
 
@@ -41,7 +42,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
             let query = supabase
                 .from('documents')
                 .select('*')
-                .in('type', ['CR', 'report', 'pdf', 'CGM'])
+                .in('type', [...TRANSPORTE_TYPES, 'report', 'pdf', 'CGM'])
                 .order('created_at', { ascending: false });
 
             if (!showAll) {
@@ -242,7 +243,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                                 {/* Title Row */}
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase ${cert.type === 'CR' ? 'bg-primary/10 text-primary' : cert.type === 'CGM' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase ${isTransportDoc(cert.type) ? 'bg-primary/10 text-primary' : cert.type === 'CGM' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
                                             {cert.type}
                                         </span>
                                         <p className="font-bold text-sm text-gray-900 truncate">{cert.title}</p>

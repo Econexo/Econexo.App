@@ -33,7 +33,7 @@ export interface MonthlySummary {
   destinations: DestinationTotals;
   materials: MonthlyMaterialRow[];
   impact: MonthlyImpact;
-  /** Nº de certificados de recepción que componen el mes. */
+  /** Nº de certificados de transporte que componen el mes. */
   docCount: number;
 }
 

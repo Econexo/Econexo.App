@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { isTransportDoc } from '../../utils/documentTypes';
 import { AdminDocument, AdminUserProfile, AdminPath, MONTH_NAMES, MONTH_SHORT } from './types';
 
 interface DocumentsHistoryProps {
@@ -13,7 +14,8 @@ interface DocumentsHistoryProps {
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-    CR:      { label: 'CR',      color: 'bg-green-100 text-green-700' },
+    CT:      { label: 'CT',      color: 'bg-green-100 text-green-700' },
+    CR:      { label: 'CT',      color: 'bg-green-100 text-green-700' },
     CGM:     { label: 'CGM',     color: 'bg-orange-100 text-orange-700' },
     report:  { label: 'Reporte', color: 'bg-blue-100 text-blue-700' },
     pdf:     { label: 'PDF',     color: 'bg-purple-100 text-purple-700' },
@@ -78,7 +80,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
         filtered.forEach(c => {
             // Only CR counts toward kg gestionados. CGM is the monthly summary of the
             // company's CRs, and reports re-state the same waste — both would double-count.
-            if (c.type === 'CR') {
+            if (isTransportDoc(c.type)) {
                 const details = c.metadata?.waste_details || [];
                 totalKg += details.reduce((s: number, i: any) => s + (Number(i.quantity) || 0), 0);
                 crCount++;
@@ -110,7 +112,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
     // CGM Panel (generate monthly certs)
     // ─────────────────────────────────────────────────────────────────────────
     if (showCGMPanel) {
-        const usersWithCR = users.filter(u => certs.some(c => c.user_id === u.id && c.type === 'CR'));
+        const usersWithCR = users.filter(u => certs.some(c => c.user_id === u.id && isTransportDoc(c.type)));
         return (
             <section className="space-y-4">
                 <div className="flex items-center gap-3 px-1">
@@ -287,7 +289,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                             // Only CR counts toward kg gestionados; CGM (monthly summary)
                             // and reports re-state the same waste and would double-count.
                             const monthKg = monthCerts.reduce((s, c) => {
-                                if (c.type !== 'CR') return s;
+                                if (!isTransportDoc(c.type)) return s;
                                 const details = c.metadata?.waste_details || [];
                                 return s + details.reduce((ss: number, i: any) => ss + (Number(i.quantity) || 0), 0);
                             }, 0);

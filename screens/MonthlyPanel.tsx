@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { WASTE_DOC_TYPES } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import jsPDF from 'jspdf';
@@ -72,7 +73,7 @@ const MonthlyPanel: React.FC = () => {
                 let query = supabase
                     .from('documents')
                     .select('user_id, created_at, metadata')
-                    .in('type', ['CR', 'COMMUNITY_CR'])
+                    .in('type', WASTE_DOC_TYPES)
                     .eq('verified', true)
                     .order('created_at', { ascending: false });
 
@@ -176,7 +177,7 @@ const MonthlyPanel: React.FC = () => {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(110, 110, 110);
         doc.text(
-            `recuperados en ${summary.docCount} certificado(s) de recepción` +
+            `recuperados en ${summary.docCount} certificado(s) de transporte` +
             (delta !== null ? `  ·  ${delta > 0 ? '+' : ''}${delta}% vs. ${periodLabel(previousPeriod(period))}` : ''),
             14, 57,
         );
@@ -362,7 +363,7 @@ const MonthlyPanel: React.FC = () => {
                                 )}
                             </div>
                             <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold mt-2">
-                                {summary.docCount} certificado{summary.docCount === 1 ? '' : 's'} de recepción
+                                {summary.docCount} certificado{summary.docCount === 1 ? '' : 's'} de transporte
                                 {delta !== null && ` · mes anterior: ${fmt(previous.totalKg)} kg`}
                             </p>
                         </div>
@@ -411,7 +412,7 @@ const MonthlyPanel: React.FC = () => {
                                     Sin movimientos en {periodLabel(period)}
                                 </p>
                                 <p className="text-[11px] text-gray-400 font-bold max-w-xs mx-auto leading-relaxed">
-                                    Aquí verás el desglose por material apenas se emita un Certificado de Recepción de este mes.
+                                    Aquí verás el desglose por material apenas se emita un Certificado de Transporte de este mes.
                                 </p>
                             </div>
                         ) : (

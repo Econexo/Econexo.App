@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
@@ -83,7 +84,7 @@ const Documents: React.FC = () => {
   ];
 
   const ECONEXO_FOLDERS = [
-    { id: 'recepcion', name: 'Recepción (CR)', icon: 'verified', color: 'bg-primary', types: ['CR'] },
+    { id: 'transporte', name: 'Transporte (CT)', icon: 'local_shipping', color: 'bg-primary', types: TRANSPORTE_TYPES },
     { id: 'mensual', name: 'Gestión Mensual', icon: 'calendar_month', color: 'bg-orange-500', types: ['CGM'] },
     { id: 'reportes', name: 'Reportes de Impacto', icon: 'analytics', color: 'bg-green-600', types: ['pdf', 'report'] },
     { id: 'trazabilidad', name: 'Guías, OC, Pesaje y CDF', icon: 'inventory_2', color: 'bg-teal-600', types: ['guia', 'oc', 'ticket_pesaje', 'cdf'] }
@@ -114,7 +115,7 @@ const Documents: React.FC = () => {
 
     // If we are in Reportes, use CRs time-range as reference optionally
     if (selectedFolder === 'reportes') {
-      typesToCheck = [...typesToCheck, 'CR'];
+      typesToCheck = [...typesToCheck, ...TRANSPORTE_TYPES];
     }
 
     const folderDocs = documents.filter(doc => typesToCheck.includes(doc.type) && getDocEmisor(doc) === sectionToEmisor(currentSection));
@@ -128,7 +129,7 @@ const Documents: React.FC = () => {
     let typesToCheck = folder?.types || [];
 
     if (selectedFolder === 'reportes') {
-      typesToCheck = [...typesToCheck, 'CR'];
+      typesToCheck = [...typesToCheck, ...TRANSPORTE_TYPES];
     }
 
     const yearDocs = documents.filter(doc =>
@@ -173,7 +174,7 @@ const Documents: React.FC = () => {
     }
 
     try {
-      const { generateCR, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
+      const { generateCT, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
       const details = doc.metadata.waste_details;
       if (!details) {
         toast.warning("El documento no contiene detalles de residuos.");
@@ -218,7 +219,7 @@ const Documents: React.FC = () => {
           doc.metadata?.cgm_number
         );
       } else {
-        generateCR(
+        generateCT(
           clientData,
           validItems,
           doc.metadata.cert_number || 'CR-000',
@@ -310,7 +311,7 @@ const Documents: React.FC = () => {
         {
           user_id: userData.user.id,
           title: `Certificado de Prueba ${testDate.toLocaleDateString()} `,
-          type: 'CR',
+          type: DOC_TYPE.TRANSPORTE,
           verified: true,
           created_at: testDate.toISOString(),
           metadata: {
@@ -401,7 +402,7 @@ const Documents: React.FC = () => {
       const yearMatches = date.getFullYear() === targetYear;
       const monthMatches = targetMonth === null || date.getMonth() === targetMonth;
 
-      const isSourceDoc = (doc.type === 'CR' || doc.type === 'verified');
+      const isSourceDoc = (isTransportDoc(doc.type) || doc.type === 'verified');
       return yearMatches && monthMatches && isSourceDoc && doc.verified;
     });
 
@@ -494,7 +495,7 @@ const Documents: React.FC = () => {
       const month = date.getMonth();
       const monthMatches = month >= rangeStart && month <= rangeEnd;
 
-      const isSourceDoc = (doc.type === 'CR' || doc.type === 'verified');
+      const isSourceDoc = (isTransportDoc(doc.type) || doc.type === 'verified');
       return yearMatches && monthMatches && isSourceDoc && doc.verified;
     });
 
@@ -580,7 +581,7 @@ const Documents: React.FC = () => {
   };
 
   const exportToCSV = () => {
-    const crDocs = documents.filter(doc => doc.type === 'CR' && doc.verified);
+    const crDocs = documents.filter(doc => isTransportDoc(doc.type) && doc.verified);
     if (crDocs.length === 0) {
       toast.warning('No hay certificados de retiro para exportar.');
       return;
@@ -698,7 +699,7 @@ const Documents: React.FC = () => {
                       className="flex items-center gap-4 p-5 bg-white/60 backdrop-blur-2xl rounded-[24px] border border-white/80 hover:border-primary/20 transition-all text-left group shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.01]"
                     >
                       <div className={`size-14 rounded-2xl ${folder.color}/10 flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform shadow-sm`}>
-                        <span className={`material-symbols-outlined text-3xl font-bold ${folder.id === 'recepcion' ? 'filled' : ''}`} style={{ color: folder.color.replace('bg-', 'text-').replace('-500', '-600').replace('-600', '-600') }}>{folder.icon}</span>
+                        <span className={`material-symbols-outlined text-3xl font-bold ${folder.id === 'transporte' ? 'filled' : ''}`} style={{ color: folder.color.replace('bg-', 'text-').replace('-500', '-600').replace('-600', '-600') }}>{folder.icon}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-display font-black text-sm text-gray-900 break-words">{folder.name}</h4>
@@ -899,8 +900,8 @@ const Documents: React.FC = () => {
                   <div key={doc.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-[24px] border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] space-y-4 hover:border-primary/20 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="size-12 rounded-xl bg-gray-50 flex items-center justify-center text-primary border border-gray-100">
-                        <span className={`material-symbols-outlined text-2xl ${(doc.type === 'CR' || doc.type === 'pdf' || doc.type === 'report' || doc.type === 'CGM') ? 'filled' : ''}`}>
-                          {(doc.type === 'pdf' || doc.type === 'report') ? 'analytics' : (doc.type === 'CR' ? 'verified' : (doc.type === 'CGM' ? 'calendar_month' : 'description'))}
+                        <span className={`material-symbols-outlined text-2xl ${(isTransportDoc(doc.type) || doc.type === 'pdf' || doc.type === 'report' || doc.type === 'CGM') ? 'filled' : ''}`}>
+                          {(doc.type === 'pdf' || doc.type === 'report') ? 'analytics' : (isTransportDoc(doc.type) ? 'local_shipping' : (doc.type === 'CGM' ? 'calendar_month' : 'description'))}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
