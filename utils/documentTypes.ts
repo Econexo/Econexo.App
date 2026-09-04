@@ -63,3 +63,31 @@ export const CERT_NUMBER_RE = /(?:CT|CR)\s*N°:\s*(\d+)/;
 
 /** Nombre visible del documento. */
 export const CERT_TITLE = 'Certificado de Transporte';
+
+// ── Certificados emitidos con el nombre anterior ─────────────────────────────
+
+/**
+ * Reescribe a CT el nombre o el número de un certificado emitido antes del
+ * cambio, para mostrarlo o para reimprimir su PDF.
+ *
+ * Hace falta por dos motivos. Uno, la migración de la base es opcional y puede
+ * tardar: hasta que se aplique, la app mostraría "CR N°:007" junto a los CT
+ * nuevos. Dos, la app permite volver a descargar un certificado antiguo; sin
+ * esto el PDF saldría titulado "CERTIFICADO DE TRANSPORTE" pero numerado
+ * "CR N°:007", que es justo la confusión que se quería evitar.
+ *
+ * El número NO cambia: el 007 sigue siendo el 007, solo cambia el prefijo.
+ *
+ * Se aplica únicamente a documentos de transporte —comprueba isTransportDoc()
+ * antes de llamar—. El "Certificado de Recepción" del centro de acopio se llama
+ * así de verdad y no debe tocarse.
+ */
+export function toTransportLabel(text?: string | null): string {
+  if (!text) return '';
+  return text
+    .replace(/Certificado de Recepción/g, CERT_TITLE)
+    // Solo donde CR actúa de prefijo de correlativo: 'CR N°:007' y el formato
+    // antiguo del Dashboard, 'CR-4837'. Nunca dentro de otra palabra ni en
+    // códigos como CR_ACOPIO.
+    .replace(/\bCR(?=\s*N°:|-\d)/g, DOC_TYPE.TRANSPORTE);
+}

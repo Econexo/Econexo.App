@@ -9,19 +9,26 @@
 -- Esta migración renombra los certificados YA EMITIDOS. Toca tres cosas de cada
 -- fila: el código de tipo, el título y el correlativo guardado en metadata.
 --
---   type          'CR'                              → 'CT'
+--   type          'CR'                                 → 'CT'
 --   title         'Certificado de Recepción CR N°:007' → 'Certificado de Transporte CT N°:007'
---   cert_number   'CR N°:007'                        → 'CT N°:007'
+--   cert_number   'CR N°:007'                          → 'CT N°:007'
 --
--- El NÚMERO no cambia. La secuencia continúa donde estaba: el 007 sigue siendo
--- el 007, solo cambia el prefijo. Un certificado ya entregado a un cliente
--- conserva su identificador.
+-- Hay DOS formatos de número conviviendo, porque durante un tiempo el botón del
+-- Dashboard y el del panel Admin numeraban distinto:
+--
+--   'CR N°:007'   correlativo del Admin
+--   'CR-4837'     número al azar del Dashboard antiguo
+--
+-- Los dos se migran. El NÚMERO no cambia: el 007 sigue siendo el 007 y el 4837
+-- sigue siendo el 4837, solo cambia el prefijo. Un certificado ya entregado a un
+-- cliente conserva su identificador.
 --
 -- ⚠️  Ejecuta los bloques de uno en uno. El 0 y el 1 solo consultan.
 -- ⚠️  Haz un backup antes del bloque 2 (Database → Backups).
 --
--- El código lee los dos prefijos, así que la app funciona igual antes y después
--- de aplicar esto. No hay prisa ni ventana de mantención.
+-- El código lee los dos prefijos y además reescribe a CT lo que muestra en
+-- pantalla, así que la app se ve igual antes y después de aplicar esto. No hay
+-- prisa ni ventana de mantención: esto ordena los datos, no arregla la vista.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 
@@ -30,11 +37,13 @@
 -- ─────────────────────────────────────────────────────────────────────────
 
 SELECT
-  count(*)                                                   AS total_cr,
-  count(*) FILTER (WHERE title  LIKE '%Recepción%')          AS con_titulo_viejo,
-  count(*) FILTER (WHERE metadata->>'cert_number' LIKE 'CR %') AS con_numero_viejo,
-  min(created_at)::date                                      AS mas_antiguo,
-  max(created_at)::date                                      AS mas_reciente
+  count(*)                                                       AS total_cr,
+  count(*) FILTER (WHERE title LIKE '%Recepción%')                AS con_titulo_viejo,
+  count(*) FILTER (WHERE metadata->>'cert_number' LIKE 'CR N°:%') AS numero_correlativo,
+  count(*) FILTER (WHERE metadata->>'cert_number' ~ '^CR-\d')     AS numero_dashboard_viejo,
+  count(*) FILTER (WHERE metadata->>'cert_number' IS NULL)        AS sin_numero,
+  min(created_at)::date                                          AS mas_antiguo,
+  max(created_at)::date                                          AS mas_reciente
 FROM public.documents
 WHERE type = 'CR';
 
@@ -42,17 +51,26 @@ WHERE type = 'CR';
 -- ─────────────────────────────────────────────────────────────────────────
 -- 1 · Vista previa: cómo quedaría cada fila (solo consulta)
 -- ─────────────────────────────────────────────────────────────────────────
--- Revisa que los títulos nuevos se vean bien ANTES de escribir nada.
+-- Revisa que los títulos y números nuevos se vean bien ANTES de escribir nada.
+--
+-- El CR solo se reemplaza donde actúa de prefijo de un número —seguido de
+-- 'N°:' o de un guion y un dígito—, nunca dentro de otra palabra.
 
 SELECT
   id,
-  created_at::date                       AS fecha,
-  title                                  AS titulo_actual,
-  replace(title, 'Certificado de Recepción CR N°:', 'Certificado de Transporte CT N°:')
-                                         AS titulo_nuevo,
-  metadata->>'cert_number'               AS numero_actual,
-  replace(metadata->>'cert_number', 'CR N°:', 'CT N°:')
-                                         AS numero_nuevo
+  created_at::date         AS fecha,
+  title                    AS titulo_actual,
+  regexp_replace(
+    regexp_replace(
+      replace(title, 'Certificado de Recepción', 'Certificado de Transporte'),
+      'CR(\s*N°:)', 'CT\1', 'g'),
+    'CR-(\d)', 'CT-\1', 'g')
+                           AS titulo_nuevo,
+  metadata->>'cert_number' AS numero_actual,
+  regexp_replace(
+    regexp_replace(coalesce(metadata->>'cert_number', ''), 'CR(\s*N°:)', 'CT\1', 'g'),
+    'CR-(\d)', 'CT-\1', 'g')
+                           AS numero_nuevo
 FROM public.documents
 WHERE type = 'CR'
 ORDER BY created_at;
@@ -66,20 +84,24 @@ ORDER BY created_at;
 --
 -- Se guarda el nombre anterior en metadata.renamed_from. En un documento de
 -- trazabilidad conviene poder reconstruir por qué un certificado cambió de
--- nombre, y a quién se le entregó con el nombre viejo.
+-- nombre, y con cuál se le entregó al cliente.
 
 BEGIN;
 
 UPDATE public.documents
 SET
   type  = 'CT',
-  title = replace(
-            replace(title, 'Certificado de Recepción', 'Certificado de Transporte'),
-            'CR N°:', 'CT N°:'
-          ),
-  metadata = metadata
+  title = regexp_replace(
+            regexp_replace(
+              replace(title, 'Certificado de Recepción', 'Certificado de Transporte'),
+              'CR(\s*N°:)', 'CT\1', 'g'),
+            'CR-(\d)', 'CT-\1', 'g'),
+  metadata = coalesce(metadata, '{}'::jsonb)
     || jsonb_build_object(
-         'cert_number', replace(coalesce(metadata->>'cert_number', ''), 'CR N°:', 'CT N°:'),
+         'cert_number', regexp_replace(
+                          regexp_replace(coalesce(metadata->>'cert_number', ''),
+                                         'CR(\s*N°:)', 'CT\1', 'g'),
+                          'CR-(\d)', 'CT-\1', 'g'),
          'renamed_from', jsonb_build_object(
             'type',        'CR',
             'title',       title,
@@ -89,8 +111,13 @@ SET
        )
 WHERE type = 'CR';
 
--- Comprueba el resultado ANTES de confirmar. Debe devolver 0 filas.
-SELECT count(*) AS quedan_sin_migrar FROM public.documents WHERE type = 'CR';
+-- Comprueba el resultado ANTES de confirmar. Las dos columnas deben dar 0.
+SELECT
+  count(*) FILTER (WHERE type = 'CR')                    AS quedan_sin_migrar,
+  count(*) FILTER (WHERE type = 'CT'
+                     AND (title LIKE '%Recepción%'
+                       OR metadata->>'cert_number' LIKE 'CR%')) AS quedan_con_nombre_viejo
+FROM public.documents;
 
 COMMIT;
 -- Si algo se ve mal, ejecuta ROLLBACK; en vez de COMMIT;
@@ -106,7 +133,7 @@ COMMIT;
 --   WHERE type IN ('CT', 'CR', 'COMMUNITY_CR')
 --   GROUP BY type;
 --
--- Y que la numeración quedó correlativa, sin huecos ni repetidos:
+-- Y que no haya dos certificados con el mismo número:
 --
 --   SELECT metadata->>'cert_number' AS numero, count(*)
 --   FROM public.documents

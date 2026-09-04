@@ -9,7 +9,7 @@ const SLIDES = [
     icon: 'verified',
     color: 'bg-primary',
     title: 'Registra tus retiros',
-    description: 'Sube tus Certificados de Retiro (CR) y lleva un historial completo de todos los residuos que gestionas.',
+    description: 'Sube tus Certificados de Transporte (CT) y lleva un historial completo de todos los residuos que gestionas.',
   },
   {
     icon: 'analytics',

@@ -569,7 +569,7 @@ const MonthlyPanel: React.FC = () => {
                         </section>
 
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold text-center leading-relaxed px-4">
-                            Basado en los Certificados de Recepción verificados de tu empresa.<br />
+                            Basado en los Certificados de Transporte verificados de tu empresa.<br />
                             Factores de impacto: EPA WARM v16 · Water Footprint Network.
                         </p>
                     </>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc } from '../utils/documentTypes';
+import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
@@ -222,7 +222,7 @@ const Documents: React.FC = () => {
         generateCT(
           clientData,
           validItems,
-          doc.metadata.cert_number || 'CR-000',
+          toTransportLabel(doc.metadata.cert_number || doc.title) || 'CT-000',
           action
         );
       }
@@ -315,7 +315,7 @@ const Documents: React.FC = () => {
           verified: true,
           created_at: testDate.toISOString(),
           metadata: {
-            cert_number: `CR-TEST-${Math.floor(100 + Math.random() * 900)}`,
+            cert_number: `CT-TEST-${Math.floor(100 + Math.random() * 900)}`,
             waste_details: [
               { waste_type: "Papel/Cartón", quantity: 150.5, unit: "Kg", description: "Cartón corrugado" },
               { waste_type: "Plásticos", quantity: 85.2, unit: "Kg", description: "Film stretch y PET" },
@@ -407,7 +407,7 @@ const Documents: React.FC = () => {
     });
 
     if (docsToReport.length === 0) {
-      toast.warning(`No hay documentos certificados (CR) válidos en ${period.toLowerCase()} para generar un reporte.`);
+      toast.warning(`No hay documentos certificados (CT) válidos en ${period.toLowerCase()} para generar un reporte.`);
       return;
     }
 
@@ -500,7 +500,7 @@ const Documents: React.FC = () => {
     });
 
     if (docsToReport.length === 0) {
-      toast.warning(`No hay documentos certificados (CR) válidos en el periodo ${period}.`);
+      toast.warning(`No hay documentos certificados (CT) válidos en el periodo ${period}.`);
       return;
     }
 
@@ -599,7 +599,7 @@ const Documents: React.FC = () => {
 
     crDocs.forEach(doc => {
       const date = new Date(doc.created_at).toLocaleDateString('es-CL');
-      const certNum = doc.metadata?.cert_number || doc.title;
+      const certNum = toTransportLabel(doc.metadata?.cert_number || doc.title);
       const details = doc.metadata?.waste_details;
       const items = Array.isArray(details) ? details : details ? [details] : [];
 
@@ -798,7 +798,9 @@ const Documents: React.FC = () => {
                           <span className="material-symbols-outlined text-2xl filled">analytics</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-black text-[13px] truncate text-gray-900">{doc.title}</h4>
+                          <h4 className="font-black text-[13px] truncate text-gray-900">
+                          {isTransportDoc(doc.type) ? toTransportLabel(doc.title) : doc.title}
+                        </h4>
                           <p className="text-[9px] text-gray-500 mt-1 font-black uppercase tracking-widest">Consolidado Anual</p>
                         </div>
                       </div>
@@ -905,7 +907,9 @@ const Documents: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-[13px] truncate text-gray-900">{doc.title}</h4>
+                        <h4 className="font-black text-[13px] truncate text-gray-900">
+                          {isTransportDoc(doc.type) ? toTransportLabel(doc.title) : doc.title}
+                        </h4>
                         <div className="flex items-center gap-2 text-[9px] text-gray-500 mt-1 font-black uppercase tracking-widest">
                           <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                           <span className="size-1 rounded-full bg-gray-200"></span>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TRANSPORTE_TYPES, isTransportDoc } from '../utils/documentTypes';
+import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
 import { monthRange, yearRange, isWithin } from '../utils/dateRange';
 import { supabase } from '../services/supabase';
 // pdfGenerator is loaded on-demand to defer 1.6 MB of PDF assets until needed
@@ -261,7 +261,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
             } else if (doc.type === 'pdf' || doc.type === 'report') {
                 generateEcoReport(client, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte', 'preview');
             } else {
-                generateCT(client, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, 'preview');
+                generateCT(client, doc.metadata.waste_details, toTransportLabel(doc.metadata.cert_number || doc.title), 'preview');
             }
             return;
         }
@@ -422,7 +422,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                         <div className="size-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <span className="material-symbols-outlined">verified</span>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase text-primary leading-tight text-center">Cert. Recepción</span>
+                                        <span className="text-[10px] font-black uppercase text-primary leading-tight text-center">Cert. Transporte</span>
                                     </button>
 
                                     <button
@@ -524,10 +524,12 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                         </span>
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-xs font-bold text-gray-900 truncate">{doc.title}</p>
+                                                        <p className="text-xs font-bold text-gray-900 truncate">
+                                                            {isTransportDoc(doc.type) ? toTransportLabel(doc.title) : doc.title}
+                                                        </p>
                                                         <p className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1.5 flex-wrap">
                                                             <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                                                            <span className="text-primary">{doc.type}</span>
+                                                            <span className="text-primary">{isTransportDoc(doc.type) ? DOC_TYPE.TRANSPORTE : doc.type}</span>
                                                             <span className={`px-1.5 py-0.5 rounded-full text-[8px] ${emisor === 'econexo' ? 'bg-primary/10 text-primary' : 'bg-blue-100 text-blue-600'}`}>
                                                                 {emisor === 'econexo' ? 'EcoNexo' : 'Gestor'}
                                                             </span>
