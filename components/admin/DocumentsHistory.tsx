@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { isTransportDoc } from '../../utils/documentTypes';
+import { DOC_TYPE, isTransportDoc, toTransportLabel } from '../../utils/documentTypes';
 import { AdminDocument, AdminUserProfile, AdminPath, MONTH_NAMES, MONTH_SHORT } from './types';
 
 interface DocumentsHistoryProps {
@@ -68,7 +68,11 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
             if (d.getFullYear() !== filterYear) return false;
             if (filterMonth !== null && d.getMonth() !== filterMonth) return false;
             if (filterCompany && c._clientId !== filterCompany) return false;
-            if (filterType && c.type !== filterType) return false;
+            // Filtrar por CT tiene que traer también los emitidos con el código
+            // anterior, o la lista se vacía hasta que se aplique la migración.
+            if (filterType === DOC_TYPE.TRANSPORTE) {
+                if (!isTransportDoc(c.type)) return false;
+            } else if (filterType && c.type !== filterType) return false;
             return true;
         }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }, [certs, filterYear, filterMonth, filterCompany, filterType]);
@@ -195,7 +199,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                         className="col-span-1 px-2 py-1.5 text-xs font-bold border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white text-gray-800"
                     >
                         <option value="">Todos los tipos</option>
-                        <option value="CR">CR</option>
+                        <option value="CT">CT</option>
                         <option value="CGM">CGM</option>
                         <option value="report">Reporte</option>
                         <option value="pdf">PDF</option>
@@ -380,7 +384,9 @@ const CertCard: React.FC<CertCardProps> = ({ cert, expanded, onToggle, onViewCer
                             <p className="text-xs font-bold text-gray-900 truncate min-w-0">{cert._companyName || 'Sin nombre'}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <p className="text-[10px] text-gray-500 truncate max-w-[160px]">{cert.metadata?.cert_number || cert.title}</p>
+                            <p className="text-[10px] text-gray-500 truncate max-w-[160px]">{isTransportDoc(cert.type)
+                                ? toTransportLabel(cert.metadata?.cert_number || cert.title)
+                                : (cert.metadata?.cert_number || cert.title)}</p>
                             <span className="text-[9px] text-gray-400">{certDate}</span>
                         </div>
                     </div>
@@ -439,14 +445,14 @@ const CertCard: React.FC<CertCardProps> = ({ cert, expanded, onToggle, onViewCer
                             </div>
                         </div>
                     )}
-                    {/* Nuevo CR for this company */}
+                    {/* Nuevo CT para esta empresa */}
                     {certUser && cert.type !== 'CGM' && (
                         <button
                             onClick={() => onOpenCRModal(certUser)}
                             className="w-full py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition-colors"
                         >
                             <span className="material-symbols-outlined text-[12px]">add</span>
-                            Nuevo CR para esta empresa
+                            Nuevo CT para esta empresa
                         </button>
                     )}
                 </div>

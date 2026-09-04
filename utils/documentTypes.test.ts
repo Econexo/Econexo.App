@@ -7,6 +7,7 @@ import {
   CERT_PREFIX,
   CERT_NUMBER_RE,
   CERT_TITLE,
+  toTransportLabel,
 } from './documentTypes';
 
 describe('isTransportDoc', () => {
@@ -98,5 +99,51 @@ describe('nombres visibles', () => {
   it('el código anterior y el nuevo son distintos entre sí', () => {
     expect(DOC_TYPE.TRANSPORTE).not.toBe(DOC_TYPE.TRANSPORTE_LEGACY);
     expect(TRANSPORTE_TYPES).toHaveLength(2);
+  });
+});
+
+describe('toTransportLabel', () => {
+  it('reescribe el título guardado en la base', () => {
+    expect(toTransportLabel('Certificado de Recepción CR N°:007'))
+      .toBe('Certificado de Transporte CT N°:007');
+  });
+
+  it('conserva el número: el 007 sigue siendo el 007', () => {
+    expect(toTransportLabel('CR N°:007')).toBe('CT N°:007');
+    expect(toTransportLabel('CR N°:012')).toBe('CT N°:012');
+  });
+
+  it('cubre el formato antiguo del Dashboard', () => {
+    // Antes de unificar la emisión, el botón del Dashboard numeraba al azar.
+    expect(toTransportLabel('CR-4837')).toBe('CT-4837');
+    expect(toTransportLabel('Certificado de Recepción CR-4837'))
+      .toBe('Certificado de Transporte CT-4837');
+  });
+
+  it('no toca lo que ya está en CT', () => {
+    expect(toTransportLabel('Certificado de Transporte CT N°:013'))
+      .toBe('Certificado de Transporte CT N°:013');
+  });
+
+  it('no toca el código del centro de acopio', () => {
+    expect(toTransportLabel('CR_ACOPIO')).toBe('CR_ACOPIO');
+  });
+
+  it('la función no distingue emisores: eso lo hace quien la llama', () => {
+    // El certificado del centro de acopio SÍ es de recepción y no debe
+    // renombrarse. Esta función solo reescribe texto, así que los sitios que
+    // la usan comprueban isTransportDoc() antes de llamarla.
+    expect(isTransportDoc(DOC_TYPE.RECEPCION_ACOPIO)).toBe(false);
+  });
+
+  it('no reemplaza CR dentro de otra palabra', () => {
+    expect(toTransportLabel('CRC N°:004')).toBe('CRC N°:004');
+    expect(toTransportLabel('SCRAP-12')).toBe('SCRAP-12');
+  });
+
+  it('tolera vacíos', () => {
+    expect(toTransportLabel('')).toBe('');
+    expect(toTransportLabel(null)).toBe('');
+    expect(toTransportLabel(undefined)).toBe('');
   });
 });

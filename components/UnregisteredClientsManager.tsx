@@ -218,7 +218,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                                                     <button 
                                                         onClick={() => onGenerateCR(client)}
                                                         className="size-9 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl flex items-center justify-center border border-transparent transition-colors"
-                                                        title="Generar Certificado (CR)"
+                                                        title="Generar Certificado (CT)"
                                                     >
                                                         <span className="material-symbols-outlined text-lg">verified</span>
                                                     </button>

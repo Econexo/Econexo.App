@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { WASTE_DOC_TYPES } from '../utils/documentTypes';
+import { WASTE_DOC_TYPES, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
 import { Link, useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from '../components/Navbar';
@@ -478,7 +478,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       return {
         id: doc.id,
         title: doc.title,
-        cert_number: doc.metadata?.cert_number || doc.title,
+        cert_number: isTransportDoc(doc.type)
+          ? toTransportLabel(doc.metadata?.cert_number || doc.title)
+          : (doc.metadata?.cert_number || doc.title),
         date: new Date(doc.created_at).toLocaleDateString('es-CL'),
         totalKg,
         materials,

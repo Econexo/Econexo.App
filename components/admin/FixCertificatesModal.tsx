@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TRANSPORTE_TYPES, isTransportDoc } from '../../utils/documentTypes';
+import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc, toTransportLabel } from '../../utils/documentTypes';
 import { supabase } from '../../services/supabase';
 import { useToast } from '../ui/Toast';
 
@@ -244,9 +244,11 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase ${isTransportDoc(cert.type) ? 'bg-primary/10 text-primary' : cert.type === 'CGM' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
-                                            {cert.type}
+                                            {isTransportDoc(cert.type) ? DOC_TYPE.TRANSPORTE : cert.type}
                                         </span>
-                                        <p className="font-bold text-sm text-gray-900 truncate">{cert.title}</p>
+                                        <p className="font-bold text-sm text-gray-900 truncate">
+                                            {isTransportDoc(cert.type) ? toTransportLabel(cert.title) : cert.title}
+                                        </p>
                                         {cert._isUnregistered && (
                                             <span className="text-[8px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full font-black uppercase shrink-0">Manual</span>
                                         )}

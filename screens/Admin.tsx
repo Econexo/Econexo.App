@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc } from '../utils/documentTypes';
+import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { monthRange } from '../utils/dateRange';
@@ -253,7 +253,7 @@ const Admin: React.FC = () => {
         } else if (doc.type === 'CGM') {
             generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action, doc.metadata?.cgm_number, doc.metadata?.destinations);
         } else {
-            generateCT({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
+            generateCT({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, toTransportLabel(doc.metadata.cert_number || doc.title), action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
         }
     };
 
