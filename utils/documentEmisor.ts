@@ -1,4 +1,4 @@
-// Who issued a document: EcoNexo (retiro guides, CR, CGM, reports) or a Gestor
+// Who issued a document: EcoNexo (retiro guides, CT, CGM, reports) or a Gestor
 // (weighing tickets, CDF, disposal certificates). The emisor is used to route
 // documents into the client's "Econexo" vs "Gestores" sections.
 //
@@ -19,8 +19,8 @@ export function getDocEmisor(doc: { type?: string; metadata?: any } | null | und
     if (raw === 'econexo' || raw === 'gestor') return raw;
 
     // Fallback by type: EcoNexo issues CR/CGM/reports and its own retiro guides.
-    if (['CR', 'CGM', 'report', 'pdf', 'guia'].includes(doc?.type || '')) return 'econexo';
-    // ticket_pesaje, cdf, declaration, legal, oc, custom, … → Gestor.
+    if (['CT', 'CR', 'CGM', 'report', 'pdf', 'guia'].includes(doc?.type || '')) return 'econexo';
+    // ticket_pesaje, cdf, CR_ACOPIO, declaration, legal, oc, custom, … → Gestor.
     return 'gestor';
 }
 

@@ -1,7 +1,10 @@
-// Emisión de Certificados de Recepción (CR).
+// Emisión de Certificados de Transporte (CT).
+//
+// EcoNexo transporta: el CR lo emite el centro de acopio al recibir la carga
+// y el CDF quien la trata. Ver utils/documentTypes.ts.
 //
 // Existía duplicada en dos sitios —el botón del Dashboard y el panel Admin— y
-// habían derivado: el Admin numeraba correlativo (CR N°:001) y el Dashboard
+// habían derivado: el Admin numeraba correlativo (CT N°:001) y el Dashboard
 // usaba un número al azar (CR-4837) que además podía repetirse. Tampoco
 // guardaban los mismos metadatos ni mandaban el mismo aviso.
 //
@@ -11,6 +14,13 @@
 import { supabase } from './supabase';
 import { createNotification } from './notificationService';
 import { summarizeByDestination } from '../utils/wasteClassification';
+import {
+  DOC_TYPE,
+  TRANSPORTE_TYPES,
+  CERT_PREFIX,
+  CERT_NUMBER_RE,
+  CERT_TITLE,
+} from '../utils/documentTypes';
 
 export interface CertificateWasteItem {
   waste_type: string;
@@ -52,27 +62,29 @@ export interface IssueCertificateResult {
 const POINTS_PER_KG = 2;
 
 /**
- * Siguiente número correlativo de CR. Lee los existentes y toma el máximo + 1.
+ * Siguiente número correlativo de CT. Lee los existentes y toma el máximo + 1.
  *
  * No es a prueba de emisiones simultáneas: dos operarios emitiendo en el mismo
  * segundo pueden obtener el mismo número. Con un solo operario a la vez no pasa;
  * si algún día son varios, esto tiene que moverse a una secuencia de Postgres.
  */
 export async function nextCertificateNumber(): Promise<string> {
-  const { data } = await supabase.from('documents').select('metadata, title').eq('type', 'CR');
+  // Lee los dos prefijos para que el correlativo continúe donde lo dejó el
+  // último CR, en vez de empezar de cero al cambiar de nombre.
+  const { data } = await supabase.from('documents').select('metadata, title').in('type', TRANSPORTE_TYPES);
 
   let nextNum = 1;
   if (data && data.length > 0) {
     const nums = data
       .map((d: any) => {
-        const match = (d.metadata?.cert_number || d.title || '').match(/CR N°:(\d+)/);
+        const match = (d.metadata?.cert_number || d.title || '').match(CERT_NUMBER_RE);
         return match ? parseInt(match[1], 10) : 0;
       })
       .filter((n: number) => n > 0);
     if (nums.length > 0) nextNum = Math.max(...nums) + 1;
   }
 
-  return `CR N°:${String(nextNum).padStart(3, '0')}`;
+  return `${CERT_PREFIX}${String(nextNum).padStart(3, '0')}`;
 }
 
 /** Fecha del retiro como ISO. Se fija a mediodía local para que no se corra de día. */
@@ -83,18 +95,18 @@ function withdrawalToIso(withdrawalDate?: string): string {
 }
 
 /**
- * Emite un CR: genera el PDF, guarda el documento, otorga Eco-Puntos y avisa
+ * Emite un CT: genera el PDF, guarda el documento, otorga Eco-Puntos y avisa
  * al cliente. Lanza si falla el guardado; el resto de pasos son best-effort y
  * no tumban la emisión.
  */
-export async function issueReceptionCertificate(
+export async function issueTransportCertificate(
   { client, items, withdrawalDate, issuedFrom, updateClientProfile }: IssueCertificateParams,
 ): Promise<IssueCertificateResult> {
   if (!client) throw new Error('Falta la empresa destino.');
   if (!items || items.length === 0) throw new Error('Debes agregar al menos un ítem.');
 
   const certNumber = await nextCertificateNumber();
-  const docTitle = `Certificado de Recepción ${certNumber}`;
+  const docTitle = `${CERT_TITLE} ${certNumber}`;
 
   // El Dashboard deja corregir los datos de la empresa en el mismo formulario.
   if (updateClientProfile && !client.is_unregistered) {
@@ -106,8 +118,8 @@ export async function issueReceptionCertificate(
   }
 
   // PDF. Se importa aquí para no arrastrar el motor de PDF al bundle inicial.
-  const { generateCR } = await import('./pdfGenerator');
-  generateCR(
+  const { generateCT } = await import('./pdfGenerator');
+  generateCT(
     {
       company_name: client.company_name,
       rut: client.rut,
@@ -133,7 +145,7 @@ export async function issueReceptionCertificate(
   const { error } = await supabase.from('documents').insert([{
     user_id: ownerId,
     title: docTitle,
-    type: 'CR',
+    type: DOC_TYPE.TRANSPORTE,
     verified: true,
     created_at: withdrawalToIso(withdrawalDate),
     metadata: {

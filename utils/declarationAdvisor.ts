@@ -174,7 +174,7 @@ export function evaluateDeclarations(
         : `Sin residuos no peligrosos registrados en ${year}.`,
     action:
       sinaderVerdict === 'obligatorio'
-        ? `Superaste las ${ton(SINADER_MANDATORY_KG)} anuales: corresponde declarar en el módulo SINADER de Ventanilla Única RETC. Tus certificados de recepción son el respaldo de las cantidades.`
+        ? `Superaste las ${ton(SINADER_MANDATORY_KG)} anuales: corresponde declarar en el módulo SINADER de Ventanilla Única RETC. Tus certificados de transporte son el respaldo de las cantidades.`
         : sinaderVerdict === 'cerca'
           ? `Te faltan ${kg(faltante)} para las ${ton(SINADER_MANDATORY_KG)} anuales. Conviene ir dejando los antecedentes ordenados por si cierras el año por encima.`
           : `Estás muy por debajo de las ${ton(SINADER_MANDATORY_KG)} anuales: no corresponde declarar de forma obligatoria. Puedes hacerlo de manera voluntaria si te sirve como respaldo comercial.`,

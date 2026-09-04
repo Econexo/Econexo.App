@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { TRANSPORTE_TYPES, isTransportDoc } from '../utils/documentTypes';
 import { monthRange, yearRange, isWithin } from '../utils/dateRange';
 import { supabase } from '../services/supabase';
 // pdfGenerator is loaded on-demand to defer 1.6 MB of PDF assets until needed
@@ -116,7 +117,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
             setEcoPoints(profile?.eco_points || 0);
 
             // Compute stats from CR documents
-            const crDocs = (docs || []).filter((d: any) => d.type === 'CR' && d.metadata?.waste_details);
+            const crDocs = (docs || []).filter((d: any) => isTransportDoc(d.type) && d.metadata?.waste_details);
             const materialData: Record<string, number> = {};
             let totalKg = 0;
             let totalCO2 = 0;
@@ -218,7 +219,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
             : yearRange(reportYear);
 
         const crDocs = documents.filter((d: any) =>
-            d.type === 'CR' && d.metadata?.waste_details && isWithin(d.created_at, range)
+            isTransportDoc(d.type) && d.metadata?.waste_details && isWithin(d.created_at, range)
         );
 
         if (crDocs.length === 0) {
@@ -253,14 +254,14 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
     // (bucket "documents") or a storage path (bucket "scanned-docs") via signed URL.
     const handleViewDoc = async (doc: any) => {
         const client = { company_name: user.company_name, rut: user.rut, address: user.address || 'Chile' };
-        if (doc.metadata?.waste_details && ['CR', 'CGM', 'pdf', 'report'].includes(doc.type)) {
-            const { generateCR, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
+        if (doc.metadata?.waste_details && [...TRANSPORTE_TYPES, 'CGM', 'pdf', 'report'].includes(doc.type)) {
+            const { generateCT, generateEcoReport, generateCGM } = await import('../services/pdfGenerator');
             if (doc.type === 'CGM') {
                 generateCGM(client, doc.metadata.waste_details, doc.metadata.month || 'Mes', doc.metadata.year || new Date().getFullYear(), 'preview', doc.metadata?.cgm_number, doc.metadata?.destinations);
             } else if (doc.type === 'pdf' || doc.type === 'report') {
                 generateEcoReport(client, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte', 'preview');
             } else {
-                generateCR(client, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, 'preview');
+                generateCT(client, doc.metadata.waste_details, doc.metadata.cert_number || doc.title, 'preview');
             }
             return;
         }
@@ -519,7 +520,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                 <div className="flex items-center gap-3 p-3">
                                                     <div className="size-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                                                         <span className="material-symbols-outlined text-base">
-                                                            {doc.type === 'CR' ? 'verified' : doc.type === 'CGM' ? 'calendar_today' : doc.type === 'pdf' || doc.type === 'report' ? 'bar_chart' : 'description'}
+                                                            {isTransportDoc(doc.type) ? 'verified' : doc.type === 'CGM' ? 'calendar_today' : doc.type === 'pdf' || doc.type === 'report' ? 'bar_chart' : 'description'}
                                                         </span>
                                                     </div>
                                                     <div className="flex-1 min-w-0">
@@ -628,7 +629,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">CRs emitidos</p>
-                                    <p className="font-bold text-gray-700 mt-0.5">{documents.filter(d => d.type === 'CR').length}</p>
+                                    <p className="font-bold text-gray-700 mt-0.5">{documents.filter(d => isTransportDoc(d.type)).length}</p>
                                 </div>
                                 {user.waste_types && user.waste_types.length > 0 && (
                                     <div className="col-span-2 min-w-0">

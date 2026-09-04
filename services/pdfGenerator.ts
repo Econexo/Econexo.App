@@ -32,7 +32,7 @@ interface WasteItem {
     unit: string;
 }
 
-export const generateCR = (client: CompanyData, items: WasteItem[], certificateNumber: string, action: 'save' | 'preview' = 'save', customDate?: string) => {
+export const generateCT = (client: CompanyData, items: WasteItem[], certificateNumber: string, action: 'save' | 'preview' = 'save', customDate?: string) => {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = 210;
     const pageHeight = 297;
@@ -141,7 +141,8 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
 
     // ── TITLE ──
     const titleY = clientTableY + clientRows.length * rowH + 12;
-    const titleText = 'CERTIFICADO DE TRANSPORTE Y RECEPCION DE MATERIAL';
+    // EcoNexo transporta: el título nombra ese rol, no el de quien recibe.
+    const titleText = 'CERTIFICADO DE TRANSPORTE DE RESIDUOS';
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
@@ -179,7 +180,7 @@ export const generateCR = (client: CompanyData, items: WasteItem[], certificateN
     // Light green header: approximates EcoNexo logo green palette
     autoTable(doc, {
         startY: tableStartY,
-        head: [['ITEM', 'MATERIAL', 'RECEPCIÓN', 'CANTIDAD (Kg)']],
+        head: [['ITEM', 'MATERIAL', 'RETIRO', 'CANTIDAD (Kg)']],
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [180, 220, 185], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0] },
@@ -1601,7 +1602,7 @@ export const generateCommunityCR = (
 
     autoTable(doc, {
         startY: tableStartY,
-        head: [['ITEM', 'MATERIAL', 'RECEPCIÓN', 'CANTIDAD (Kg)']],
+        head: [['ITEM', 'MATERIAL', 'RETIRO', 'CANTIDAD (Kg)']],
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [180, 220, 185], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, halign: 'center', lineWidth: 0.3, lineColor: [0, 0, 0] },

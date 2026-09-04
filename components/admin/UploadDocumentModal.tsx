@@ -24,18 +24,20 @@ const GESTOR_TYPES = [
     { value: 'guia',          label: 'Guía' },
     { value: 'oc',            label: 'Orden de Compra (OC)' },
     { value: 'ticket_pesaje', label: 'Ticket de Pesaje' },
-    { value: 'cdf',           label: 'Certificado Disposición Final (CDF)' },
+    { value: 'CR_ACOPIO',     label: 'Certificado de Recepción (centro de acopio)' },
+  { value: 'cdf',           label: 'Certificado Disposición Final (CDF)' },
     { value: 'custom',        label: 'Otro' },
 ];
 
 const ECONEXO_TYPES = [
-    { value: 'CR',            label: 'Certificado de Recepción (CR)' },
+    { value: 'CT',            label: 'Certificado de Transporte (CT)' },
     { value: 'CGM',           label: 'Certificado Gestión Mensual (CGM)' },
     { value: 'report',        label: 'Reporte Ambiental' },
     { value: 'guia',          label: 'Guía' },
     { value: 'oc',            label: 'Orden de Compra (OC)' },
     { value: 'ticket_pesaje', label: 'Ticket de Pesaje' },
-    { value: 'cdf',           label: 'Certificado Disposición Final (CDF)' },
+    { value: 'CR_ACOPIO',     label: 'Certificado de Recepción (centro de acopio)' },
+  { value: 'cdf',           label: 'Certificado Disposición Final (CDF)' },
     { value: 'custom',        label: 'Otro' },
 ];
 

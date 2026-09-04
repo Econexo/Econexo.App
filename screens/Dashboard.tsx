@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WASTE_DOC_TYPES } from '../utils/documentTypes';
 import { Link, useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from '../components/Navbar';
@@ -7,7 +8,7 @@ import NotificationBell from '../components/NotificationBell';
 
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
-import { issueReceptionCertificate } from '../services/certificateService';
+import { issueTransportCertificate } from '../services/certificateService';
 import { WASTE_CATEGORIES } from '../components/admin/types';
 import { summarizeByDestination, WASTE_DESTINATIONS, defaultDestinationFor, isValorized } from '../utils/wasteClassification';
 import { formatKg } from '../utils/formatKg';
@@ -189,7 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     try {
       // Mismo servicio que usa el panel Admin: misma numeración correlativa,
       // mismos metadatos y mismo aviso al cliente desde los dos botones.
-      const { certNumber, pointsAwarded, totalKg } = await issueReceptionCertificate({
+      const { certNumber, pointsAwarded, totalKg } = await issueTransportCertificate({
         client: selectedClient,
         items: wasteItems,
         withdrawalDate,
@@ -235,7 +236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       let query = supabase
         .from('documents')
         .select('*')
-        .in('type', ['CR', 'COMMUNITY_CR'])
+        .in('type', WASTE_DOC_TYPES)
         .eq('verified', true);
 
       // Fetch user profile to check admin status again or strictly use the prop if passed, 
@@ -389,7 +390,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       .from('documents')
       .select('created_at')
       .eq('user_id', user.id)
-      .in('type', ['CR', 'COMMUNITY_CR'])
+      .in('type', WASTE_DOC_TYPES)
       .eq('verified', true)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -422,7 +423,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         .from('documents')
         .select('metadata')
         .eq('user_id', user.id)
-        .in('type', ['CR', 'COMMUNITY_CR'])
+        .in('type', WASTE_DOC_TYPES)
         .eq('verified', true);
 
       let totalKgYear = 0;
@@ -463,7 +464,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
       .from('documents')
       .select('id, title, metadata, created_at')
       .eq('user_id', user.id)
-      .in('type', ['CR', 'COMMUNITY_CR'])
+      .in('type', WASTE_DOC_TYPES)
       .eq('verified', true)
       .order('created_at', { ascending: false })
       .limit(4);
@@ -492,7 +493,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
     const isUserAdmin = !!profile?.is_admin;
 
-    let query = supabase.from('documents').select('*').in('type', ['CR', 'COMMUNITY_CR']).eq('verified', true);
+    let query = supabase.from('documents').select('*').in('type', WASTE_DOC_TYPES).eq('verified', true);
     if (!isUserAdmin) query = query.eq('user_id', user.id);
 
     const { data: docs } = await query;

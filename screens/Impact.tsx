@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { WASTE_DOC_TYPES } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { jsPDF } from 'jspdf';
@@ -116,7 +117,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
         .from('documents')
         .select('metadata, created_at')
         .eq('user_id', user.id)
-        .in('type', ['CR', 'COMMUNITY_CR'])
+        .in('type', WASTE_DOC_TYPES)
         .eq('verified', true);
 
       let totalKg = 0;
