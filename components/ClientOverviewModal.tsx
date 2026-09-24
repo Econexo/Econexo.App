@@ -261,7 +261,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
             } else if (doc.type === 'pdf' || doc.type === 'report') {
                 generateEcoReport(client, doc.metadata.waste_details, doc.metadata.periodo || 'Reporte', 'preview');
             } else {
-                generateCT(client, doc.metadata.waste_details, toTransportLabel(doc.metadata.cert_number || doc.title), 'preview');
+                generateCT(client, doc.metadata.waste_details, toTransportLabel(doc.metadata.cert_number || doc.title), 'preview', doc.metadata?.withdrawal_date || doc.created_at?.split('T')[0], doc.metadata?.transporter);
             }
             return;
         }

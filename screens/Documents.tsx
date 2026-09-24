@@ -27,6 +27,10 @@ interface Document {
     year?: number;
     cgm_number?: number | string;
     source_document_ids?: string[];
+    /** Día del retiro. El CT lo imprime en las casillas de fecha. */
+    withdrawal_date?: string;
+    /** Transportista con que se emitió: de aquí sale su resolución sanitaria. */
+    transporter?: { name?: string; rut?: string; resolution?: string };
   };
 }
 
@@ -223,7 +227,9 @@ const Documents: React.FC = () => {
           clientData,
           validItems,
           toTransportLabel(doc.metadata.cert_number || doc.title) || 'CT-000',
-          action
+          action,
+          doc.metadata?.withdrawal_date || doc.created_at?.split('T')[0],
+          doc.metadata?.transporter
         );
       }
     } catch (error: any) {
