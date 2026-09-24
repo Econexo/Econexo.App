@@ -9,6 +9,7 @@ import NotificationBell from '../components/NotificationBell';
 import { supabase } from '../services/supabase';
 import { normalizeMaterialType, materialFactors, CO2_PER_TREE } from '../utils/materialCalculations';
 import { issueTransportCertificate } from '../services/certificateService';
+import { fetchActiveTransportistas, TransportistaOption } from '../services/transportistas';
 import { WASTE_CATEGORIES } from '../components/admin/types';
 import { summarizeByDestination, WASTE_DESTINATIONS, defaultDestinationFor, isValorized } from '../utils/wasteClassification';
 import { formatKg } from '../utils/formatKg';
@@ -55,6 +56,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+  // Transportista del retiro: su resolución sanitaria es la que declara el CT.
+  const [transportistas, setTransportistas] = useState<TransportistaOption[]>([]);
+  const [selectedTransportistaId, setSelectedTransportistaId] = useState('');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   // State for multiple items
   const [wasteItems, setWasteItems] = useState<any[]>([]);
@@ -181,6 +185,20 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
     setWasteItems(wasteItems.filter((_, i) => i !== index));
   };
 
+  // Se cargan al abrir el modal de retiro, no al entrar al Dashboard: el
+  // selector solo existe ahí y la mayoría de las visitas no emite nada.
+  useEffect(() => {
+    if (!showWithdrawalModal) return;
+    let cancelled = false;
+    fetchActiveTransportistas().then(list => {
+      if (cancelled) return;
+      setTransportistas(list);
+      setSelectedTransportistaId(prev =>
+        prev && list.some(t => t.id === prev) ? prev : (list[0]?.id || ''));
+    });
+    return () => { cancelled = true; };
+  }, [showWithdrawalModal]);
+
   const handleGenerateCR = async () => {
     if (!selectedClient || wasteItems.length === 0) {
       toast.warning("Debes agregar al menos un ítem a la lista.");
@@ -196,6 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         withdrawalDate,
         issuedFrom: 'dashboard',
         updateClientProfile: true,
+        transporter: transportistas.find(t => t.id === selectedTransportistaId) || null,
       });
 
       toast.success(
@@ -699,6 +718,33 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">Fecha</label>
                 <input type="date" value={withdrawalDate} onChange={(e) => setWithdrawalDate(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-primary" />
               </div>
+
+              {/* Transportista: de su ficha sale la resolución sanitaria del certificado */}
+              {transportistas.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[14px]">local_shipping</span>
+                    Transportista
+                  </label>
+                  <select
+                    value={selectedTransportistaId}
+                    onChange={(e) => setSelectedTransportistaId(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-primary"
+                  >
+                    {transportistas.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  {(() => {
+                    const chosen = transportistas.find(t => t.id === selectedTransportistaId);
+                    return chosen ? (
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 ml-1">
+                        Resolución N° : {chosen.resolution}
+                      </p>
+                    ) : null;
+                  })()}
+                </div>
+              )}
 
               {selectedClient && (
                 <div className="space-y-4">

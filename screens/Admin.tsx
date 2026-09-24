@@ -4,19 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { monthRange } from '../utils/dateRange';
 import { issueTransportCertificate } from '../services/certificateService';
+import { fetchActiveTransportistas, TransportistaOption } from '../services/transportistas';
+import { bulkUploadDocuments } from '../services/bulkDocumentUpload';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import Navbar from '../components/Navbar';
 import { generateCT, generateEcoReport, generateCGM } from '../services/pdfGenerator';
 import CommunityWithdrawalsManager from '../components/CommunityWithdrawalsManager';
 import DocumentEditor from '../components/DocumentEditor';
-import { createNotification } from '../services/notificationService';
 import ClientOverviewModal from '../components/ClientOverviewModal';
 import UnregisteredClientsManager, { UnregisteredClient } from '../components/UnregisteredClientsManager';
 
 // Admin subcomponents
 import MonthlyGenModal, { CgmDestinationOption } from '../components/admin/MonthlyGenModal';
 import CgmDestinationsManager from '../components/admin/CgmDestinationsManager';
+import TransportistasManager from '../components/admin/TransportistasManager';
 import UploadDocumentModal from '../components/admin/UploadDocumentModal';
 import GenerateCRModal from '../components/admin/GenerateCRModal';
 import PendingDocsList from '../components/admin/PendingDocsList';
@@ -62,8 +64,15 @@ const Admin: React.FC = () => {
     const [selectedDestIds, setSelectedDestIds] = useState<string[]>([]);
     const [showDestinationsManager, setShowDestinationsManager] = useState(false);
 
-    // Upload modal state
-    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    // Transportistas: de su ficha sale la resolución sanitaria que declara el CT.
+    const [transportistas, setTransportistas] = useState<TransportistaOption[]>([]);
+    const [selectedTransportistaId, setSelectedTransportistaId] = useState('');
+    const [showTransportistasManager, setShowTransportistasManager] = useState(false);
+
+    // Upload modal state: varios archivos × varias empresas.
+    const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+    const [uploadUserIds, setUploadUserIds] = useState<string[]>([]);
+    const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
     const [uploadDate, setUploadDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [uploadType, setUploadType] = useState('declaration');
     const [uploadSource, setUploadSource] = useState<'gestor' | 'econexo'>('gestor');
@@ -78,6 +87,7 @@ const Admin: React.FC = () => {
         checkAdmin();
         fetchAdminData();
         fetchCgmDestinations();
+        loadTransportistas();
     }, []);
 
     const fetchCgmDestinations = async () => {
@@ -87,6 +97,15 @@ const Admin: React.FC = () => {
             .eq('active', true)
             .order('created_at', { ascending: true });
         setCgmDestinations(data || []);
+    };
+
+    // El primero activo queda preseleccionado (la semilla es EcoNexo), y una
+    // recarga no pierde el que el operario ya había elegido.
+    const loadTransportistas = async () => {
+        const list = await fetchActiveTransportistas();
+        setTransportistas(list);
+        setSelectedTransportistaId(prev =>
+            prev && list.some(t => t.id === prev) ? prev : (list[0]?.id || ''));
     };
 
     const checkAdmin = async () => {
@@ -194,6 +213,7 @@ const Admin: React.FC = () => {
                 items: wasteItems,
                 withdrawalDate,
                 issuedFrom: 'admin',
+                transporter: transportistas.find(t => t.id === selectedTransportistaId) || null,
             });
 
             setShowCRModal(false);
@@ -253,7 +273,7 @@ const Admin: React.FC = () => {
         } else if (doc.type === 'CGM') {
             generateCGM({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, doc.metadata?.month || 'Mes', doc.metadata?.year || 2024, action, doc.metadata?.cgm_number, doc.metadata?.destinations);
         } else {
-            generateCT({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, toTransportLabel(doc.metadata.cert_number || doc.title), action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0]);
+            generateCT({ company_name: profileData.company_name, rut: profileData.rut, address: profileData.address || 'Chile' }, doc.metadata.waste_details, toTransportLabel(doc.metadata.cert_number || doc.title), action, doc.metadata.withdrawal_date || doc.created_at?.split('T')[0], doc.metadata?.transporter);
         }
     };
 
@@ -288,45 +308,70 @@ const Admin: React.FC = () => {
         }
     };
 
-    const handleUploadDocument = async () => {
-        if (!uploadFile || !selectedUser || !uploadDate) { toast.warning('Por favor completa todos los campos y selecciona un archivo.'); return; }
-        setLoading(true);
-        try {
-            const timestamp = Date.now();
-            const cleanFileName = uploadFile.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
-            const fileName = `${selectedUser.id}/${timestamp}_${cleanFileName}`;
+    const resetUploadForm = () => {
+        setUploadFiles([]);
+        setUploadUserIds([]);
+        setUploadDate(new Date().toISOString().split('T')[0]);
+        setUploadSource('gestor');
+        setUploadType('declaration');
+    };
 
-            // Bucket PRIVADO: se guarda la ruta, no una URL pública. El cliente abre
-            // el archivo con una URL firmada de 60 s (ver Documents.handleDownload).
-            const { error: uploadError } = await supabase.storage
-                .from('scanned-docs')
-                .upload(fileName, uploadFile, { contentType: uploadFile.type || 'application/octet-stream' });
-            if (uploadError) throw uploadError;
+    const handleUploadDocuments = async () => {
+        if (uploadFiles.length === 0 || uploadUserIds.length === 0 || !uploadDate) {
+            toast.warning('Elige al menos un archivo, una empresa y la fecha del documento.');
+            return;
+        }
 
-            const { error: dbError } = await supabase.rpc('create_admin_document', {
-                _user_id: selectedUser.id,
-                _title: uploadFile.name,
-                _type: uploadType,
-                _content_url: fileName,
-                _created_at: new Date(uploadDate).toISOString(),
-                _metadata: { original_name: uploadFile.name, size: uploadFile.size, mime_type: uploadFile.type, uploaded_by: 'admin', source: uploadSource }
+        const companies = users
+            .filter(u => uploadUserIds.includes(u.id))
+            .map(u => ({ id: u.id, company_name: u.company_name }));
+
+        // Marcar "todas" es un click. Antes de repartir un documento entre muchas
+        // empresas conviene ver el número: un documento privado en la cuenta
+        // equivocada no se puede "desenviar".
+        if (companies.length > 5) {
+            const ok = await confirm({
+                title: 'Confirmar carga masiva',
+                message: `${uploadFiles.length} archivo(s) × ${companies.length} empresas = ${uploadFiles.length * companies.length} documentos. `
+                    + 'Cada empresa verá estos archivos en su cuenta. ¿Continuar?',
+                confirmLabel: 'Sí, subir',
             });
-            if (dbError) throw dbError;
+            if (!ok) return;
+        }
 
-            await createNotification({ userId: selectedUser.id, title: '📄 Nuevo Documento Disponible', message: `El administrador ha subido un nuevo documento: "${uploadFile.name}".`, type: 'document', metadata: { file_name: uploadFile.name, document_type: uploadType } });
+        setLoading(true);
+        setUploadProgress({ done: 0, total: uploadFiles.length * companies.length });
+        try {
+            const result = await bulkUploadDocuments({
+                files: uploadFiles,
+                companies,
+                type: uploadType,
+                source: uploadSource,
+                documentDate: uploadDate,
+                onProgress: (done, total) => setUploadProgress({ done, total }),
+            });
 
-            toast.success('Documento subido exitosamente.');
-            setShowUploadModal(false);
-            setUploadFile(null);
-            setUploadDate(new Date().toISOString().split('T')[0]);
-            setUploadSource('gestor');
-            setUploadType('declaration');
-            setSelectedUser(null);
+            if (result.failures.length === 0) {
+                toast.success(`${result.uploaded} documento(s) subido(s) a ${result.companiesReached} empresa(s).`);
+            } else {
+                console.error('Fallos en la carga masiva:', result.failures);
+                const detalle = result.failures.slice(0, 3).map(f => `${f.company} (${f.file}): ${f.message}`).join(' · ');
+                toast.warning(`${result.uploaded} de ${result.total} subidos. Fallaron ${result.failures.length}: ${detalle}`);
+            }
+
+            // Si no se subió nada, el modal queda abierto para reintentar sin volver
+            // a elegir los archivos. Si algo sí se subió, se cierra: reintentar con
+            // la misma selección duplicaría los que ya están.
+            if (result.uploaded > 0) {
+                setShowUploadModal(false);
+                resetUploadForm();
+            }
             fetchAdminData();
         } catch (err: any) {
-            toast.error('Error al subir el documento: ' + (err.message || 'Error desconocido'));
+            toast.error('Error al subir los documentos: ' + (err.message || 'Error desconocido'));
         } finally {
             setLoading(false);
+            setUploadProgress(null);
         }
     };
 
@@ -448,18 +493,24 @@ const Admin: React.FC = () => {
                 <UploadDocumentModal
                     show={showUploadModal}
                     users={users}
-                    selectedUser={selectedUser}
-                    onSelectUser={setSelectedUser}
+                    selectedIds={uploadUserIds}
+                    onToggleUser={(id) => setUploadUserIds(prev =>
+                        prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                    onSetMany={(ids, selected) => setUploadUserIds(prev => selected
+                        ? Array.from(new Set([...prev, ...ids]))
+                        : prev.filter(x => !ids.includes(x)))}
                     uploadDate={uploadDate}
                     onDateChange={setUploadDate}
                     uploadType={uploadType}
                     onTypeChange={setUploadType}
                     uploadSource={uploadSource}
                     onSourceChange={(src) => { setUploadSource(src); setUploadType(src === 'econexo' ? DOC_TYPE.TRANSPORTE : 'declaration'); }}
-                    onFileChange={setUploadFile}
+                    files={uploadFiles}
+                    onFilesChange={setUploadFiles}
                     loading={loading}
-                    onUpload={handleUploadDocument}
-                    onClose={() => setShowUploadModal(false)}
+                    progress={uploadProgress}
+                    onUpload={handleUploadDocuments}
+                    onClose={() => { setShowUploadModal(false); resetUploadForm(); }}
                 />
 
                 <GenerateCRModal
@@ -475,6 +526,9 @@ const Admin: React.FC = () => {
                     onRemoveItem={handleRemoveWasteItem}
                     onGenerate={handleGenerateCR}
                     onClose={() => setShowCRModal(false)}
+                    transportistas={transportistas}
+                    selectedTransportistaId={selectedTransportistaId}
+                    onTransportistaChange={setSelectedTransportistaId}
                 />
 
                 {/* Quick Actions */}
@@ -502,6 +556,10 @@ const Admin: React.FC = () => {
                     <button onClick={() => setShowDestinationsManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 border border-teal-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">pin_drop</span></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-teal-600 transition-colors text-center">Destinos CGM</span>
+                    </button>
+                    <button onClick={() => setShowTransportistasManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
+                        <div className="size-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 border border-teal-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">local_shipping</span></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-teal-600 transition-colors text-center">Transportistas</span>
                     </button>
                 </section>
 
@@ -561,6 +619,13 @@ const Admin: React.FC = () => {
             {showDestinationsManager && (
                 <CgmDestinationsManager
                     onClose={() => { setShowDestinationsManager(false); fetchCgmDestinations(); }}
+                />
+            )}
+
+            {/* Transportistas Manager */}
+            {showTransportistasManager && (
+                <TransportistasManager
+                    onClose={() => { setShowTransportistasManager(false); loadTransportistas(); }}
                 />
             )}
 

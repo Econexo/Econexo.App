@@ -41,9 +41,21 @@ export interface CertificateClient {
   is_unregistered?: boolean;
 }
 
+/** El transportista elegido al emitir. Se copia en los metadatos del documento. */
+export interface CertificateTransporter {
+  name: string;
+  rut?: string;
+  resolution: string;
+}
+
 export interface IssueCertificateParams {
   client: CertificateClient;
   items: CertificateWasteItem[];
+  /**
+   * Quién hizo el traslado. Su resolución sanitaria es la que declara el
+   * certificado. Si no se indica, el PDF imprime la de EcoNexo.
+   */
+  transporter?: CertificateTransporter | null;
   /** 'YYYY-MM-DD'. Vacío = hoy. */
   withdrawalDate?: string;
   /** De dónde salió la emisión. Solo para trazabilidad en los metadatos. */
@@ -100,7 +112,7 @@ function withdrawalToIso(withdrawalDate?: string): string {
  * no tumban la emisión.
  */
 export async function issueTransportCertificate(
-  { client, items, withdrawalDate, issuedFrom, updateClientProfile }: IssueCertificateParams,
+  { client, items, withdrawalDate, issuedFrom, updateClientProfile, transporter }: IssueCertificateParams,
 ): Promise<IssueCertificateResult> {
   if (!client) throw new Error('Falta la empresa destino.');
   if (!items || items.length === 0) throw new Error('Debes agregar al menos un ítem.');
@@ -131,6 +143,7 @@ export async function issueTransportCertificate(
     certNumber,
     'save',
     withdrawalDate,
+    transporter,
   );
 
   // Los clientes no registrados no tienen cuenta: el documento queda a nombre
@@ -151,6 +164,11 @@ export async function issueTransportCertificate(
     metadata: {
       cert_number: certNumber,
       generated_by: issuedFrom === 'admin' ? 'Admin Panel' : 'Dashboard Operator',
+      // Copia, no referencia: si mañana cambia la resolución del transportista,
+      // este certificado sigue mostrando la que se imprimió.
+      transporter: transporter
+        ? { name: transporter.name, rut: transporter.rut || '', resolution: transporter.resolution }
+        : undefined,
       waste_details: items,
       withdrawal_date: withdrawalDate,
       // Se guarda el resumen ya calculado para no tener que recorrer los ítems

@@ -3,6 +3,7 @@ import { formatKg as fmtKg, sumTruncated } from '../utils/formatKg';
 import autoTable from 'jspdf-autotable';
 import { ECONEXO_SIGNATURE, ECONEXO_LOGO, ECONEXO_WATERMARK, REPORT_HEADER_BG, ECONEXO_FULL_LOGO, ECONEXO_FULL_LOGO_V2, PHONE_ICON, PHONE_ICON_V2, ECONEXO_LOGO_CGM, CGM_FOOTER_BAR } from './constants';
 import { materialFactors, normalizeMaterialType } from '../utils/materialCalculations';
+import { resolveTransportResolution, TransporterInfo } from '../utils/transportistas';
 
 /**
  * iOS Safari blocks doc.save() (programmatic anchor click).
@@ -32,7 +33,15 @@ interface WasteItem {
     unit: string;
 }
 
-export const generateCT = (client: CompanyData, items: WasteItem[], certificateNumber: string, action: 'save' | 'preview' = 'save', customDate?: string) => {
+/**
+ * Certificado de Transporte.
+ *
+ * `transporter` es quien hizo el retiro: de su ficha sale la resolución sanitaria
+ * que el certificado declara. Si no llega —certificados emitidos antes de que el
+ * transportista fuera seleccionable— se imprime la de EcoNexo, que es la que este
+ * PDF traía escrita a fuego.
+ */
+export const generateCT = (client: CompanyData, items: WasteItem[], certificateNumber: string, action: 'save' | 'preview' = 'save', customDate?: string, transporter?: TransporterInfo | null) => {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = 210;
     const pageHeight = 297;
@@ -207,7 +216,7 @@ export const generateCT = (client: CompanyData, items: WasteItem[], certificateN
     doc.setFont('helvetica', 'normal');
     doc.text('Transporte Autorizado por Ministerio de Salud', ml, transportY);
     doc.setFont('helvetica', 'bold');
-    doc.text('RESOLUCIÓN N° : 2402341155', ml, transportY + 5);
+    doc.text(`RESOLUCIÓN N° : ${resolveTransportResolution(transporter)}`, ml, transportY + 5);
 
     // ── SIGNATURES ──
     const sigY = transportY + 68; // enough space so 54mm-tall signature sits fully above line

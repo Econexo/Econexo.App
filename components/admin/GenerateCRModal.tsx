@@ -2,6 +2,7 @@ import React from 'react';
 import { AdminUserProfile, WasteItem, WASTE_CATEGORIES } from './types';
 import { WASTE_DESTINATIONS, defaultDestinationFor, DESTINATION_LABELS } from '../../utils/wasteClassification';
 import type { WasteDestination } from '../../utils/wasteClassification';
+import type { TransportistaOption } from '../../services/transportistas';
 
 interface CurrentWaste {
     waste_type: string;
@@ -22,6 +23,10 @@ interface GenerateCRModalProps {
     onCurrentWasteChange: (waste: CurrentWaste) => void;
     onAddItem: () => void;
     onRemoveItem: (index: number) => void;
+    /** Transportistas activos. Vacío = el certificado imprime la resolución de EcoNexo. */
+    transportistas: TransportistaOption[];
+    selectedTransportistaId: string;
+    onTransportistaChange: (id: string) => void;
     onGenerate: () => void;
     onClose: () => void;
 }
@@ -39,6 +44,9 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
     onRemoveItem,
     onGenerate,
     onClose,
+    transportistas,
+    selectedTransportistaId,
+    onTransportistaChange,
 }) => {
     if (!show || !selectedUser) return null;
 
@@ -80,6 +88,30 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                             onChange={(e) => onDateChange(e.target.value)}
                         />
                     </div>
+
+                    {/* Transportista: de su ficha sale la resolución sanitaria del PDF */}
+                    {transportistas.length > 0 && (
+                        <div className="space-y-3">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Transportista</h4>
+                            <select
+                                className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900"
+                                value={selectedTransportistaId}
+                                onChange={(e) => onTransportistaChange(e.target.value)}
+                            >
+                                {transportistas.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </select>
+                            {(() => {
+                                const chosen = transportistas.find(t => t.id === selectedTransportistaId);
+                                return chosen ? (
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                                        Resolución N° : {chosen.resolution}
+                                    </p>
+                                ) : null;
+                            })()}
+                        </div>
+                    )}
 
                     <div className="h-px bg-gray-200"></div>
 
