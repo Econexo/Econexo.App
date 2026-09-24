@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
+import { TRANSPORTE_TYPES, isEconexoCertificate, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
@@ -297,45 +297,6 @@ const Documents: React.FC = () => {
     } catch (err: any) {
       console.error('Error deleting document:', err);
       toast.error('Error al eliminar el documento: ' + err.message);
-    }
-  };
-
-  const addTestDocument = async () => {
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
-
-      // Use current view as date reference
-      const now = new Date();
-      const testDate = new Date(
-        selectedYear || now.getFullYear(),
-        selectedMonth !== null ? selectedMonth : now.getMonth(),
-        15 // Middle of the month
-      );
-
-      const { error } = await supabase.from('documents').insert([
-        {
-          user_id: userData.user.id,
-          title: `Certificado de Prueba ${testDate.toLocaleDateString()} `,
-          type: DOC_TYPE.TRANSPORTE,
-          verified: true,
-          created_at: testDate.toISOString(),
-          metadata: {
-            cert_number: `CT-TEST-${Math.floor(100 + Math.random() * 900)}`,
-            waste_details: [
-              { waste_type: "Papel/Cartón", quantity: 150.5, unit: "Kg", description: "Cartón corrugado" },
-              { waste_type: "Plásticos", quantity: 85.2, unit: "Kg", description: "Film stretch y PET" },
-              { waste_type: "Vidrio", quantity: 40, unit: "Kg", description: "Botellas de vidrio" }
-            ]
-          }
-        }
-      ]);
-
-      if (error) throw error;
-      fetchDocuments();
-      toast.success(`Certificado creado para ${testDate.toLocaleDateString()}. Ya puedes generar el reporte.`);
-    } catch (err) {
-      console.error('Error adding document:', err);
     }
   };
 
@@ -825,13 +786,18 @@ const Documents: React.FC = () => {
                           <span className="material-symbols-outlined text-sm">download</span>
                           Bajar
                         </button>
-                        <button
-                          onClick={() => handleDelete(doc)}
-                          className="size-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
-                          title="Eliminar Reporte"
-                        >
-                          <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
+                        {/* Un certificado emitido por EcoNexo no lo borra quien lo
+                            recibió: es su trazabilidad y la base lo rechaza. */}
+                        {!isEconexoCertificate(doc.type) && (
+                          <button
+                            onClick={() => handleDelete(doc)}
+                            aria-label={`Eliminar ${doc.title}`}
+                            className="size-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
+                            title="Eliminar Reporte"
+                          >
+                            <span className="material-symbols-outlined text-lg">delete</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -947,13 +913,23 @@ const Documents: React.FC = () => {
                           <span className="material-symbols-outlined text-lg">share</span>
                         </button>
                       )}
-                      <button
-                        onClick={() => handleDelete(doc)}
-                        className="size-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
-                        title="Eliminar Documento"
-                      >
-                        <span className="material-symbols-outlined text-lg">delete</span>
-                      </button>
+                      {!isEconexoCertificate(doc.type) ? (
+                        <button
+                          onClick={() => handleDelete(doc)}
+                          aria-label={`Eliminar ${doc.title}`}
+                          className="size-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center border border-red-100 transition-colors"
+                          title="Eliminar Documento"
+                        >
+                          <span className="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                      ) : (
+                        <span
+                          title="Emitido por EcoNexo: es tu respaldo de trazabilidad y no se puede eliminar"
+                          className="size-10 bg-gray-50 text-gray-300 rounded-xl flex items-center justify-center border border-gray-100"
+                        >
+                          <span className="material-symbols-outlined text-lg">lock</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -963,12 +939,10 @@ const Documents: React.FC = () => {
         )}
       </div>
 
-      <button
-        onClick={addTestDocument}
-        className="fixed bottom-24 right-6 size-14 bg-primary text-background-dark rounded-full shadow-lg shadow-primary/30 flex items-center justify-center transform active:scale-90 transition-transform z-40"
-      >
-        <span className="material-symbols-outlined text-3xl">add</span>
-      </button>
+      {/* Aquí vivía un botón flotante "+" que insertaba un "Certificado de Prueba":
+          un CT verificado con 275,7 kg inventados, en la cuenta del propio cliente,
+          que alimentaba sus totales, su CGM y las cifras con que declara. Era una
+          herramienta de desarrollo que quedó en producción. */}
 
 
 

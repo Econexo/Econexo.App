@@ -3,6 +3,7 @@ import {
   DOC_TYPE,
   TRANSPORTE_TYPES,
   WASTE_DOC_TYPES,
+  isEconexoCertificate,
   isTransportDoc,
   CERT_PREFIX,
   CERT_NUMBER_RE,
@@ -145,5 +146,35 @@ describe('toTransportLabel', () => {
     expect(toTransportLabel('')).toBe('');
     expect(toTransportLabel(null)).toBe('');
     expect(toTransportLabel(undefined)).toBe('');
+  });
+});
+
+describe('isEconexoCertificate', () => {
+  it('reconoce los cuatro certificados que emite EcoNexo', () => {
+    // De estas filas salen los kilos, el CGM y la declaración: el cliente no
+    // puede crearlas ni alterarlas.
+    expect(isEconexoCertificate('CT')).toBe(true);
+    expect(isEconexoCertificate('CR')).toBe(true);           // código anterior del CT
+    expect(isEconexoCertificate('COMMUNITY_CR')).toBe(true);
+    expect(isEconexoCertificate('CGM')).toBe(true);
+  });
+
+  it('no alcanza a los documentos que el cliente sí administra', () => {
+    // Los de terceros que él sube, y su propio reporte de impacto.
+    for (const t of ['CR_ACOPIO', 'cdf', 'ticket_pesaje', 'guia', 'oc', 'declaration', 'legal', 'custom', 'report', 'pdf']) {
+      expect(isEconexoCertificate(t), t).toBe(false);
+    }
+  });
+
+  it('tolera un tipo ausente', () => {
+    expect(isEconexoCertificate()).toBe(false);
+    expect(isEconexoCertificate(null)).toBe(false);
+    expect(isEconexoCertificate('')).toBe(false);
+  });
+
+  it('la lista cubre todo lo que suma kilos, más el mensual', () => {
+    // Si mañana se agrega un tipo que trae waste_details, tiene que quedar
+    // protegido: si no, el cliente podría inventarse kilos con ese tipo.
+    for (const t of WASTE_DOC_TYPES) expect(isEconexoCertificate(t), t).toBe(true);
   });
 });

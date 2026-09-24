@@ -1,0 +1,47 @@
+# Puerta automática antes de mergear.
+#
+# Hasta ahora los tests existían pero solo corrían cuando alguien se acordaba de
+# ejecutarlos a mano. Lo que estos tests protegen son los kilos: la clasificación
+# de residuos, el desglose mensual, el formato de cifras y la resolución que
+# imprime cada certificado. Un error ahí no se ve en pantalla, se ve en una
+# declaración mal presentada meses después.
+#
+# No necesita secretos: el build de Vite no requiere las variables de Supabase
+# (sin ellas la app compila igual y solo avisa en tiempo de ejecución).
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Si empujas dos veces seguidas, cancela la corrida anterior en vez de hacer fila.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Tipos, tests y build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Los tres en orden de menor a mayor costo: el que falle, falla rápido.
+      - name: Tipos
+        run: npx tsc --noEmit
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
