@@ -126,7 +126,7 @@ esas empresas quedan fuera.
 
 ## Exportación
 
-**Excel (.xls)** — misma técnica HTML que ya usa `screens/Documents.tsx`, sin
+**Excel (.xls)** — TSV con BOM, la misma técnica que ya usa `screens/Documents.tsx`, sin
 dependencias nuevas. Columnas: Empresa · RUT · Residuo · Kg · N° CT. Subtotal por
 empresa y total general. Nombre: `Cierre_<Gestor>_<YYYY-MM>.xls`.
 
