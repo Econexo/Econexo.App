@@ -5,6 +5,7 @@ import { useConfirm } from '../components/ui/ConfirmDialog';
 import { generateCommunityCR } from '../services/pdfGenerator';
 import { WasteItem, WASTE_CATEGORIES } from './admin/types';
 
+import { todayLocalDate } from '../utils/dateRange';
 interface CommunityWithdrawal {
     id: string;
     community_name: string;
@@ -33,7 +34,7 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
     const [communityName, setCommunityName] = useState('');
     const [sector, setSector] = useState('');
     const [participantsCount, setParticipantsCount] = useState('');
-    const [withdrawalDate, setWithdrawalDate] = useState(new Date().toISOString().split('T')[0]);
+    const [withdrawalDate, setWithdrawalDate] = useState(todayLocalDate());
     const [wasteItems, setWasteItems] = useState<WasteItem[]>([]);
     const [currentWaste, setCurrentWaste] = useState({ waste_type: '', description: '', quantity: '', unit: 'Kg' });
 
@@ -195,7 +196,7 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
         setCommunityName('');
         setSector('');
         setParticipantsCount('');
-        setWithdrawalDate(new Date().toISOString().split('T')[0]);
+        setWithdrawalDate(todayLocalDate());
         setWasteItems([]);
         setCurrentWaste({ waste_type: '', description: '', quantity: '', unit: 'Kg' });
         setShowForm(false);

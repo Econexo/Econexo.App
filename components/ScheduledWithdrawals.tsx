@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 import { createNotification } from '../services/notificationService';
 import { useToast } from '../components/ui/Toast';
 
+import { todayLocalDate } from '../utils/dateRange';
 // Define the shape of our scheduled withdrawal
 interface ScheduledWithdrawal {
     id: string;
@@ -322,7 +323,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                                 <input
                                     type="date"
                                     required
-                                    min={new Date().toISOString().split('T')[0]}
+                                    min={todayLocalDate()}
                                     value={newDate}
                                     onChange={(e) => setNewDate(e.target.value)}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all"

@@ -9,6 +9,7 @@ import { uploadScannedDocument } from '../services/documentUpload';
 import { useDocumentCamera, AUTO_CAPTURE_FRAMES } from '../hooks/useDocumentCamera';
 import type { Point } from '../services/scanGeometry';
 
+import { todayLocalDate, localDayToISO } from '../utils/dateRange';
 type Stage = 'capture' | 'adjust' | 'review';
 
 /** Página escaneada: guardamos el recorte sin filtrar para poder recambiarlo después. */
@@ -75,7 +76,7 @@ const Scan: React.FC = () => {
   const [clientId, setClientId] = useState('');
   const [source, setSource] = useState<'gestor' | 'econexo'>('gestor');
   const [docType, setDocType] = useState('declaration');
-  const [docDate, setDocDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [docDate, setDocDate] = useState<string>(todayLocalDate());
 
   // Imagen capturada + esquinas ajustables (en coordenadas naturales de la imagen)
   const sourceCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -290,7 +291,7 @@ const Scan: React.FC = () => {
         title: finalTitle,
         type: docType,
         clientId,
-        createdAt: new Date(docDate).toISOString(),
+        createdAt: localDayToISO(docDate),
         source,
       });
       toast.success('Documento escaneado y asignado al cliente.');

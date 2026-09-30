@@ -18,6 +18,7 @@ import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import { useCountUp } from '../hooks/useCountUp';
 
+import { todayLocalDate } from '../utils/dateRange';
 interface DashboardProps {
   isLeyRep: boolean;
 }
@@ -85,7 +86,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   const [prevYearMetrics, setPrevYearMetrics] = useState({ totalKg: 0, co2: 0, water: 0, energy: 0 });
   const [alerts, setAlerts] = useState<{ type: 'warning' | 'success' | 'info'; icon: string; message: string }[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
-  const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [withdrawalDate, setWithdrawalDate] = useState<string>(todayLocalDate());
   const [userName, setUserName] = useState<string>('Usuario');
   const [recentDocs, setRecentDocs] = useState<{ id: string; title: string; cert_number: string; date: string; totalKg: number; materials: string[] }[]>([]);
 

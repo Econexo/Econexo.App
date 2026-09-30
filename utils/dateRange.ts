@@ -51,3 +51,24 @@ export function isWithin(date: Date | string, range: DateRange): boolean {
 export function lastDayOfMonth(year: number, monthIndex: number): number {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
+
+/**
+ * Convierte la fecha de un `<input type="date">` ('YYYY-MM-DD') en el instante
+ * que se guarda en `created_at`: mediodía local, en ISO/UTC.
+ * Nunca `new Date('YYYY-MM-DD')`: eso es medianoche UTC, que en Chile todavía
+ * es el día anterior, y el documento aparece con un día menos.
+ */
+export function localDayToISO(fecha: string): string {
+  return new Date(`${fecha}T12:00:00`).toISOString();
+}
+
+/**
+ * Hoy en hora local como 'YYYY-MM-DD', para el valor inicial de los
+ * `<input type="date">`. `toISOString()` da el día UTC, que desde las 20–21 h
+ * de Chile ya es mañana.
+ */
+export function todayLocalDate(now: Date = new Date()): string {
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${m}-${d}`;
+}

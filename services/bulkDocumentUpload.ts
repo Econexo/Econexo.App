@@ -10,6 +10,7 @@ import { supabase } from './supabase';
 import { createNotification } from './notificationService';
 import { buildUploadPlan, UploadTargetCompany } from '../utils/bulkUpload';
 
+import { localDayToISO } from '../utils/dateRange';
 export interface BulkUploadParams {
   files: File[];
   companies: UploadTargetCompany[];
@@ -43,7 +44,7 @@ export async function bulkUploadDocuments(
   if (companies.length === 0) throw new Error('Selecciona al menos una empresa.');
 
   const plan = buildUploadPlan(files, companies);
-  const createdAt = new Date(documentDate).toISOString();
+  const createdAt = localDayToISO(documentDate);
   const failures: BulkUploadFailure[] = [];
   // Nombres subidos por empresa: sirven para mandar un solo aviso por empresa.
   const uploadedByCompany = new Map<string, { company: UploadTargetCompany; titles: string[] }>();

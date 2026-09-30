@@ -3,6 +3,7 @@ import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc, toTransportLabel } from '..
 import { supabase } from '../../services/supabase';
 import { useToast } from '../ui/Toast';
 
+import { todayLocalDate } from '../../utils/dateRange';
 interface CertToFix {
     id: string;
     title: string;
@@ -29,7 +30,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
     const [certs, setCerts] = useState<CertToFix[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [filterDate, setFilterDate] = useState<string>(todayLocalDate());
     const [showAll, setShowAll] = useState(false);
 
     useEffect(() => {
