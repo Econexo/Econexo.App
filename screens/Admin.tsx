@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DOC_TYPE, TRANSPORTE_TYPES, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import { monthRange } from '../utils/dateRange';
+import { monthRange, todayLocalDate } from '../utils/dateRange';
 import { issueTransportCertificate } from '../services/certificateService';
 import { fetchActiveTransportistas, TransportistaOption } from '../services/transportistas';
 import { bulkUploadDocuments } from '../services/bulkDocumentUpload';
@@ -52,7 +52,7 @@ const Admin: React.FC = () => {
 
     // CR modal state
     const [wasteItems, setWasteItems] = useState<WasteItem[]>([]);
-    const [withdrawalDate, setWithdrawalDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [withdrawalDate, setWithdrawalDate] = useState<string>(todayLocalDate());
     const [currentWaste, setCurrentWaste] = useState({ waste_type: '', description: '', quantity: '', unit: 'Kg' });
 
     // Monthly gen state
@@ -73,7 +73,7 @@ const Admin: React.FC = () => {
     const [uploadFiles, setUploadFiles] = useState<File[]>([]);
     const [uploadUserIds, setUploadUserIds] = useState<string[]>([]);
     const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
-    const [uploadDate, setUploadDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [uploadDate, setUploadDate] = useState<string>(todayLocalDate());
     const [uploadType, setUploadType] = useState('declaration');
     const [uploadSource, setUploadSource] = useState<'gestor' | 'econexo'>('gestor');
 
@@ -311,7 +311,7 @@ const Admin: React.FC = () => {
     const resetUploadForm = () => {
         setUploadFiles([]);
         setUploadUserIds([]);
-        setUploadDate(new Date().toISOString().split('T')[0]);
+        setUploadDate(todayLocalDate());
         setUploadSource('gestor');
         setUploadType('declaration');
     };

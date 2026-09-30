@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { monthRange, yearRange, isWithin, lastDayOfMonth } from './dateRange';
+import { monthRange, yearRange, isWithin, lastDayOfMonth, localDayToISO, todayLocalDate } from './dateRange';
 
 /** Cómo guarda la app un retiro con fecha elegida por el operario. */
 const retiro = (fecha: string) => new Date(`${fecha}T12:00:00`).toISOString();
@@ -90,5 +90,25 @@ describe('lastDayOfMonth', () => {
     expect(lastDayOfMonth(2028, 1)).toBe(29);  // febrero bisiesto
     expect(lastDayOfMonth(2026, 3)).toBe(30);  // abril
     expect(lastDayOfMonth(2026, 11)).toBe(31); // diciembre
+  });
+});
+
+describe('localDayToISO', () => {
+  it('conserva el día elegido al volver a hora local — la regresión de septiembre', () => {
+    // `new Date('2026-09-30')` es medianoche UTC: en Chile se veía como el 29.
+    const d = new Date(localDayToISO('2026-09-30'));
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2026, 8, 30]);
+  });
+
+  it('cae en el mes correcto aunque sea el primer día', () => {
+    expect(isWithin(localDayToISO('2026-10-01'), monthRange(2026, 9))).toBe(true);
+    expect(isWithin(localDayToISO('2026-10-01'), monthRange(2026, 8))).toBe(false);
+  });
+});
+
+describe('todayLocalDate', () => {
+  it('usa el día local, no el UTC', () => {
+    expect(todayLocalDate(new Date(2026, 8, 30, 23, 30))).toBe('2026-09-30');
+    expect(todayLocalDate(new Date(2026, 0, 5, 0, 10))).toBe('2026-01-05');
   });
 });
