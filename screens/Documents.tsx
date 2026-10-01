@@ -9,6 +9,7 @@ import { createNotification } from '../services/notificationService';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import { getDocEmisor, sectionToEmisor } from '../utils/documentEmisor';
+import { downloadXlsx, type XlsxValue } from '../utils/xlsx';
 
 interface Document {
   id: string;
@@ -560,7 +561,7 @@ const Documents: React.FC = () => {
       'Madera': 0.7, 'Textiles': 1.1, 'Neumáticos': 1.4, 'Otros': 1.0
     };
 
-    const rows: string[][] = [
+    const rows: XlsxValue[][] = [
       ['Fecha', 'Certificado N°', 'Material', 'Cantidad (Kg)', 'Unidad', 'CO₂ Evitado (kg)', 'Descripción']
     ];
 
@@ -574,20 +575,18 @@ const Documents: React.FC = () => {
         const qty = Number(item.quantity) || 0;
         const material = item.waste_type || 'Otros';
         const factor = materialFactorsLocal[material] ?? materialFactorsLocal['Otros'];
-        const co2 = (qty * factor).toFixed(2);
-        rows.push([date, certNum, material, qty.toString(), item.unit || 'Kg', co2, item.description || '']);
+        const co2 = Number((qty * factor).toFixed(2));
+        rows.push([date, certNum, material, qty, item.unit || 'Kg', co2, item.description || '']);
       });
     });
 
-    const tsv = rows.map(row => row.map(cell => String(cell).replace(/\t/g, ' ')).join('\t')).join('\n');
-    const blob = new Blob(['\uFEFF' + tsv], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `econexo_retiros_${new Date().toISOString().split('T')[0]}.xls`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`CSV exportado con ${rows.length - 1} registros.`);
+    downloadXlsx(`econexo_retiros_${new Date().toISOString().split('T')[0]}.xlsx`, {
+      name: 'Retiros',
+      rows,
+      boldRows: [0],
+      colWidths: [12, 18, 16, 14, 8, 16, 40],
+    });
+    toast.success(`Excel exportado con ${rows.length - 1} registros.`);
   };
 
   return (

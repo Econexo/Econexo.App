@@ -3,7 +3,8 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { closureToTsv, closureTotalKg, type ClosureCompany } from '../utils/monthlyClosure';
+import { closureToSheet, closureTotalKg, type ClosureCompany } from '../utils/monthlyClosure';
+import { downloadXlsx } from '../utils/xlsx';
 import { periodLabel } from '../utils/monthlyBreakdown';
 import { formatKg } from '../utils/formatKg';
 import type { ClosureDestination } from './monthlyClosureService';
@@ -12,16 +13,10 @@ const fileSafe = (text: string) =>
   text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w-]+/g, '_').replace(/_+$/, '');
 
 export function downloadClosureXls(destinationName: string, periodKey: string, companies: ClosureCompany[]): void {
-  // BOM para que Excel reconozca los acentos; TSV con extensión .xls, como en Documentos.
-  const blob = new Blob(['﻿' + closureToTsv(destinationName, periodKey, companies)], {
-    type: 'application/vnd.ms-excel;charset=utf-8;',
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Cierre_${fileSafe(destinationName)}_${periodKey}.xls`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadXlsx(
+    `Cierre_${fileSafe(destinationName)}_${periodKey}.xlsx`,
+    closureToSheet(destinationName, periodKey, companies),
+  );
 }
 
 export function downloadClosurePdf(

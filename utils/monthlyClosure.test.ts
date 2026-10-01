@@ -6,7 +6,7 @@ import {
   staleDestinationIds,
   snapshotFingerprint,
   closureTotalKg,
-  closureToTsv,
+  closureToSheet,
   UNKNOWN_COMPANY_NAME,
   type ClosureDoc,
   type CompanyInfo,
@@ -184,7 +184,7 @@ describe('snapshotFingerprint', () => {
   });
 });
 
-describe('closureTotalKg y closureToTsv', () => {
+describe('closureTotalKg y closureToSheet', () => {
   const companies = buildClosureCompanies([
     retiro('2026-09-10', 'empA', [{ waste_type: 'Vidrio', quantity: 1.25 }, { waste_type: 'Cartón', quantity: 2 }], { cert_number: 'CT N°:001' }),
     retiro('2026-09-10', 'empB', [{ waste_type: 'Vidrio', quantity: 4 }], { cert_number: 'CT N°:002' }),
@@ -194,26 +194,18 @@ describe('closureTotalKg y closureToTsv', () => {
     expect(closureTotalKg(companies)).toBe(7.2);
   });
 
-  it('arma una fila por residuo, subtotal por empresa y total general', () => {
-    const lines = closureToTsv('GCR', '2026-09', companies).split('\n');
-    expect(lines[0]).toBe('Cierre Septiembre 2026 — GCR');
-    expect(lines[2]).toBe('Empresa\tRUT\tResiduo\tKg\tN° CT');
-    expect(lines).toContain('Alfa SpA\t76.111.111-1\tCartón\t2\tCT N°:001');
-    expect(lines).toContain('\t\tSubtotal Alfa SpA\t3,2\t');
-    expect(lines[lines.length - 1]).toBe('TOTAL\t\t\t7,2\t');
-  });
-
-  it('neutraliza fórmulas y comillas en los textos', () => {
-    const peligrosas = buildClosureCompanies([
-      retiro('2026-09-10', 'empA', [{ waste_type: 'Vidrio', quantity: 1 }]),
-    ], { empA: { name: '=HYPERLINK("http://x")', rut: '+1', isManual: false } }, '2026-09');
-    const tsv = closureToTsv('GCR', '2026-09', peligrosas);
-    expect(tsv).toContain("'=HYPERLINK('http://x')\t'+1\tVidrio");
-    expect(tsv).not.toContain('"');
+  it('arma una fila por residuo, subtotal por empresa y total general, con kilos numéricos', () => {
+    const { rows, boldRows } = closureToSheet('GCR', '2026-09', companies);
+    expect(rows[0]).toEqual(['Cierre Septiembre 2026 — GCR']);
+    expect(rows[2]).toEqual(['Empresa', 'RUT', 'Residuo', 'Kg', 'N° CT']);
+    expect(rows).toContainEqual(['Alfa SpA', '76.111.111-1', 'Cartón', 2, 'CT N°:001']);
+    expect(rows).toContainEqual(['', '', 'Subtotal Alfa SpA', 3.2, '']);
+    expect(rows[rows.length - 1]).toEqual(['TOTAL', '', '', 7.2, '']);
+    expect(boldRows).toContain(rows.length - 1);
   });
 
   it('limpia tabulaciones y saltos de línea en los textos', () => {
-    const tsv = closureToTsv('GCR', '2026-09', companies);
-    expect(tsv).toContain('Beta Ltda Sur\t1-9\tVidrio\t4\tCT N°:002');
+    const { rows } = closureToSheet('GCR', '2026-09', companies);
+    expect(rows).toContainEqual(['Beta Ltda Sur', '1-9', 'Vidrio', 4, 'CT N°:002']);
   });
 });
