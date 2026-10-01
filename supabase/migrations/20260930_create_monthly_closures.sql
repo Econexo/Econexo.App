@@ -7,6 +7,19 @@
 --
 -- Se corre a mano en el SQL Editor.
 
+-- Misma definición que en 20260824_security_hardening.sql. Se repite aquí
+-- porque esa migración puede no estar aplicada; CREATE OR REPLACE no cambia
+-- nada si ya existe.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true);
+$$;
+
 CREATE TABLE IF NOT EXISTS public.monthly_closures (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   period           text NOT NULL CHECK (period ~ '^\d{4}-(0[1-9]|1[0-2])$'),
