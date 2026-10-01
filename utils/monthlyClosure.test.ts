@@ -137,6 +137,15 @@ describe('defaultAssignment', () => {
     expect(defaultAssignment(companies, closures, ['gcr', 'sorepa'], '2026-09').empA).toBe('gcr');
   });
 
+  it('si el mes ya está cerrado, usa solo ese cierre: lo excluido sigue excluido', () => {
+    const closures = [
+      withA('gcr', '2026-08'),
+      stored({ destination_id: 'gcr', period: '2026-09', companies: [companies[1]] }),
+    ];
+    expect(defaultAssignment(companies, closures, ['gcr'], '2026-09'))
+      .toEqual({ empA: null, empB: 'gcr' });
+  });
+
   it('deja en «No incluir» si el gestor anterior está desactivado', () => {
     const closures = [withA('viejo', '2026-08')];
     expect(defaultAssignment(companies, closures, ['gcr'], '2026-09').empA).toBeNull();
@@ -192,6 +201,15 @@ describe('closureTotalKg y closureToTsv', () => {
     expect(lines).toContain('Alfa SpA\t76.111.111-1\tCartón\t2,0\tCT N°:001');
     expect(lines).toContain('\t\tSubtotal Alfa SpA\t3,2\t');
     expect(lines[lines.length - 1]).toBe('TOTAL\t\t\t7,2\t');
+  });
+
+  it('neutraliza fórmulas y comillas en los textos', () => {
+    const peligrosas = buildClosureCompanies([
+      retiro('2026-09-10', 'empA', [{ waste_type: 'Vidrio', quantity: 1 }]),
+    ], { empA: { name: '=HYPERLINK("http://x")', rut: '+1', isManual: false } }, '2026-09');
+    const tsv = closureToTsv('GCR', '2026-09', peligrosas);
+    expect(tsv).toContain("'=HYPERLINK('http://x')\t'+1\tVidrio");
+    expect(tsv).not.toContain('"');
   });
 
   it('limpia tabulaciones y saltos de línea en los textos', () => {

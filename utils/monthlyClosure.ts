@@ -146,8 +146,9 @@ export function groupByDestination(
 }
 
 /**
- * Gestor sugerido para cada empresa: el del cierre más reciente (hasta este
- * mes inclusive) en que aparece, siempre que ese gestor siga activo.
+ * Gestor sugerido para cada empresa. Si el mes ya se cerró, manda ese cierre:
+ * lo que quedó fuera sigue fuera. Si no, el del cierre anterior más reciente en
+ * que aparece la empresa, siempre que ese gestor siga activo.
  */
 export function defaultAssignment(
   companies: ClosureCompany[],
@@ -156,8 +157,8 @@ export function defaultAssignment(
   periodKey: string,
 ): Assignment {
   const active = new Set(activeDestinationIds);
-  const ordered = closures
-    .filter(c => c.period <= periodKey)
+  const thisMonth = closures.filter(c => c.period === periodKey);
+  const ordered = (thisMonth.length > 0 ? thisMonth : closures.filter(c => c.period < periodKey))
     .sort((a, b) => b.period.localeCompare(a.period) || b.closed_at.localeCompare(a.closed_at));
 
   const out: Assignment = {};
@@ -196,7 +197,13 @@ export function closureTotalKg(companies: ClosureCompany[]): number {
   return sumTruncated(companies.map(c => c.totalKg));
 }
 
-const cell = (value: string) => value.replace(/[\t\r\n]+/g, ' ').trim();
+// Los nombres los escribe cada cliente y el archivo lo abre el gestor en Excel:
+// sin esto, un nombre que empiece con «=» se ejecuta como fórmula, y una
+// comilla doble descuadra las columnas.
+const cell = (value: string) => {
+  const clean = value.replace(/[\t\r\n]+/g, ' ').replace(/"/g, "'").trim();
+  return /^[=+\-@]/.test(clean) ? `'${clean}` : clean;
+};
 
 /** Contenido del Excel (TSV) que se envía a un gestor. */
 export function closureToTsv(
