@@ -5,8 +5,8 @@
 import { monthRange, isWithin } from './dateRange';
 import { wasteItemsOf, parseQuantity, destinationOf, type WasteDestination } from './wasteClassification';
 import { normalizeMaterialType } from './materialCalculations';
-import { sumTruncated, truncateTo } from './formatKg';
-import type { XlsxSheet, XlsxValue } from './xlsx';
+import { sumTruncated, truncateTo, formatKg } from './formatKg';
+import type { XlsxCell, XlsxSheet, XlsxStyle } from './xlsx';
 import { toTransportLabel } from './documentTypes';
 import { periodLabel } from './monthlyBreakdown';
 
@@ -258,28 +258,89 @@ export function closureTotalKg(companies: ClosureCompany[]): number {
 // del nombre descuadra la fila al leerla en Excel.
 const cell = (value: string) => value.replace(/[\t\r\n]+/g, ' ').trim();
 
-/** Hoja del Excel (.xlsx) que se envía a un gestor. Kilos como número, truncados. */
+// Colores del Excel, los mismos del PDF del cierre.
+const GREEN = '326105';
+const GREEN_SOFT = 'EBF2E6';
+const COMPANY_BG = 'F7FAF5';
+const LINE = 'C9D6C0';
+const GREY = '6B7280';
+const KG_FORMAT = '#,##0.0';
+
+/**
+ * Hoja del Excel (.xlsx) que se envía a un gestor.
+ *
+ * Empresa, RUT y N° CT van en una celda combinada por empresa, centrada a lo
+ * alto de sus residuos, para no repetir el nombre en cada fila. Kilos como
+ * número, truncados.
+ */
 export function closureToSheet(
   destinationName: string,
   periodKey: string,
   companies: ClosureCompany[],
 ): XlsxSheet {
-  const rows: XlsxValue[][] = [
-    [`Cierre ${periodLabel(periodKey)} — ${cell(destinationName)}`],
+  const box = { border: LINE, valign: 'center' as const };
+  const cols = 5;
+  const blank = (s: XlsxStyle): XlsxCell[] => Array.from({ length: cols }, () => ({ v: '', s }));
+  const total = closureTotalKg(companies);
+
+  const rows: XlsxCell[][] = [
+    [{ v: `Cierre mensual de residuos valorizados — ${periodLabel(periodKey)}`, s: { bold: true, size: 16, color: GREEN, valign: 'center' } }],
+    [{ v: `Gestor: ${cell(destinationName)}  ·  ${companies.length} empresa(s)  ·  ${formatKg(total)} kg`, s: { size: 11, color: GREY } }],
     [],
-    ['Empresa', 'RUT', 'Residuo', 'Kg', 'N° CT'],
+    ['Empresa', 'RUT', 'Residuo', 'Kg', 'N° CT'].map((v, i) => ({
+      v, s: { bold: true, color: 'FFFFFF', fill: GREEN, border: GREEN, valign: 'center' as const, align: i === 3 ? 'right' as const : 'center' as const },
+    })),
   ];
-  const boldRows = [0, 2];
+  const merges = ['A1:E1', 'A2:E2'];
+  const rowHeights: Record<number, number> = { 0: 28, 3: 22 };
 
   for (const c of companies) {
+    const first = rows.length;
     c.materials.forEach((m, i) => {
-      rows.push([cell(c.name), cell(c.rut), cell(m.material), truncateTo(m.kg), i === 0 ? c.certNumbers.join(', ') : '']);
+      rows.push([
+        { v: i === 0 ? cell(c.name) : '', s: { ...box, bold: true, wrap: true, align: 'center', fill: COMPANY_BG } },
+        { v: i === 0 ? cell(c.rut) : '', s: { ...box, align: 'center', fill: COMPANY_BG } },
+        { v: cell(m.material), s: box },
+        { v: truncateTo(m.kg), s: { ...box, numFmt: KG_FORMAT } },
+        { v: i === 0 ? c.certNumbers.join('\n') : '', s: { ...box, align: 'center', wrap: true, color: GREY, size: 10 } },
+      ]);
     });
-    boldRows.push(rows.length);
-    rows.push(['', '', `Subtotal ${cell(c.name)}`, truncateTo(c.totalKg), '']);
+    rows.push([
+      { v: '', s: { ...box, fill: COMPANY_BG } },
+      { v: '', s: { ...box, fill: COMPANY_BG } },
+      { v: 'Subtotal', s: { ...box, bold: true, fill: GREEN_SOFT, align: 'right' } },
+      { v: truncateTo(c.totalKg), s: { ...box, bold: true, fill: GREEN_SOFT, numFmt: KG_FORMAT } },
+      { v: '', s: box },
+    ]);
+    // Empresa, RUT y CT ocupan todo el bloque: residuos + subtotal.
+    const last = rows.length - 1;
+    if (last > first) {
+      for (const col of ['A', 'B', 'E']) merges.push(`${col}${first + 1}:${col}${last + 1}`);
+    }
   }
-  boldRows.push(rows.length);
-  rows.push(['TOTAL', '', '', closureTotalKg(companies), '']);
 
-  return { name: periodLabel(periodKey), rows, boldRows, colWidths: [42, 14, 30, 10, 40] };
+  const totalStyle = { bold: true, size: 12, color: 'FFFFFF', fill: GREEN, border: GREEN, valign: 'center' as const };
+  const totalRow = blank(totalStyle);
+  totalRow[0] = { v: 'TOTAL', s: totalStyle };
+  totalRow[3] = { v: total, s: { ...totalStyle, numFmt: KG_FORMAT } };
+  rowHeights[rows.length] = 22;
+  merges.push(`A${rows.length + 1}:C${rows.length + 1}`);
+  rows.push(totalRow);
+
+  rows.push([]);
+  merges.push(`A${rows.length + 1}:E${rows.length + 1}`);
+  rows.push([{
+    v: 'Solo residuos con destino valorización. Kilos truncados a un decimal, igual que en los certificados de transporte. Generado por EcoNexo.',
+    s: { italic: true, size: 9, color: GREY },
+  }]);
+
+  return {
+    name: periodLabel(periodKey),
+    rows,
+    merges,
+    rowHeights,
+    freezeRows: 4,
+    hideGridLines: true,
+    colWidths: [38, 15, 24, 12, 16],
+  };
 }

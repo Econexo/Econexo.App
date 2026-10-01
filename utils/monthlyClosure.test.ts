@@ -14,6 +14,7 @@ import {
   type StoredClosure,
 } from './monthlyClosure';
 import { localDayToISO } from './dateRange';
+import { cellValue } from './xlsx';
 
 const retiro = (
   fecha: string,
@@ -195,19 +196,27 @@ describe('closureTotalKg y closureToSheet', () => {
     expect(closureTotalKg(companies)).toBe(7.2);
   });
 
+  const sheet = closureToSheet('GCR', '2026-09', companies);
+  const values = sheet.rows.map(r => r.map(cellValue));
+
   it('arma una fila por residuo, subtotal por empresa y total general, con kilos numéricos', () => {
-    const { rows, boldRows } = closureToSheet('GCR', '2026-09', companies);
-    expect(rows[0]).toEqual(['Cierre Septiembre 2026 — GCR']);
-    expect(rows[2]).toEqual(['Empresa', 'RUT', 'Residuo', 'Kg', 'N° CT']);
-    expect(rows).toContainEqual(['Alfa SpA', '76.111.111-1', 'Cartón', 2, 'CT N°:001']);
-    expect(rows).toContainEqual(['', '', 'Subtotal Alfa SpA', 3.2, '']);
-    expect(rows[rows.length - 1]).toEqual(['TOTAL', '', '', 7.2, '']);
-    expect(boldRows).toContain(rows.length - 1);
+    expect(values[0]).toEqual(['Cierre mensual de residuos valorizados — Septiembre 2026']);
+    expect(values[1][0]).toBe('Gestor: GCR  ·  2 empresa(s)  ·  7,2 kg');
+    expect(values[3]).toEqual(['Empresa', 'RUT', 'Residuo', 'Kg', 'N° CT']);
+    expect(values).toContainEqual(['Alfa SpA', '76.111.111-1', 'Cartón', 2, 'CT N°:001']);
+    expect(values).toContainEqual(['', '', 'Vidrio', 1.2, '']);
+    expect(values).toContainEqual(['', '', 'Subtotal', 3.2, '']);
+    expect(values.find(r => r[0] === 'TOTAL')?.[3]).toBe(7.2);
+  });
+
+  it('muestra cada empresa una sola vez, en una celda combinada sobre su bloque', () => {
+    expect(values.filter(r => r[0] === 'Alfa SpA')).toHaveLength(1);
+    // Alfa: filas 5-7 (dos residuos + subtotal).
+    expect(sheet.merges).toEqual(expect.arrayContaining(['A5:A7', 'B5:B7', 'E5:E7']));
   });
 
   it('limpia tabulaciones y saltos de línea en los textos', () => {
-    const { rows } = closureToSheet('GCR', '2026-09', companies);
-    expect(rows).toContainEqual(['Beta Ltda Sur', '1-9', 'Vidrio', 4, 'CT N°:002']);
+    expect(values).toContainEqual(['Beta Ltda Sur', '1-9', 'Vidrio', 4, 'CT N°:002']);
   });
 });
 
