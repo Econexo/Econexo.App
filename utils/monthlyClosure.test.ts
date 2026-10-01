@@ -7,6 +7,7 @@ import {
   snapshotFingerprint,
   closureTotalKg,
   closureToSheet,
+  outsideClosureKg,
   UNKNOWN_COMPANY_NAME,
   type ClosureDoc,
   type CompanyInfo,
@@ -17,7 +18,7 @@ import { localDayToISO } from './dateRange';
 const retiro = (
   fecha: string,
   owner: string,
-  items: { waste_type: string; quantity: unknown }[],
+  items: { waste_type: string; quantity: unknown; destination?: string }[],
   extra: Record<string, unknown> = {},
 ): ClosureDoc => ({
   user_id: owner,
@@ -207,5 +208,36 @@ describe('closureTotalKg y closureToSheet', () => {
   it('limpia tabulaciones y saltos de línea en los textos', () => {
     const { rows } = closureToSheet('GCR', '2026-09', companies);
     expect(rows).toContainEqual(['Beta Ltda Sur', '1-9', 'Vidrio', 4, 'CT N°:002']);
+  });
+});
+
+describe('solo lo valorizado va al gestor', () => {
+  const docs = [
+    retiro('2026-09-05', 'empA', [
+      { waste_type: 'Madera', quantity: 460, destination: 'rescon' },
+      { waste_type: 'Cartón', quantity: 5.3 },
+    ], { cert_number: 'CT N°:134' }),
+    retiro('2026-09-06', 'empA', [{ waste_type: 'Madera', quantity: 100, destination: 'rescon' }], { cert_number: 'CT N°:138' }),
+    retiro('2026-09-07', 'empB', [{ waste_type: 'Domiciliarios', quantity: 50 }], { cert_number: 'CT N°:139' }),
+  ];
+  const companies = buildClosureCompanies(docs, directory, '2026-09');
+
+  it('deja la madera a RESCON fuera de los kilos y del total', () => {
+    const alfa = companies.find(c => c.companyId === 'empA')!;
+    expect(alfa.materials).toEqual([{ material: 'Cartón', kg: 5.3 }]);
+    expect(alfa.totalKg).toBe(5.3);
+    expect(alfa.outside).toEqual([{ material: 'Madera', destination: 'rescon', kg: 560 }]);
+  });
+
+  it('no lista CT que no llevan nada valorizado', () => {
+    expect(companies.find(c => c.companyId === 'empA')!.certNumbers).toEqual(['CT N°:134']);
+  });
+
+  it('omite empresas sin nada valorizado en el mes', () => {
+    expect(companies.map(c => c.companyId)).toEqual(['empA']);
+  });
+
+  it('suma aparte lo que queda fuera, por destino', () => {
+    expect(outsideClosureKg(docs, '2026-09')).toEqual({ rescon: 560, relleno_sanitario: 50 });
   });
 });

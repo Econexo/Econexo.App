@@ -3,7 +3,7 @@
 // docs/superpowers/specs/2026-09-30-cierre-mensual-design.md.
 
 import { monthRange, isWithin } from './dateRange';
-import { wasteItemsOf, parseQuantity } from './wasteClassification';
+import { wasteItemsOf, parseQuantity, destinationOf, type WasteDestination } from './wasteClassification';
 import { normalizeMaterialType } from './materialCalculations';
 import { sumTruncated, truncateTo } from './formatKg';
 import type { XlsxSheet, XlsxValue } from './xlsx';
@@ -33,6 +33,14 @@ export interface ClosureMaterial {
   kg: number;
 }
 
+/** Residuo que no va al gestor porque en el CT su destino no es valorización. */
+export interface ClosureOutside {
+  material: string;
+  destination: Exclude<WasteDestination, 'valorizacion'>;
+  /** Truncado a 1 decimal. */
+  kg: number;
+}
+
 export interface ClosureCompany {
   /** id del perfil, o id del documento UNREGISTERED_CLIENT si es manual. */
   companyId: string;
@@ -43,6 +51,11 @@ export interface ClosureCompany {
   /** Suma de las filas truncadas. */
   totalKg: number;
   certNumbers: string[];
+  /**
+   * Lo que la empresa retiró ese mes pero no se envía al gestor (RESCON,
+   * relleno). Solo informativo; no suma en `totalKg`. Ausente en cierres viejos.
+   */
+  outside?: ClosureOutside[];
 }
 
 /** Fila de `monthly_closures`. */
@@ -72,6 +85,14 @@ export const companyIdOf = (doc: ClosureDoc): string =>
 
 const byText = (a: string, b: string) => a.localeCompare(b, 'es', { numeric: true });
 
+/**
+ * Empresas del mes con lo que se envía al gestor.
+ *
+ * Solo entra lo VALORIZADO: el gestor (GCR) certifica valorización, y lo que el
+ * CT marca como RESCON o relleno sanitario se va a otro lado. Si se sumara, el
+ * cierre no cuadra con el que devuelve el gestor (pasó con la madera a RESCON).
+ * Eso queda aparte en `outside`, para que se vea por qué no está.
+ */
 export function buildClosureCompanies(
   docs: ClosureDoc[],
   directory: Record<string, CompanyInfo>,
@@ -84,6 +105,7 @@ export function buildClosureCompanies(
     isManual: boolean;
     // Cantidades por material, sin sumar: se truncan una a una, como en el CT.
     quantities: Record<string, number[]>;
+    outside: Record<string, { material: string; destination: ClosureOutside['destination']; qtys: number[] }>;
     certs: Set<string>;
   }>();
 
@@ -91,21 +113,33 @@ export function buildClosureCompanies(
     if (!isWithin(doc.created_at, range)) continue;
 
     const lines = wasteItemsOf(doc)
-      .map(item => ({ material: normalizeMaterialType(item), qty: parseQuantity(item?.quantity) }))
+      .map(item => ({
+        material: normalizeMaterialType(item),
+        qty: parseQuantity(item?.quantity),
+        destination: destinationOf(item),
+      }))
       .filter(l => l.qty > 0);
     if (lines.length === 0) continue;
 
     const id = companyIdOf(doc);
     let bucket = buckets.get(id);
     if (!bucket) {
-      bucket = { isManual: !!doc.metadata?.unregistered_client_id, quantities: {}, certs: new Set() };
+      bucket = { isManual: !!doc.metadata?.unregistered_client_id, quantities: {}, outside: {}, certs: new Set() };
       buckets.set(id, bucket);
     }
-    for (const { material, qty } of lines) {
-      (bucket.quantities[material] ??= []).push(qty);
+    let sendsSomething = false;
+    for (const { material, qty, destination } of lines) {
+      if (destination === 'valorizacion') {
+        (bucket.quantities[material] ??= []).push(qty);
+        sendsSomething = true;
+      } else {
+        const key = `${destination}|${material}`;
+        (bucket.outside[key] ??= { material, destination, qtys: [] }).qtys.push(qty);
+      }
     }
+    // El CT va al gestor solo si lleva algo valorizado.
     const cert = toTransportLabel(doc.metadata?.cert_number);
-    if (cert) bucket.certs.add(cert);
+    if (cert && sendsSomething) bucket.certs.add(cert);
   }
 
   const companies: ClosureCompany[] = [];
@@ -115,6 +149,11 @@ export function buildClosureCompanies(
       .map(([material, qtys]) => ({ material, kg: sumTruncated(qtys) }))
       .filter(m => m.kg > 0)
       .sort((a, b) => b.kg - a.kg || byText(a.material, b.material));
+    const outside = Object.values(bucket.outside)
+      .map(o => ({ material: o.material, destination: o.destination, kg: sumTruncated(o.qtys) }))
+      .filter(o => o.kg > 0)
+      .sort((a, b) => b.kg - a.kg || byText(a.material, b.material));
+    // Sin nada valorizado, la empresa no tiene qué mandar al gestor.
     if (materials.length === 0) continue;
 
     companies.push({
@@ -125,10 +164,27 @@ export function buildClosureCompanies(
       materials,
       totalKg: sumTruncated(materials.map(m => m.kg)),
       certNumbers: [...bucket.certs].sort(byText),
+      ...(outside.length > 0 ? { outside } : {}),
     });
   }
 
   return companies.sort((a, b) => byText(a.name, b.name));
+}
+
+/** Kilos del mes que NO van al gestor, por destino, de todas las empresas. */
+export function outsideClosureKg(docs: ClosureDoc[], periodKey: string): Record<ClosureOutside['destination'], number> {
+  const [year, month] = periodKey.split('-').map(Number);
+  const range = monthRange(year, month - 1);
+  const qtys: Record<ClosureOutside['destination'], number[]> = { rescon: [], relleno_sanitario: [] };
+  for (const doc of docs) {
+    if (!isWithin(doc.created_at, range)) continue;
+    for (const item of wasteItemsOf(doc)) {
+      const destination = destinationOf(item);
+      const qty = parseQuantity(item?.quantity);
+      if (destination !== 'valorizacion' && qty > 0) qtys[destination].push(qty);
+    }
+  }
+  return { rescon: sumTruncated(qtys.rescon), relleno_sanitario: sumTruncated(qtys.relleno_sanitario) };
 }
 
 export function groupByDestination(

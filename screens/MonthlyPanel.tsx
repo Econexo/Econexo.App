@@ -12,9 +12,10 @@ import { useToast } from '../components/ui/Toast';
 import { materialColor } from '../utils/materialCalculations';
 import { WASTE_DESTINATIONS } from '../utils/wasteClassification';
 import { formatKg, truncateTo, sumTruncated } from '../utils/formatKg';
+import { downloadXlsx } from '../utils/xlsx';
 import {
     buildMonthlyBreakdown,
-    breakdownToCsv,
+    breakdownToSheet,
     emptySummary,
     monthOverMonth,
     periodLabel,
@@ -137,17 +138,10 @@ const MonthlyPanel: React.FC = () => {
 
     const canGoForward = period < thisMonth;
 
-    const handleExportCsv = () => {
+    const handleExportExcel = () => {
         if (summary.materials.length === 0) { toast.warning('No hay datos para exportar en este mes.'); return; }
-        // BOM para que Excel reconozca los acentos.
-        const blob = new Blob(['﻿' + breakdownToCsv(summary)], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `EcoNexo_Panel_${period}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success('CSV descargado.');
+        downloadXlsx(`EcoNexo_Panel_${period}.xlsx`, breakdownToSheet(summary, period));
+        toast.success('Excel descargado.');
     };
 
     const handleExportPdf = () => {
@@ -270,8 +264,8 @@ const MonthlyPanel: React.FC = () => {
                 {view === 'resumen' ? (
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={handleExportCsv}
-                            title="Exportar CSV"
+                            onClick={handleExportExcel}
+                            title="Exportar Excel"
                             className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 transition-all active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
                         >
                             <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">table_view</span>

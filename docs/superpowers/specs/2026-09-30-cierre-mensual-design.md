@@ -46,8 +46,10 @@ igual que en `screens/Admin.tsx`.
 
 **Residuos y kilos:** `wasteItemsOf(doc)` + `parseQuantity` + `normalizeMaterialType`
 (las mismas funciones que el panel), agrupados por material dentro de cada empresa.
-Se incluyen todos los destinos (valorización, relleno, RESCON), porque qué va a
-cada gestor se decide por empresa.
+Solo entra lo marcado como **valorización** en el CT: lo que va a RESCON o a
+relleno sanitario no lo recibe el gestor, y sumarlo descuadraba el cierre con el
+que devuelve GCR (caso madera → RESCON, 2026-10-01). Eso se muestra aparte, como
+informativo, y no entra al Excel ni al PDF. Los CT sin nada valorizado no se listan.
 
 **N° de CT:** `metadata.cert_number` de cada documento, pasado por
 `toTransportLabel` para que diga CT y no CR.

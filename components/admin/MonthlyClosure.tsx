@@ -4,11 +4,13 @@ import { useToast } from '../ui/Toast';
 import { useConfirm } from '../ui/ConfirmDialog';
 import { formatKg } from '../../utils/formatKg';
 import { periodLabel } from '../../utils/monthlyBreakdown';
+import { DESTINATION_LABELS } from '../../utils/wasteClassification';
 import {
   buildClosureCompanies,
   closureTotalKg,
   defaultAssignment,
   groupByDestination,
+  outsideClosureKg,
   snapshotFingerprint,
   type Assignment,
   type ClosureDoc,
@@ -66,6 +68,7 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
     [docs, directory, period],
   );
   const fingerprint = useMemo(() => snapshotFingerprint(companies), [companies]);
+  const outside = useMemo(() => outsideClosureKg(docs, period), [docs, period]);
   const periodClosures = useMemo(
     () => closures.filter(c => c.period === period),
     [closures, period],
@@ -188,6 +191,12 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
                     <span>{m.material}</span><span className="font-bold">{formatKg(m.kg)} kg</span>
                   </li>
                 ))}
+                {c.outside?.map(o => (
+                  <li key={`${o.destination}-${o.material}`} className="flex justify-between text-xs text-gray-400">
+                    <span>{o.material} · {DESTINATION_LABELS[o.destination]} (no va al gestor)</span>
+                    <span>{formatKg(o.kg)} kg</span>
+                  </li>
+                ))}
                 {c.certNumbers.length > 0 && (
                   <li className="text-[11px] text-gray-400 pt-1">{c.certNumbers.join(', ')}</li>
                 )}
@@ -210,6 +219,15 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
         ))}
         {excluded.length > 0 && (
           <p className="text-xs text-gray-400">{excluded.length} empresa(s) sin incluir</p>
+        )}
+        {(outside.rescon > 0 || outside.relleno_sanitario > 0) && (
+          <p className="text-xs text-gray-400">
+            Solo se envía lo valorizado. Fuera del cierre:{' '}
+            {[
+              outside.rescon > 0 && `${formatKg(outside.rescon)} kg RESCON`,
+              outside.relleno_sanitario > 0 && `${formatKg(outside.relleno_sanitario)} kg relleno sanitario`,
+            ].filter(Boolean).join(' · ')}
+          </p>
         )}
       </div>
 

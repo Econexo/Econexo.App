@@ -6,6 +6,7 @@ import { mapToRepCategory, REP_CATEGORY_LABELS } from './materialMapping';
 import { isValorized, summarizeByDestination, parseQuantity, type DestinationTotals } from './wasteClassification';
 import { truncateTo, sumTruncated } from './formatKg';
 import type { MonthlyMaterialRow } from '../types';
+import type { XlsxSheet, XlsxValue } from './xlsx';
 
 export const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -189,13 +190,13 @@ export function trailingPeriods(periodKey: string, count: number): string[] {
   return out;
 }
 
-/** Filas del desglose a CSV (separador ';' — Excel en es-CL lo abre en columnas). */
-export function breakdownToCsv(summary: MonthlySummary): string {
+/** Desglose del mes como hoja de Excel (.xlsx). Cifras como número, truncadas a 1 decimal. */
+export function breakdownToSheet(summary: MonthlySummary, periodKey: string): XlsxSheet {
   const head = ['Material', 'Kg recuperados', '% del mes', 'CO2e evitado (kg)', 'Agua ahorrada (L)', 'Energía ahorrada (kWh)', 'Categoría Ley REP'];
   // Un decimal y truncado, igual que en pantalla y que el comprobante del gestor.
-  const d1 = (n: number) => truncateTo(n).toFixed(1);
+  const d1 = (n: number) => truncateTo(n);
 
-  const rows = summary.materials.map(r => [
+  const rows: XlsxValue[][] = summary.materials.map(r => [
     r.material,
     d1(r.kg),
     d1(r.share),
@@ -204,17 +205,16 @@ export function breakdownToCsv(summary: MonthlySummary): string {
     d1(r.energy),
     r.repCategory ?? 'No aplica',
   ]);
-  const total = [
+  const total: XlsxValue[] = [
     'TOTAL',
     // Suma de las filas ya truncadas, para que la columna cuadre.
-    d1(sumTruncated(summary.materials.map(m => m.kg))),
-    '100.0',
+    sumTruncated(summary.materials.map(m => m.kg)),
+    100,
     d1(summary.impact.co2),
     d1(summary.impact.water),
     d1(summary.impact.energy),
     '',
   ];
-  return [head, ...rows, total]
-    .map(cols => cols.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';'))
-    .join('\r\n');
+  const all = [head, ...rows, total];
+  return { name: periodLabel(periodKey), rows: all, boldRows: [0, all.length - 1], colWidths: [20, 16, 11, 18, 18, 22, 24] };
 }
