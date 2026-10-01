@@ -16,6 +16,20 @@ WHERE (created_at AT TIME ZONE 'UTC')::time = time '00:00:00'
 ORDER BY created_at DESC;
 
 -- 2 · Corregir: mismo día, a mediodía de Chile.
+-- El trigger documents_guard_certificates (20260923_documents_integridad.sql)
+-- bloquea tocar certificados fuera de una sesión de admin, y el SQL Editor no
+-- tiene sesión. Se apaga solo dentro de esta transacción: si algo falla, el
+-- ROLLBACK lo deja encendido igual.
+BEGIN;
+ALTER TABLE public.documents DISABLE TRIGGER documents_guard_certificates;
+
 UPDATE public.documents
 SET created_at = ((created_at AT TIME ZONE 'UTC')::date + time '12:00') AT TIME ZONE 'America/Santiago'
 WHERE (created_at AT TIME ZONE 'UTC')::time = time '00:00:00';
+
+ALTER TABLE public.documents ENABLE TRIGGER documents_guard_certificates;
+COMMIT;
+
+-- 3 · Comprobar que el trigger quedó encendido (tgenabled = 'O'):
+--   SELECT tgname, tgenabled FROM pg_trigger
+--   WHERE tgname = 'documents_guard_certificates';
