@@ -38,9 +38,11 @@ describe('formatKg', () => {
     expect(formatKg(1234567.8)).toBe('1.234.567,8');
   });
 
-  it('muestra siempre un decimal', () => {
-    expect(formatKg(100)).toBe('100,0');
-    expect(formatKg(0)).toBe('0,0');
+  it('omite la coma cuando el decimal es cero', () => {
+    expect(formatKg(100)).toBe('100');
+    expect(formatKg(0)).toBe('0');
+    expect(formatKg(1234)).toBe('1.234');
+    expect(formatKg(10.04)).toBe('10');
   });
 
   it('trunca antes de formatear', () => {

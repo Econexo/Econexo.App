@@ -198,7 +198,7 @@ describe('closureTotalKg y closureToTsv', () => {
     const lines = closureToTsv('GCR', '2026-09', companies).split('\n');
     expect(lines[0]).toBe('Cierre Septiembre 2026 — GCR');
     expect(lines[2]).toBe('Empresa\tRUT\tResiduo\tKg\tN° CT');
-    expect(lines).toContain('Alfa SpA\t76.111.111-1\tCartón\t2,0\tCT N°:001');
+    expect(lines).toContain('Alfa SpA\t76.111.111-1\tCartón\t2\tCT N°:001');
     expect(lines).toContain('\t\tSubtotal Alfa SpA\t3,2\t');
     expect(lines[lines.length - 1]).toBe('TOTAL\t\t\t7,2\t');
   });
@@ -214,6 +214,6 @@ describe('closureTotalKg y closureToTsv', () => {
 
   it('limpia tabulaciones y saltos de línea en los textos', () => {
     const tsv = closureToTsv('GCR', '2026-09', companies);
-    expect(tsv).toContain('Beta Ltda Sur\t1-9\tVidrio\t4,0\tCT N°:002');
+    expect(tsv).toContain('Beta Ltda Sur\t1-9\tVidrio\t4\tCT N°:002');
   });
 });
