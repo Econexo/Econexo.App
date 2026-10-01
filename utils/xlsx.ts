@@ -10,14 +10,46 @@
 
 export type XlsxValue = string | number | null | undefined;
 
+export interface XlsxStyle {
+  bold?: boolean;
+  italic?: boolean;
+  /** Tamaño de letra; 11 por defecto. */
+  size?: number;
+  /** Color del texto, hex sin «#». */
+  color?: string;
+  /** Color de fondo, hex sin «#». */
+  fill?: string;
+  align?: 'left' | 'center' | 'right';
+  valign?: 'top' | 'center' | 'bottom';
+  wrap?: boolean;
+  /** Borde fino en los cuatro lados, de este color (hex sin «#»). */
+  border?: string;
+  /** Formato de número, como en Excel: '#,##0.0'. */
+  numFmt?: string;
+}
+
+/** Celda: un valor suelto, o valor con estilo. Una celda vacía con estilo se dibuja igual (bordes, fondo). */
+export type XlsxCell = XlsxValue | { v: XlsxValue; s?: XlsxStyle };
+
 export interface XlsxSheet {
   name: string;
-  rows: XlsxValue[][];
-  /** Filas (índice desde 0) que van en negrita: encabezados, subtotales, total. */
+  rows: XlsxCell[][];
+  /** Filas (índice desde 0) que van en negrita, para hojas sin estilos propios. */
   boldRows?: number[];
   /** Ancho de cada columna, en caracteres. */
   colWidths?: number[];
+  /** Alto de filas puntuales (índice desde 0 → puntos). */
+  rowHeights?: Record<number, number>;
+  /** Rangos combinados, como 'A5:A8'. */
+  merges?: string[];
+  /** Filas fijas arriba al desplazarse (encabezados). */
+  freezeRows?: number;
+  /** Oculta la cuadrícula gris de fondo, para hojas con bordes propios. */
+  hideGridLines?: boolean;
 }
+
+export const cellValue = (cell: XlsxCell): XlsxValue =>
+  cell !== null && typeof cell === 'object' ? cell.v : (cell as XlsxValue);
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -30,7 +62,7 @@ const escapeXml = (text: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-const columnLetter = (index: number) => {
+export const columnLetter = (index: number) => {
   let n = index + 1;
   let out = '';
   while (n > 0) {
@@ -41,31 +73,124 @@ const columnLetter = (index: number) => {
   return out;
 };
 
-function sheetXml(sheet: XlsxSheet): string {
+// ── Estilos ─────────────────────────────────────────────────────────────────
+// Excel guarda fuentes, fondos, bordes y formatos en listas, y cada celda apunta
+// a una combinación (cellXfs). Se registran a medida que aparecen, sin repetir.
+
+class StyleRegistry {
+  private fonts = ['<font><sz val="11"/><name val="Calibri"/></font>'];
+  private fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'];
+  private borders = ['<border><left/><right/><top/><bottom/><diagonal/></border>'];
+  private numFmts: string[] = [];
+  private xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'];
+  private byKey = new Map<string, number>();
+
+  private add(list: string[], xml: string): number {
+    const i = list.indexOf(xml);
+    if (i >= 0) return i;
+    list.push(xml);
+    return list.length - 1;
+  }
+
+  /** Índice de estilo para el atributo s="…" de la celda (0 = sin estilo). */
+  id(style?: XlsxStyle): number {
+    if (!style || Object.keys(style).length === 0) return 0;
+    const key = JSON.stringify(style);
+    const known = this.byKey.get(key);
+    if (known !== undefined) return known;
+
+    const font = this.add(this.fonts, '<font>'
+      + (style.bold ? '<b/>' : '') + (style.italic ? '<i/>' : '')
+      + `<sz val="${style.size ?? 11}"/>`
+      + (style.color ? `<color rgb="FF${style.color}"/>` : '')
+      + '<name val="Calibri"/></font>');
+    const fill = style.fill
+      ? this.add(this.fills, `<fill><patternFill patternType="solid"><fgColor rgb="FF${style.fill}"/><bgColor indexed="64"/></patternFill></fill>`)
+      : 0;
+    const side = (tag: string) => `<${tag} style="thin"><color rgb="FF${style.border}"/></${tag}>`;
+    const border = style.border
+      ? this.add(this.borders, `<border>${side('left')}${side('right')}${side('top')}${side('bottom')}<diagonal/></border>`)
+      : 0;
+    const numFmt = style.numFmt ? 164 + this.add(this.numFmts, style.numFmt) : 0;
+    const alignment = style.align || style.valign || style.wrap
+      ? '<alignment'
+        + (style.align ? ` horizontal="${style.align}"` : '')
+        + (style.valign ? ` vertical="${style.valign}"` : '')
+        + (style.wrap ? ' wrapText="1"' : '')
+        + '/>'
+      : '';
+
+    const xf = `<xf numFmtId="${numFmt}" fontId="${font}" fillId="${fill}" borderId="${border}" xfId="0"`
+      + (font ? ' applyFont="1"' : '') + (fill ? ' applyFill="1"' : '') + (border ? ' applyBorder="1"' : '')
+      + (numFmt ? ' applyNumberFormat="1"' : '') + (alignment ? ` applyAlignment="1">${alignment}</xf>` : '/>');
+    const id = this.add(this.xfs, xf);
+    this.byKey.set(key, id);
+    return id;
+  }
+
+  xml(): string {
+    const numFmts = this.numFmts.length
+      ? `<numFmts count="${this.numFmts.length}">${this.numFmts.map((f, i) => `<numFmt numFmtId="${164 + i}" formatCode="${escapeXml(f)}"/>`).join('')}</numFmts>`
+      : '';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      + numFmts
+      + `<fonts count="${this.fonts.length}">${this.fonts.join('')}</fonts>`
+      + `<fills count="${this.fills.length}">${this.fills.join('')}</fills>`
+      + `<borders count="${this.borders.length}">${this.borders.join('')}</borders>`
+      + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+      + `<cellXfs count="${this.xfs.length}">${this.xfs.join('')}</cellXfs>`
+      + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+      + '</styleSheet>';
+  }
+}
+
+function sheetXml(sheet: XlsxSheet, styles: StyleRegistry): string {
   const bold = new Set(sheet.boldRows ?? []);
   const cols = sheet.colWidths?.length
     ? `<cols>${sheet.colWidths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols>`
     : '';
 
   const rows = sheet.rows.map((row, r) => {
-    const style = bold.has(r) ? ' s="1"' : '';
-    const cells = row.map((value, c) => {
-      if (value === null || value === undefined || value === '') return '';
+    const cells = row.map((cell, c) => {
+      const value = cellValue(cell);
+      const own = cell !== null && typeof cell === 'object' ? cell.s : undefined;
+      const style = styles.id(own ?? (bold.has(r) ? { bold: true } : undefined));
+      const s = style ? ` s="${style}"` : '';
       const ref = `${columnLetter(c)}${r + 1}`;
+      if (value === null || value === undefined || value === '') return style ? `<c r="${ref}"${s}/>` : '';
       if (typeof value === 'number' && Number.isFinite(value)) {
-        return `<c r="${ref}"${style}><v>${value}</v></c>`;
+        return `<c r="${ref}"${s}><v>${value}</v></c>`;
       }
-      return `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${escapeXml(String(value))}</t></is></c>`;
+      return `<c r="${ref}"${s} t="inlineStr"><is><t xml:space="preserve">${escapeXml(String(value))}</t></is></c>`;
     }).join('');
-    return `<row r="${r + 1}">${cells}</row>`;
+    const height = sheet.rowHeights?.[r];
+    return `<row r="${r + 1}"${height ? ` ht="${height}" customHeight="1"` : ''}>${cells}</row>`;
   }).join('');
+
+  const pane = sheet.freezeRows
+    ? `<pane ySplit="${sheet.freezeRows}" topLeftCell="A${sheet.freezeRows + 1}" activePane="bottomLeft" state="frozen"/>`
+    : '';
+  const freeze = pane || sheet.hideGridLines
+    ? `<sheetViews><sheetView${sheet.hideGridLines ? ' showGridLines="0"' : ''} workbookViewId="0">${pane}</sheetView></sheetViews>`
+    : '';
+  const merges = sheet.merges?.length
+    ? `<mergeCells count="${sheet.merges.length}">${sheet.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>`
+    : '';
 
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-    + `${cols}<sheetData>${rows}</sheetData></worksheet>`;
+    // Al imprimir, todo el ancho en una hoja.
+    + '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'
+    + `${freeze}${cols}<sheetData>${rows}</sheetData>${merges}`
+    + '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>'
+    + '<pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>'
+    + '</worksheet>';
 }
 
 function workbookFiles(sheet: XlsxSheet): Record<string, string> {
+  const styles = new StyleRegistry();
+  const worksheet = sheetXml(sheet, styles);
   // Excel limita el nombre de la hoja a 31 caracteres y prohíbe : \ / ? * [ ]
   const sheetName = escapeXml(sheet.name.replace(/[:\\/?*[\]]/g, ' ').slice(0, 31) || 'Hoja1');
   return {
@@ -89,17 +214,8 @@ function workbookFiles(sheet: XlsxSheet): Record<string, string> {
       + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
       + '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
       + '</Relationships>',
-    'xl/styles.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-      + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-      + '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>'
-      + '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
-      + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
-      + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-      + '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
-      + '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>'
-      + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
-      + '</styleSheet>',
-    'xl/worksheets/sheet1.xml': sheetXml(sheet),
+    'xl/styles.xml': styles.xml(),
+    'xl/worksheets/sheet1.xml': worksheet,
   };
 }
 
