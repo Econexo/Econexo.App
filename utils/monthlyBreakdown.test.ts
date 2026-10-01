@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildMonthlyBreakdown,
-  breakdownToCsv,
+  breakdownToSheet,
   monthOverMonth,
   previousPeriod,
   trailingPeriods,
@@ -128,28 +128,19 @@ describe('monthOverMonth', () => {
   });
 });
 
-describe('breakdownToCsv', () => {
-  it('incluye encabezado, filas y total', () => {
+describe('breakdownToSheet', () => {
+  it('incluye encabezado, filas y total, con cifras numéricas', () => {
     const mes = buildMonthlyBreakdown([
-      doc('2026-07-03T10:00:00', [{ waste_type: 'Vidrio', quantity: 20 }]),
+      doc('2026-07-03T10:00:00', [{ waste_type: 'Vidrio', quantity: 20.37 }]),
     ]).get('2026-07')!;
 
-    const csv = breakdownToCsv(mes);
-    const lines = csv.split('\r\n');
+    const { rows, name } = breakdownToSheet(mes, '2026-07');
 
-    expect(lines).toHaveLength(3);
-    expect(lines[0]).toContain('Material');
-    expect(lines[1]).toContain('Vidrio');
-    expect(lines[2]).toContain('TOTAL');
-  });
-
-  it('escapa las comillas dobles del contenido', () => {
-    const mes = buildMonthlyBreakdown([
-      doc('2026-07-03T10:00:00', [{ waste_type: 'Vidrio', quantity: 1 }]),
-    ]).get('2026-07')!;
-    mes.materials[0].material = 'Vidrio "verde"';
-
-    expect(breakdownToCsv(mes)).toContain('"Vidrio ""verde"""');
+    expect(name).toBe('Julio 2026');
+    expect(rows).toHaveLength(3);
+    expect(rows[0][0]).toBe('Material');
+    expect(rows[1].slice(0, 2)).toEqual(['Vidrio', 20.3]);
+    expect(rows[2].slice(0, 3)).toEqual(['TOTAL', 20.3, 100]);
   });
 });
 
