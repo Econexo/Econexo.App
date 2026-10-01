@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import Navbar from '../components/Navbar';
+import MonthlyClosure from '../components/admin/MonthlyClosure';
 import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
 import { materialColor } from '../utils/materialCalculations';
@@ -51,6 +52,8 @@ const MonthlyPanel: React.FC = () => {
     const [allDocs, setAllDocs] = useState<any[]>([]);
     const [period, setPeriod] = useState(currentPeriodKey);
     const [expanded, setExpanded] = useState<string | null>(null);
+    // «Cierre mensual» es solo para el admin.
+    const [view, setView] = useState<'resumen' | 'cierre'>('resumen');
 
     const thisMonth = currentPeriodKey();
 
@@ -264,27 +267,45 @@ const MonthlyPanel: React.FC = () => {
                     <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[22px]">arrow_back</span>
                 </button>
                 <h1 className="text-xl font-display font-black tracking-tight text-gray-900 dark:text-white">Panel Mensual</h1>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleExportCsv}
-                        title="Exportar CSV"
-                        className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 transition-all active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
-                    >
-                        <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">table_view</span>
-                    </button>
-                    <button
-                        onClick={handleExportPdf}
-                        title="Exportar PDF"
-                        className="size-10 flex items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-all active:scale-90 border border-primary/20 shadow-sm"
-                    >
-                        <span className="material-symbols-outlined text-primary text-[20px]">picture_as_pdf</span>
-                    </button>
-                </div>
+                {view === 'resumen' ? (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleExportCsv}
+                            title="Exportar CSV"
+                            className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 transition-all active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
+                        >
+                            <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">table_view</span>
+                        </button>
+                        <button
+                            onClick={handleExportPdf}
+                            title="Exportar PDF"
+                            className="size-10 flex items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-all active:scale-90 border border-primary/20 shadow-sm"
+                        >
+                            <span className="material-symbols-outlined text-primary text-[20px]">picture_as_pdf</span>
+                        </button>
+                    </div>
+                ) : (
+                    <div className="w-[88px]" />
+                )}
             </header>
 
             <div className="px-4 py-6 space-y-5 relative z-10">
+                {isAdmin && (
+                    <div className="grid grid-cols-2 gap-1 p-1 bg-white/70 dark:bg-slate-800/70 border border-white/80 dark:border-white/10 rounded-2xl shadow-sm">
+                        {(['resumen', 'cierre'] as const).map(v => (
+                            <button
+                                key={v}
+                                onClick={() => setView(v)}
+                                className={`h-10 rounded-xl text-sm font-black transition-colors ${view === v ? 'bg-primary text-white' : 'text-gray-600 dark:text-gray-300'}`}
+                            >
+                                {v === 'resumen' ? 'Resumen' : 'Cierre mensual'}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {/* Selector de empresa — solo para el admin */}
-                {isAdmin && companies.length > 0 && (
+                {isAdmin && view === 'resumen' && companies.length > 0 && (
                     <select
                         value={companyFilter}
                         onChange={e => setCompanyFilter(e.target.value)}
@@ -335,6 +356,8 @@ const MonthlyPanel: React.FC = () => {
                     <div className="flex items-center justify-center py-24">
                         <div className="size-9 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
                     </div>
+                ) : view === 'cierre' && isAdmin ? (
+                    <MonthlyClosure docs={allDocs} period={period} />
                 ) : (
                     <>
                         {/* ── Total del mes ── */}
