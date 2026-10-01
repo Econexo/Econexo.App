@@ -25,5 +25,18 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  // Solo la app. Sin esto, `tsc --noEmit` también revisaba las edge functions
+  // —que corren en Deno, con sus propios tipos e imports por URL— y el script
+  // local inspect_reports.ts, y fallaba siempre con errores ajenos a la app.
+  // Eso hacía imposible usar el chequeo de tipos como puerta en CI.
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "venv",
+    "venv_new",
+    "supabase/functions",
+    "inspect_reports.ts"
+  ]
 }

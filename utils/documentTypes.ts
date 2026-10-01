@@ -46,6 +46,29 @@ export const TRANSPORTE_TYPES: string[] = [DOC_TYPE.TRANSPORTE, DOC_TYPE.TRANSPO
 /** Documentos que traen waste_details y por tanto suman kilos. */
 export const WASTE_DOC_TYPES: string[] = [...TRANSPORTE_TYPES, DOC_TYPE.COMUNITARIO];
 
+/**
+ * Los certificados que emite EcoNexo. Solo un administrador puede crearlos,
+ * modificarlos o borrarlos.
+ *
+ * Son la trazabilidad del cliente: de estas filas salen sus kilos, su CGM y las
+ * cifras con que declara. Si el cliente pudiera tocarlas, el certificado que
+ * firma EcoNexo dejaría de probar nada.
+ *
+ * La misma lista vive en la base como public.is_econexo_certificate(), aplicada
+ * por RLS y por un trigger (ver 20260923_documents_integridad.sql). Esta copia
+ * es para la interfaz: sirve para no ofrecer un botón de borrar que la base va a
+ * rechazar. Si cambias una, cambia la otra.
+ */
+export const ECONEXO_CERT_TYPES: string[] = [
+  ...TRANSPORTE_TYPES,
+  DOC_TYPE.COMUNITARIO,
+  DOC_TYPE.MENSUAL,
+];
+
+/** ¿Lo emitió EcoNexo y por tanto el cliente no puede alterarlo? */
+export const isEconexoCertificate = (type?: string | null): boolean =>
+  !!type && ECONEXO_CERT_TYPES.includes(type);
+
 /** ¿Es un certificado de transporte, con cualquiera de sus dos códigos? */
 export const isTransportDoc = (type?: string | null): boolean =>
   !!type && TRANSPORTE_TYPES.includes(type);
