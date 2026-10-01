@@ -18,6 +18,7 @@ import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import { useCountUp } from '../hooks/useCountUp';
 
+import FitText from '../components/ui/FitText';
 import { todayLocalDate } from '../utils/dateRange';
 interface DashboardProps {
   isLeyRep: boolean;
@@ -867,23 +868,23 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           onClick={() => setShowDetail(!showDetail)}
           className="group relative overflow-hidden flex items-center justify-between rounded-[20px] p-6 bg-primary shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98] cursor-pointer w-full text-left"
         >
-          <div className="flex items-center gap-4 relative z-10">
-            <span className="material-symbols-outlined text-5xl text-[#b4d351] font-black drop-shadow-sm group-hover:scale-110 transition-transform">recycling</span>
-            <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-4 relative z-10 min-w-0 flex-1">
+            <span className="material-symbols-outlined shrink-0 text-5xl text-[#b4d351] font-black drop-shadow-sm group-hover:scale-110 transition-transform">recycling</span>
+            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
               <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">
                 Total Residuos Gestionados
                 {selectedYear === 'month' && ` · ${MONTH_LABELS[selectedMonth]} ${monthYear}`}
                 {typeof selectedYear === 'number' && ` · ${selectedYear}`}
                 {selectedYear === 'range' && ` · ${rangeStart}–${rangeEnd}`}
               </span>
-              <div className="flex items-baseline gap-1.5">
-                <h3 className="text-4xl font-display font-black text-white tracking-tight leading-none">{animatedKg.toLocaleString('es-CL')}</h3>
-                <span className="text-sm font-bold text-white/90">KG</span>
+              <div className="flex items-baseline gap-1.5 min-w-0">
+                <h3 className="min-w-0 text-4xl font-display font-black text-white tracking-tight leading-none"><FitText>{animatedKg.toLocaleString('es-CL')}</FitText></h3>
+                <span className="shrink-0 text-sm font-bold text-white/90">KG</span>
               </div>
             </div>
           </div>
 
-          <div className="size-10 rounded-full bg-white/10 flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/20 transition-all">
+          <div className="size-10 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-white backdrop-blur-md group-hover:bg-white/20 transition-all">
             <span className="material-symbols-outlined">{showDetail ? 'expand_less' : 'chevron_right'}</span>
           </div>
 
@@ -915,7 +916,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 <div
                   key={d.value}
                   title={d.description}
-                  className={`rounded-[18px] p-3.5 border transition-all ${principal
+                  className={`min-w-0 overflow-hidden rounded-[18px] p-3.5 border transition-all ${principal
                     ? 'bg-white dark:bg-slate-900 border-primary/30 shadow-md shadow-primary/10'
                     : 'bg-white/60 dark:bg-slate-900/60 border-white/80 dark:border-white/10'}`}
                 >
@@ -939,7 +940,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                     className={`font-display font-black leading-none tracking-tight tabular-nums ${principal ? 'text-2xl' : 'text-xl'}`}
                     style={{ color: principal ? d.color : undefined }}
                   >
-                    {formatKg(kg)}
+                    <FitText>{formatKg(kg)}</FitText>
                   </p>
                   <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
                     kg · {share}%

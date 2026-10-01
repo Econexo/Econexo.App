@@ -31,11 +31,11 @@ export function truncateTo(value: number, decimals = KG_DECIMALS): number {
 
 /**
  * Kilos como los ve el usuario: truncados a un decimal y con separadores
- * chilenos. No incluye la unidad.
+ * chilenos. No incluye la unidad. Sin ",0" cuando no hay decimal: 10, no 10,0.
  */
 export function formatKg(value: number, decimals = KG_DECIMALS): string {
   return truncateTo(value, decimals).toLocaleString('es-CL', {
-    minimumFractionDigits: decimals,
+    minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
   });
 }
