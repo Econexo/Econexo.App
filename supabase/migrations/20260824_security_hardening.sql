@@ -49,6 +49,11 @@ GRANT EXECUTE ON FUNCTION public.increment_points(UUID, INTEGER) TO authenticate
 -- ─────────────────────────────────────────────────────────────────────────
 -- 2 · Quitar el atajo por correo de las políticas RLS
 -- ─────────────────────────────────────────────────────────────────────────
+-- ⛔ NO CORRER ESTE BLOQUE. Lo reemplaza 20260923_documents_integridad.sql,
+--    que borra todas las políticas de documents y crea las correctas. Este
+--    bloque volvería a crear "Admins can insert documents for anyone" con
+--    «OR auth.uid() = user_id», y el cliente podría fabricarse certificados.
+--
 -- Varias políticas confían en  auth.jwt() ->> 'email' = 'econexo.hub@gmail.com'.
 -- Eso es frágil por tres motivos: el claim 'email' no se revalida hasta que el
 -- token se refresca, el día que cambies de correo pierdes el acceso de golpe, y
