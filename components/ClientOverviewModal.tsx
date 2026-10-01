@@ -59,6 +59,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
     const [isActive, setIsActive] = useState(user.is_active !== false);
     const [suspending, setSuspending] = useState(false);
     const [suspendError, setSuspendError] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [documents, setDocuments] = useState<any[]>([]);
@@ -208,6 +209,41 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                 metadata: { is_active: newActive },
             });
         }
+    };
+
+    // Borra la cuenta pero no sus documentos: admin_delete_account convierte la
+    // empresa en cliente manual y le pasa los certificados antes de borrar.
+    const handleDeleteAccount = async () => {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser?.id === user.id) {
+            setSuspendError('No puedes eliminar tu propia cuenta.');
+            return;
+        }
+        const docCount = documents.length;
+        const ok = await confirm({
+            title: `¿Eliminar la cuenta de ${displayName}?`,
+            message: docCount > 0
+                ? `La empresa ya no podrá iniciar sesión y se borran su perfil, puntos y notificaciones. Sus ${docCount} documento(s) se conservan: la empresa pasa a ser un cliente manual. No se puede deshacer.`
+                : 'La empresa ya no podrá iniciar sesión y se borran su perfil, puntos y notificaciones. No tiene documentos. No se puede deshacer.',
+            confirmLabel: 'Eliminar cuenta',
+            cancelLabel: 'Cancelar',
+            danger: true,
+        });
+        if (!ok) return;
+
+        setDeleting(true);
+        setSuspendError(null);
+        const { data, error } = await supabase.rpc('admin_delete_account', { target_id: user.id });
+        setDeleting(false);
+        if (error) {
+            setSuspendError('No se pudo eliminar la cuenta: ' + error.message);
+            return;
+        }
+        const kept = (data as any)?.documents_kept ?? 0;
+        toast.success(kept > 0
+            ? `Cuenta eliminada. ${kept} documento(s) quedan como cliente manual.`
+            : 'Cuenta eliminada.');
+        onClose();
     };
 
     const handleGenerateEcoReport = async () => {
@@ -669,6 +705,15 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                             {suspending ? 'Reactivando...' : 'Reactivar cuenta'}
                                         </button>
                                     </div>
+                                )}
+                                {!(user as any).is_unregistered && (
+                                    <button
+                                        onClick={handleDeleteAccount}
+                                        disabled={deleting || suspending || loading}
+                                        className="w-full mt-2 py-2.5 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-700 disabled:opacity-40 transition-colors"
+                                    >
+                                        {deleting ? 'Eliminando...' : 'Eliminar cuenta'}
+                                    </button>
                                 )}
                             </div>
                         </>
