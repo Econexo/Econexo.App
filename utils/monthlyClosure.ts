@@ -5,7 +5,8 @@
 import { monthRange, isWithin } from './dateRange';
 import { wasteItemsOf, parseQuantity } from './wasteClassification';
 import { normalizeMaterialType } from './materialCalculations';
-import { sumTruncated, formatKg } from './formatKg';
+import { sumTruncated, truncateTo } from './formatKg';
+import type { XlsxSheet, XlsxValue } from './xlsx';
 import { toTransportLabel } from './documentTypes';
 import { periodLabel } from './monthlyBreakdown';
 
@@ -197,33 +198,32 @@ export function closureTotalKg(companies: ClosureCompany[]): number {
   return sumTruncated(companies.map(c => c.totalKg));
 }
 
-// Los nombres los escribe cada cliente y el archivo lo abre el gestor en Excel:
-// sin esto, un nombre que empiece con «=» se ejecuta como fórmula, y una
-// comilla doble descuadra las columnas.
-const cell = (value: string) => {
-  const clean = value.replace(/[\t\r\n]+/g, ' ').replace(/"/g, "'").trim();
-  return /^[=+\-@]/.test(clean) ? `'${clean}` : clean;
-};
+// Los nombres los escribe cada cliente: un salto de línea o tabulación dentro
+// del nombre descuadra la fila al leerla en Excel.
+const cell = (value: string) => value.replace(/[\t\r\n]+/g, ' ').trim();
 
-/** Contenido del Excel (TSV) que se envía a un gestor. */
-export function closureToTsv(
+/** Hoja del Excel (.xlsx) que se envía a un gestor. Kilos como número, truncados. */
+export function closureToSheet(
   destinationName: string,
   periodKey: string,
   companies: ClosureCompany[],
-): string {
-  const rows: string[][] = [
-    [`Cierre ${periodLabel(periodKey)} — ${destinationName}`],
+): XlsxSheet {
+  const rows: XlsxValue[][] = [
+    [`Cierre ${periodLabel(periodKey)} — ${cell(destinationName)}`],
     [],
     ['Empresa', 'RUT', 'Residuo', 'Kg', 'N° CT'],
   ];
+  const boldRows = [0, 2];
 
   for (const c of companies) {
     c.materials.forEach((m, i) => {
-      rows.push([c.name, c.rut, m.material, formatKg(m.kg), i === 0 ? c.certNumbers.join(', ') : '']);
+      rows.push([cell(c.name), cell(c.rut), cell(m.material), truncateTo(m.kg), i === 0 ? c.certNumbers.join(', ') : '']);
     });
-    rows.push(['', '', `Subtotal ${c.name}`, formatKg(c.totalKg), '']);
+    boldRows.push(rows.length);
+    rows.push(['', '', `Subtotal ${cell(c.name)}`, truncateTo(c.totalKg), '']);
   }
-  rows.push(['TOTAL', '', '', formatKg(closureTotalKg(companies)), '']);
+  boldRows.push(rows.length);
+  rows.push(['TOTAL', '', '', closureTotalKg(companies), '']);
 
-  return rows.map(r => r.map(v => cell(String(v))).join('\t')).join('\n');
+  return { name: periodLabel(periodKey), rows, boldRows, colWidths: [42, 14, 30, 10, 40] };
 }
