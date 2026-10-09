@@ -3,7 +3,8 @@ import { useToast } from '../ui/Toast';
 import { useConfirm } from '../ui/ConfirmDialog';
 import {
     FeedbackDraft, FeedbackItem, FeedbackItemType, FeedbackPriority, ITEM_TYPE_META, MONTH_NAMES,
-    countsText, defaultPeriod, monthPeriod, quarterPeriod, validateReport,
+    countsText, defaultPeriod, monthPeriod, quarterPeriod, validateReport, validateSave,
+    previousQuarter, detectPeriod,
 } from '../../utils/feedback';
 import {
     FeedbackReport, listCompanyReports, saveReport, publishReport, deleteReport,
@@ -41,12 +42,14 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
     const [draft, setDraft] = useState<FeedbackDraft | null>(null);
     const [saving, setSaving] = useState(false);
 
-    // Selectores de período del editor
+    // Selectores de período del editor. Mes y trimestre llevan cada uno su año:
+    // en febrero el mes anterior es de este año y el trimestre anterior del pasado.
     const now = new Date();
     const [mode, setMode] = useState<PeriodMode>('month');
     const [year, setYear] = useState(now.getFullYear());
-    const [month, setMonth] = useState(now.getMonth() === 0 ? 11 : now.getMonth() - 1);
-    const [quarter, setQuarter] = useState<1 | 2 | 3 | 4>((Math.floor(now.getMonth() / 3) || 4) as 1 | 2 | 3 | 4);
+    const [month, setMonth] = useState(now.getMonth());
+    const [quarterYear, setQuarterYear] = useState(now.getFullYear());
+    const [quarter, setQuarter] = useState<1 | 2 | 3 | 4>(1);
 
     const load = async () => {
         setLoading(true);
@@ -64,15 +67,25 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
     const openNew = () => {
         const d = emptyDraft();
         const start = new Date(`${d.period_start}T12:00:00`);
+        const pq = previousQuarter();
         setMode('month');
         setYear(start.getFullYear());
         setMonth(start.getMonth());
+        setQuarterYear(pq.year);
+        setQuarter(pq.quarter);
         setEditing(null);
         setDraft({ ...d, items: [newItem('hallazgo')] });
     };
 
+    // Los selectores parten del período guardado, para que cambiar de modo no
+    // lo reemplace por lo que haya quedado del informe anterior.
     const openExisting = (r: FeedbackReport) => {
-        setMode('custom');
+        const p = detectPeriod(r.period_start, r.period_end);
+        setMode(p.mode);
+        setYear(p.year);
+        setMonth(p.month);
+        setQuarterYear(p.year);
+        setQuarter(p.quarter);
         setEditing(r);
         setDraft({
             period_start: r.period_start, period_end: r.period_end, period_label: r.period_label,
@@ -96,6 +109,8 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
 
     const handleSave = async () => {
         if (!draft) return;
+        const invalid = validateSave(draft, editing?.status ?? 'draft');
+        if (invalid) { toast.warning(invalid); return; }
         setSaving(true);
         try {
             const saved = await saveReport(companyId, draft, editing);
@@ -166,7 +181,7 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
         return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">Publicado · sin leer</span>;
     };
 
-    const years = [now.getFullYear() - 1, now.getFullYear()];
+    const years = [...new Set([now.getFullYear() - 1, now.getFullYear(), year, quarterYear])].sort();
 
     return (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-0 sm:p-4">
@@ -226,7 +241,7 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
                                     {(['month', 'quarter', 'custom'] as PeriodMode[]).map(m => (
                                         <button
                                             key={m}
-                                            onClick={() => { setMode(m); applyPeriod(m, year, month, quarter); }}
+                                            onClick={() => { setMode(m); applyPeriod(m, m === 'quarter' ? quarterYear : year, month, quarter); }}
                                             className={`flex-1 py-2 rounded-xl text-xs font-black border transition-colors ${mode === m ? 'bg-primary text-white border-primary' : 'bg-white text-gray-500 border-gray-200'}`}
                                         >
                                             {m === 'month' ? 'Mes' : m === 'quarter' ? 'Trimestre' : 'Personalizado'}
@@ -247,10 +262,10 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
 
                                 {mode === 'quarter' && (
                                     <div className="grid grid-cols-2 gap-3">
-                                        <select className={inputCls} value={quarter} onChange={e => { const v = +e.target.value as 1 | 2 | 3 | 4; setQuarter(v); applyPeriod('quarter', year, month, v); }}>
+                                        <select className={inputCls} value={quarter} onChange={e => { const v = +e.target.value as 1 | 2 | 3 | 4; setQuarter(v); applyPeriod('quarter', quarterYear, month, v); }}>
                                             {[1, 2, 3, 4].map(q => <option key={q} value={q}>T{q}</option>)}
                                         </select>
-                                        <select className={inputCls} value={year} onChange={e => { const v = +e.target.value; setYear(v); applyPeriod('quarter', v, month, quarter); }}>
+                                        <select className={inputCls} value={quarterYear} onChange={e => { const v = +e.target.value; setQuarterYear(v); applyPeriod('quarter', v, month, quarter); }}>
                                             {years.map(y => <option key={y} value={y}>{y}</option>)}
                                         </select>
                                     </div>

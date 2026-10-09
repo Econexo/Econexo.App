@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   monthPeriod, quarterPeriod, defaultPeriod, validateReport, sortItems,
   countByType, countsText, notificationMessage, FeedbackDraft, FeedbackItem,
+  validateSave, previousQuarter, detectPeriod,
 } from './feedback';
 
 const item = (over: Partial<FeedbackItem>): FeedbackItem => ({
@@ -84,5 +85,31 @@ describe('conteos y texto del aviso', () => {
   });
   it('mensaje de notificación', () => {
     expect(notificationMessage('Septiembre 2026', items)).toBe('Septiembre 2026: 2 hallazgos, 1 sugerencia');
+  });
+});
+
+describe('validateSave', () => {
+  it('un borrador puede guardarse sin puntos, pero no sin período válido', () => {
+    expect(validateSave(draft({ items: [] }), 'draft')).toBeNull();
+    expect(validateSave(draft({ period_end: '' }), 'draft')).toMatch(/período/);
+    expect(validateSave(draft({ period_start: '2026-09-30', period_end: '2026-09-01' }), 'draft')).toMatch(/anterior/);
+    expect(validateSave(draft({ period_label: '  ' }), 'draft')).toMatch(/etiqueta/);
+  });
+  it('guardar cambios de un informe publicado exige el informe completo', () => {
+    expect(validateSave(draft({ items: [] }), 'published')).toMatch(/al menos un punto/);
+    expect(validateSave(draft({ items: [item({ title: ' ' })] }), 'published')).toMatch(/título/);
+    expect(validateSave(draft(), 'published')).toBeNull();
+  });
+});
+
+describe('selectores de período', () => {
+  it('trimestre anterior: en febrero es T4 del año previo', () => {
+    expect(previousQuarter(new Date(2027, 1, 10))).toEqual({ year: 2026, quarter: 4 });
+    expect(previousQuarter(new Date(2026, 9, 9))).toEqual({ year: 2026, quarter: 3 });
+  });
+  it('reconoce si un rango guardado es un mes, un trimestre o personalizado', () => {
+    expect(detectPeriod('2026-03-01', '2026-03-31')).toEqual({ mode: 'month', year: 2026, month: 2, quarter: 1 });
+    expect(detectPeriod('2026-07-01', '2026-09-30')).toEqual({ mode: 'quarter', year: 2026, month: 6, quarter: 3 });
+    expect(detectPeriod('2026-03-05', '2026-04-20')).toEqual({ mode: 'custom', year: 2026, month: 2, quarter: 1 });
   });
 });

@@ -3,7 +3,7 @@
 
 import { supabase } from './supabase';
 import { createNotification } from './notificationService';
-import { FeedbackDraft, validateReport, notificationMessage } from '../utils/feedback';
+import { FeedbackDraft, validateReport, validateSave, notificationMessage } from '../utils/feedback';
 
 export interface FeedbackReport extends FeedbackDraft {
   id: string;
@@ -30,14 +30,14 @@ export async function listCompanyReports(companyId: string, includeDrafts: boole
   return (data || []) as FeedbackReport[];
 }
 
+/** La última publicada (no el período más reciente): un informe atrasado también aparece como nuevo. */
 export async function latestPublished(companyId: string): Promise<FeedbackReport | null> {
   const { data, error } = await supabase
     .from('feedback_reports')
     .select(COLUMNS)
     .eq('company_id', companyId)
     .eq('status', 'published')
-    .order('period_start', { ascending: false })
-    .order('created_at', { ascending: false })
+    .order('published_at', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
@@ -78,9 +78,15 @@ async function upsert(
   return data as FeedbackReport;
 }
 
-/** Guarda sin cambiar el estado: un informe nuevo queda en borrador, uno publicado sigue publicado. */
-export function saveReport(companyId: string, draft: FeedbackDraft, current: FeedbackReport | null): Promise<FeedbackReport> {
-  return upsert(companyId, draft, current, { status: current?.status ?? 'draft' });
+/**
+ * Guarda sin cambiar el estado: un informe nuevo queda en borrador, uno
+ * publicado sigue publicado (y por eso se valida completo, igual que al publicar).
+ */
+export async function saveReport(companyId: string, draft: FeedbackDraft, current: FeedbackReport | null): Promise<FeedbackReport> {
+  const status = current?.status ?? 'draft';
+  const invalid = validateSave(draft, status);
+  if (invalid) throw new Error(invalid);
+  return upsert(companyId, draft, current, { status });
 }
 
 /**

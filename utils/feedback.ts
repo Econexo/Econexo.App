@@ -75,11 +75,18 @@ export function defaultPeriod(today: Date = new Date()): FeedbackPeriod {
   return monthPeriod(today.getFullYear(), today.getMonth() - 1);
 }
 
-/** Error legible si el informe no se puede publicar; null si está bien. */
-export function validateReport(draft: FeedbackDraft): string | null {
+/** El período es lo único que un borrador necesita para guardarse. */
+export function validatePeriod(draft: FeedbackDraft): string | null {
   if (!draft.period_start || !draft.period_end) return 'Falta el período.';
   if (draft.period_end < draft.period_start) return 'La fecha de término es anterior a la de inicio.';
   if (!draft.period_label.trim()) return 'Falta la etiqueta del período.';
+  return null;
+}
+
+/** Error legible si el informe no se puede publicar; null si está bien. */
+export function validateReport(draft: FeedbackDraft): string | null {
+  const invalidPeriod = validatePeriod(draft);
+  if (invalidPeriod) return invalidPeriod;
   if (draft.items.length === 0) return 'Agrega al menos un punto.';
   if (draft.items.some(i => !i.title.trim())) return 'Todos los puntos necesitan un título.';
   return null;
@@ -111,4 +118,38 @@ export function countsText(items: FeedbackItem[]): string {
 
 export function notificationMessage(label: string, items: FeedbackItem[]): string {
   return `${label}: ${countsText(items)}`;
+}
+
+/**
+ * Lo que exige guardar según el estado: un borrador solo el período; un
+ * informe ya publicado lo ve la empresa al instante, así que todo.
+ */
+export function validateSave(draft: FeedbackDraft, status: 'draft' | 'published'): string | null {
+  return status === 'published' ? validateReport(draft) : validatePeriod(draft);
+}
+
+/** Trimestre que acaba de terminar (en enero–marzo, T4 del año anterior). */
+export function previousQuarter(today: Date = new Date()): { year: number; quarter: 1 | 2 | 3 | 4 } {
+  const current = Math.floor(today.getMonth() / 3) + 1;
+  return current === 1
+    ? { year: today.getFullYear() - 1, quarter: 4 }
+    : { year: today.getFullYear(), quarter: (current - 1) as 1 | 2 | 3 | 4 };
+}
+
+/**
+ * Para reabrir un informe guardado con los selectores en su lugar: si el rango
+ * es exactamente un mes o un trimestre se abre en ese modo; si no, personalizado.
+ */
+export function detectPeriod(start: string, end: string): {
+  mode: 'month' | 'quarter' | 'custom'; year: number; month: number; quarter: 1 | 2 | 3 | 4;
+} {
+  const [year, month1] = start.split('-').map(Number);
+  const month = month1 - 1;
+  const quarter = (Math.floor(month / 3) + 1) as 1 | 2 | 3 | 4;
+  const m = monthPeriod(year, month);
+  const q = quarterPeriod(year, quarter);
+  const mode = m.start === start && m.end === end ? 'month'
+    : q.start === start && q.end === end ? 'quarter'
+    : 'custom';
+  return { mode, year, month, quarter };
 }
