@@ -26,6 +26,7 @@ const Scan         = lazy(() => import('./screens/Scan'));
 const Rewards           = lazy(() => import('./screens/Rewards'));
 const CarbonCalculator  = lazy(() => import('./screens/CarbonCalculator'));
 const LeyREP            = lazy(() => import('./screens/LeyREP'));
+const Feedback          = lazy(() => import('./screens/Feedback'));
 
 // Pure-CSS spinner (no icon font): avoids the raw "progress_activity" ligature
 // text flashing/spinning before Material Symbols loads on first paint.
@@ -145,6 +146,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/rewards"            element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><Rewards /></div> : <Navigate to="/" />} />
           <Route path="/carbon-calculator" element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><CarbonCalculator /></div> : <Navigate to="/" />} />
           <Route path="/ley-rep" element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><LeyREP /></div> : <Navigate to="/" />} />
+          <Route path="/retroalimentacion" element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><Feedback /></div> : <Navigate to="/" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>
