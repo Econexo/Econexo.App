@@ -30,7 +30,9 @@ const Feedback: React.FC = () => {
             try {
                 const list = await listCompanyReports(user.id, false);
                 setReports(list);
-                if (list[0]) open(list[0]);
+                // Se abre el que la tarjeta anunciaba como nuevo; si no hay, el más reciente.
+                const first = list.find(r => !r.read_at) ?? list[0];
+                if (first) open(first);
             } catch {
                 setReports([]);
             } finally {
