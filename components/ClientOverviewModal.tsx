@@ -8,6 +8,7 @@ import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import { createNotification } from '../services/notificationService';
 import { getDocEmisor, Emisor } from '../utils/documentEmisor';
+import FeedbackManager from './admin/FeedbackManager';
 
 // Types an admin can assign to an uploaded/scanned document.
 const DOC_TYPE_OPTIONS: { value: string; label: string }[] = [
@@ -80,6 +81,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
 
     // Eco-Report generation state
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showFeedback, setShowFeedback] = useState(false);
     const [reportMonth, setReportMonth] = useState(new Date().getMonth());
     const [reportYear, setReportYear] = useState(new Date().getFullYear());
     const [reportPeriodType, setReportPeriodType] = useState<'month' | 'year'>('month');
@@ -483,6 +485,21 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                 </div>
                             </div>
 
+                            {/* ── Retroalimentación ── */}
+                            <button
+                                onClick={() => setShowFeedback(true)}
+                                className="w-full flex items-center gap-3 p-4 bg-sky-50 border border-sky-100 rounded-2xl hover:bg-sky-100 transition-colors group"
+                            >
+                                <div className="size-10 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <span className="material-symbols-outlined">rate_review</span>
+                                </div>
+                                <div className="text-left flex-1">
+                                    <p className="text-xs font-black uppercase text-sky-700">Retroalimentación</p>
+                                    <p className="text-[10px] font-bold text-sky-600/70">Hallazgos, sugerencias y logros del período</p>
+                                </div>
+                                <span className="material-symbols-outlined text-sky-400">chevron_right</span>
+                            </button>
+
                             {/* ── Eco-Report Period Modal ── */}
                             {showReportModal && (
                                 <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
@@ -720,6 +737,9 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                     )}
                 </div>
             </div>
+            {showFeedback && (
+                <FeedbackManager companyId={user.id} companyName={displayName} onClose={() => setShowFeedback(false)} />
+            )}
         </div>
     );
 };

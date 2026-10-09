@@ -16,6 +16,7 @@ import { formatKg } from '../utils/formatKg';
 import { useToast } from '../components/ui/Toast';
 import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
+import FeedbackCard from '../components/FeedbackCard';
 import { useCountUp } from '../hooks/useCountUp';
 
 import FitText from '../components/ui/FitText';
@@ -970,6 +971,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             </div>
           </div>
         )}
+
+        <FeedbackCard />
 
         {/* Eco-Puntos Card - RESTORED */}
         <section
