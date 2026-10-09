@@ -75,8 +75,9 @@ Deno.serve(async (req: Request) => {
         const payload = await req.json();
         const { title, body, url, data } = payload;
 
-        // Autorización: o un JWT de usuario (destinatario = dueño del token), o el
-        // secreto interno (llamadas del cron / otra Edge Function, destinatario en el cuerpo).
+        // Autorización: o un JWT de usuario (destinatario = dueño del token; solo un
+        // admin puede avisar a otra cuenta), o el secreto interno (llamadas del
+        // cron / otra Edge Function, destinatario en el cuerpo).
         const TRIGGER_SECRET = Deno.env.get('TRIGGER_SECRET') ?? '';
         const isInternal = TRIGGER_SECRET.length > 0 &&
             (req.headers.get('x-trigger-secret') ?? '') === TRIGGER_SECRET;
@@ -111,7 +112,25 @@ Deno.serve(async (req: Request) => {
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 });
             }
-            userId = caller.id; // always derived from the verified JWT
+            userId = caller.id;
+
+            const target: string | undefined = payload.userId;
+            if (target && target !== caller.id) {
+                // is_admin con service role: el JWT ya identificó al llamador.
+                const admin = createClient(
+                    Deno.env.get('SUPABASE_URL') ?? '',
+                    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+                );
+                const { data: callerProfile } = await admin
+                    .from('profiles').select('is_admin').eq('id', caller.id).single();
+                if (callerProfile?.is_admin !== true) {
+                    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+                        status: 403,
+                        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    });
+                }
+                userId = target;
+            }
         }
 
         if (!title || !body) {

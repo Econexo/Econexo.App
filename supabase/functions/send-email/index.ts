@@ -22,6 +22,17 @@ const TRIGGER_SECRET = Deno.env.get('TRIGGER_SECRET') ?? '';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 
+// is_admin se lee con service role: el JWT ya identificó al llamador, y así no
+// depende de las políticas de profiles.
+async function isAdmin(userId: string): Promise<boolean> {
+  const admin = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  );
+  const { data } = await admin.from('profiles').select('is_admin').eq('id', userId).single();
+  return data?.is_admin === true;
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -120,7 +131,8 @@ Deno.serve(async (req: Request) => {
     const copyExtras: boolean = body.copyExtras !== false;
 
     // ── Autorización: o bien un JWT de usuario, o bien el secreto interno ──
-    // Con JWT   → el destinatario es SIEMPRE el usuario del token.
+    // Con JWT   → el destinatario es el usuario del token; solo un admin puede
+    //             avisar a otra cuenta (certificados, retiros, retroalimentación).
     // Con secreto → llamada interna (cron / otra Edge Function): el destinatario
     //               viene en el cuerpo. El secreto nunca sale del servidor.
     const triggerSecret = req.headers.get('x-trigger-secret') ?? '';
@@ -142,7 +154,13 @@ Deno.serve(async (req: Request) => {
       );
       const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
       if (authError || !caller) return json({ error: 'Unauthorized' }, 401);
-      userId = caller.id; // siempre derivado del JWT verificado
+      userId = caller.id;
+
+      const target: string | undefined = body.userId;
+      if (target && target !== caller.id) {
+        if (!(await isAdmin(caller.id))) return json({ error: 'Forbidden' }, 403);
+        userId = target;
+      }
     }
 
     if (!type || !title || !message) return json({ error: 'Missing required fields' }, 400);
