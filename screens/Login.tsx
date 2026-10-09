@@ -157,6 +157,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
         friendlyMessage = 'Este correo ya tiene una cuenta activa.';
       } else if (err.message?.includes('Invalid login credentials')) {
         friendlyMessage = 'Email o contraseña incorrectos.';
+      } else if (err.message?.toLowerCase().includes('banned')) {
+        friendlyMessage = 'Tu cuenta está suspendida. Escríbenos a econexo.hub@gmail.com para más información.';
       }
 
       setError(friendlyMessage);

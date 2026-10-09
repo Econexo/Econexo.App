@@ -46,6 +46,8 @@ const Rewards: React.FC = () => {
     const [redeeming, setRedeeming] = useState(false);
     const animatedPoints = useCountUp(points);
 
+    // Los costos los cobra redeem_reward en el servidor
+    // (supabase/migrations/20261009_puntos_y_suspension.sql): mantener en sintonía.
     const rewards: Reward[] = [
         {
             id: 1,
@@ -138,27 +140,11 @@ const Rewards: React.FC = () => {
 
         try {
             setRedeeming(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Sin sesión');
+            // El servidor valida el saldo, descuenta y anota el movimiento de una vez.
+            const { data: balance, error } = await supabase.rpc('redeem_reward', { reward_id: reward.id });
+            if (error) throw error;
 
-            // Deduct points
-            const { error: pointsError } = await supabase
-                .from('profiles')
-                .update({ eco_points: points - reward.cost })
-                .eq('id', user.id);
-            if (pointsError) throw pointsError;
-
-            // Record transaction
-            const { error: txError } = await supabase
-                .from('points_transactions')
-                .insert([{
-                    user_id: user.id,
-                    amount: -reward.cost,
-                    reason: `Canje: ${reward.title}`,
-                }]);
-            if (txError) throw txError;
-
-            setPoints(prev => prev - reward.cost);
+            setPoints(typeof balance === 'number' ? balance : points - reward.cost);
             toast.success(`¡Canjeaste "${reward.title}"! Nos contactaremos contigo pronto.`);
             fetchPointsAndHistory();
         } catch (err: any) {

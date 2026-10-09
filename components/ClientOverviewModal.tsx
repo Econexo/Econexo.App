@@ -191,10 +191,8 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         setSuspending(true);
         setSuspendError(null);
         const newActive = !isActive;
-        const { error } = await supabase
-            .from('profiles')
-            .update({ is_active: newActive })
-            .eq('id', user.id);
+        // Además de marcar el perfil, bloquea (o desbloquea) el acceso en Auth.
+        const { error } = await supabase.rpc('admin_set_account_active', { target_id: user.id, active: newActive });
         setSuspending(false);
         if (error) {
             setSuspendError('Error al actualizar la cuenta. Intenta de nuevo.');
