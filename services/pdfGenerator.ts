@@ -1258,12 +1258,24 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         categories[d.key].pct = (categories[d.key].qty / totalKg) * 100;
     });
 
+    // ── Layout adaptativo ──
+    // La página se reparte en dos columnas: a la izquierda la tabla, los destinos
+    // y el transporte; a la derecha el gráfico y la firma. El texto de la izquierda
+    // nunca entra en la columna derecha, así no choca con la firma por muchos
+    // residuos o destinos que haya. Las filas de la tabla se achican lo justo para
+    // que todo quepa sobre la barra del pie.
     const tX = margin;
     const col1 = 60;
     const col2 = 30;
     const col3 = 30;
-    const rowH = 10;
-    const gap = 2;
+    const hGap = 2;
+    const footerTop = pageHeight - (CGM_FOOTER_BAR ? pageWidth / (1822 / 98) : 14);
+    const leftLimit = footerTop - 5;       // línea base más baja permitida para texto
+    const rightColX = 168;                 // centro del gráfico y de la firma
+    const sigLineW = 50;
+    const sigImgW = 40;
+    const sigImgH = 30;
+    const leftMaxW = rightColX - sigLineW / 2 - 4 - margin;
 
     // Disable stroke for solid colors
     doc.setLineWidth(0);
@@ -1273,59 +1285,104 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
     // los miles: 1234,5 en vez de 1.234,5.
     const formatKg = (n: number): string => fmtKg(n);
 
-    // Table header
-    doc.setFillColor(220, 220, 220);
-    doc.rect(tX, currentY, col1, rowH, 'F');
-    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0);
-    doc.text("RESIDUOS", tX + col1 / 2, currentY + 7, { align: 'center' });
-    doc.text("KG", tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-    doc.text("%", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-    currentY += rowH + gap;
+    // Destinations are selected by the admin when generating the CGM and stored in
+    // the document metadata. Fall back to the legacy fixed pair only when the
+    // document predates this feature (no destinations passed at all).
+    const fallbackDestinations: CgmDestination[] = [
+        { name: 'SOREPA SPA.', rut: '86.359.300-K', resolution: 'Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA' },
+        { name: 'GCR', rut: '76.958.842-6', resolution: 'Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA' },
+    ];
+    const destinationList = destinations === undefined ? fallbackDestinations : destinations;
 
-    const drawRow = (def: typeof MATERIAL_DEFS[0]) => {
-        const d = categories[def.key];
-        if (!d || d.qty <= 0) return;
-        doc.setFillColor(d.color[0], d.color[1], d.color[2]);
-        doc.setLineWidth(0);
-        doc.rect(tX, currentY, col1, rowH, 'F');
-        doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-        doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-        doc.setTextColor(d.textMain[0], d.textMain[1], d.textMain[2]);
+    // Dibuja destinos + transporte desde la línea base y0, o solo los mide con
+    // draw=false. Devuelve la línea base de la última línea escrita.
+    const renderBottomBlock = (y0: number, draw: boolean): number => {
+        let y = y0;
+        let last = y0;
+        const line = (text: string) => { if (draw) doc.text(text, margin, y); last = y; y += 5; };
+        doc.setTextColor(0);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text(def.label, tX + col1 / 2, currentY + 7, { align: 'center' });
-        doc.text(formatKg(d.qty), tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' });
-        doc.text(d.pct.toFixed(1).replace('.', ','), tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
-        currentY += rowH + gap;
+        if (draw) underlineText("DESTINO AUTORIZADO:", margin, y);
+        y += 6;
+        doc.setFont('helvetica', 'normal');
+        if (destinationList.length === 0) {
+            line('—');
+            y += 3;
+        } else {
+            destinationList.forEach(d => {
+                const head = d.rut ? `${d.name}, RUT: ${d.rut}` : d.name;
+                doc.splitTextToSize(head, leftMaxW).forEach(line);
+                if (d.resolution) doc.splitTextToSize(d.resolution, leftMaxW).forEach(line);
+                y += 3;
+            });
+        }
+        doc.setFont('helvetica', 'bold');
+        if (draw) underlineText("Transporte Autorizado:", margin, y);
+        y += 6;
+        doc.splitTextToSize("RESOLUCIÓN N° : 2402341155, SEREMI DE SALUD ANTOFAGASTA", leftMaxW).forEach(line);
+        return last;
     };
 
-    // Render ALL materials that have qty > 0, in defined order
-    MATERIAL_DEFS.forEach(def => drawRow(def));
+    // ── Alto de filas según el espacio que queda ──
+    const activeDefs = MATERIAL_DEFS.filter(d => categories[d.key].qty > 0);
+    const nRows = activeDefs.length + 2; // encabezado + total
+    const tableTop = currentY;
+    const tableToBottomGap = 9;          // borde de la tabla → "DESTINO AUTORIZADO"
+    const MAX_ROW_H = 10;
+    const MIN_ROW_H = 4.5;
+    const bottomH = renderBottomBlock(0, false);
+    // El espacio entre filas es el 20% del alto de fila.
+    const rowHFor = (avail: number) => Math.min(MAX_ROW_H, avail / (nRows + 0.2 * (nRows - 1)));
+    let rowH = rowHFor(leftLimit - bottomH - tableToBottomGap - tableTop);
+    // Si ni con las filas al mínimo cabe todo, destinos, transporte y firma
+    // pasan a una segunda página y la tabla usa la primera completa.
+    const bottomOnNextPage = rowH < MIN_ROW_H;
+    if (bottomOnNextPage) rowH = rowHFor(leftLimit - tableTop);
+    rowH = Math.max(MIN_ROW_H, rowH);
+    const vGap = rowH * 0.2;
+    const tableH = nRows * rowH + (nRows - 1) * vGap;
+    const fontSize = Math.max(7, Math.min(9, rowH * 0.9));
+    // Centra verticalmente el texto en la fila (0.3528 mm por punto).
+    const textDy = rowH / 2 + fontSize * 0.3528 * 0.35;
 
-    doc.setFillColor(TABLE_LIGHT_GREY[0], TABLE_LIGHT_GREY[1], TABLE_LIGHT_GREY[2]);
-    doc.rect(tX, currentY, col1, rowH, 'F');
-    doc.rect(tX + col1 + gap, currentY, col2, rowH, 'F');
-    doc.rect(tX + col1 + col2 + gap * 2, currentY, col3, rowH, 'F');
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.text("TOTAL", tX + col1 / 2, currentY + 7, { align: 'center' });
+    const drawTableRow = (fill: number[], textColor: number[], cells: [string, string, string]) => {
+        doc.setFillColor(fill[0], fill[1], fill[2]);
+        doc.setLineWidth(0);
+        doc.rect(tX, currentY, col1, rowH, 'F');
+        doc.rect(tX + col1 + hGap, currentY, col2, rowH, 'F');
+        doc.rect(tX + col1 + col2 + hGap * 2, currentY, col3, rowH, 'F');
+        doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(fontSize);
+        doc.text(cells[0], tX + col1 / 2, currentY + textDy, { align: 'center' });
+        doc.text(cells[1], tX + col1 + hGap + col2 / 2, currentY + textDy, { align: 'center' });
+        doc.text(cells[2], tX + col1 + col2 + hGap * 2 + col3 / 2, currentY + textDy, { align: 'center' });
+        currentY += rowH + vGap;
+    };
+
+    drawTableRow([220, 220, 220], [0, 0, 0], ["RESIDUOS", "KG", "%"]);
+    // Render ALL materials that have qty > 0, in defined order
+    activeDefs.forEach(def => {
+        const d = categories[def.key];
+        drawTableRow(d.color, d.textMain, [def.label, formatKg(d.qty), d.pct.toFixed(1).replace('.', ',')]);
+    });
     // Suma de lo impreso, no el total real: si no, la columna no cuadra al
     // sumarla a mano contra el comprobante del gestor.
-    doc.text(
-        formatKg(sumTruncated(MATERIAL_DEFS.map(d => categories[d.key].qty))),
-        tX + col1 + gap + col2 / 2, currentY + 7, { align: 'center' },
-    );
-    doc.text("100", tX + col1 + col2 + gap * 2 + col3 / 2, currentY + 7, { align: 'center' });
+    drawTableRow(TABLE_LIGHT_GREY, [0, 0, 0], ["TOTAL", formatKg(sumTruncated(MATERIAL_DEFS.map(d => categories[d.key].qty))), "100"]);
+    const tableBottom = tableTop + tableH;
 
-    const pieX = 175;
-    const pieY = currentY - (rowH * 2) + 5;
-    const radius = 18;
+    // Firma anclada abajo a la derecha: el cargo queda justo sobre la barra del pie.
+    const sigLineYPage1 = leftLimit - 10;
+
+    // Gráfico centrado verticalmente con la tabla, sin bajar hasta la firma.
+    const pieX = rightColX;
+    const radius = Math.max(12, Math.min(18, tableH * 0.4));
+    const pieLimit = bottomOnNextPage ? leftLimit : sigLineYPage1 - sigImgH - 4;
+    const pieY = Math.min(tableTop + tableH / 2, pieLimit - radius);
     let startAngle = -Math.PI / 2;
     // Pie uses MATERIAL_DEFS order for consistent segment layout
-    const activeCats = MATERIAL_DEFS.map(d => d.key).filter(k => categories[k]?.pct > 0);
+    const activeCats = activeDefs.map(d => d.key);
     if (activeCats.length === 0) {
         doc.setDrawColor(200);
         doc.circle(pieX, pieY, radius, 'S');
@@ -1337,7 +1394,6 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         activeCats.forEach(k => {
             const cat = categories[k];
             const sliceAngle = (cat.pct / 100) * (2 * Math.PI);
-            const endAngle = startAngle + sliceAngle;
 
             // Draw each segment as a single filled polygon (no gaps between triangles)
             const steps = Math.max(48, Math.ceil(Math.abs(sliceAngle) * radius * 1.5));
@@ -1364,85 +1420,59 @@ export const generateCGM = (client: CompanyData, items: WasteItem[], month: stri
         });
     }
 
-    currentY += 25;
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    underlineText("DESTINO AUTORIZADO:", margin, currentY);
-    currentY += 6;
-    doc.setFont('helvetica', 'normal');
-    // Destinations are selected by the admin when generating the CGM and stored in
-    // the document metadata. Fall back to the legacy fixed pair only when the
-    // document predates this feature (no destinations passed at all).
-    const fallbackDestinations: CgmDestination[] = [
-        { name: 'SOREPA SPA.', rut: '86.359.300-K', resolution: 'Resolución N°7621 SEREMI DE SALUD ANTOFAGASTA' },
-        { name: 'GCR', rut: '76.958.842-6', resolution: 'Resolución N°2248, SEREMI DE SALUD ANTOFAGASTA' },
-    ];
-    const destinationList = destinations === undefined ? fallbackDestinations : destinations;
-    if (destinationList.length === 0) {
-        doc.text('—', margin, currentY);
-        currentY += 8;
-    } else {
-        destinationList.forEach(d => {
-            const line1 = d.rut ? `${d.name}, RUT: ${d.rut}` : d.name;
-            doc.text(line1, margin, currentY);
-            currentY += 5;
-            if (d.resolution) {
-                doc.text(d.resolution, margin, currentY);
-                currentY += 5;
-            }
-            currentY += 3;
-        });
+    // --- DESTINO AUTORIZADO + TRANSPORTE AUTORIZADO ---
+    let bottomY0 = tableBottom + tableToBottomGap;
+    let sigLineY = sigLineYPage1;
+    if (bottomOnNextPage) {
+        doc.addPage();
+        bottomY0 = 30;
+        sigLineY = bottomY0 - 4 + sigImgH;
     }
+    renderBottomBlock(bottomY0, true);
 
-    // --- TRANSPORTE AUTORIZADO (below destinos) ---
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    underlineText("Transporte Autorizado:", margin, currentY);
-    currentY += 6;
-    doc.setFont('helvetica', 'bold');
-    doc.text("RESOLUCIÓN N° : 2402341155,  SEREMI DE SALUD ANTOFAGASTA", margin, currentY);
-    currentY += 8;
-
-    const sigY = pageHeight - 45;
     if (ECONEXO_SIGNATURE) {
         try {
-            doc.addImage(ECONEXO_SIGNATURE, 'PNG', pageWidth - 70, sigY - 30, 40, 30);
+            doc.addImage(ECONEXO_SIGNATURE, 'PNG', rightColX - sigImgW / 2, sigLineY - sigImgH, sigImgW, sigImgH);
         } catch (e) { }
     }
     doc.setLineWidth(0.5);
     doc.setDrawColor(0);
-    doc.line(pageWidth - 80, sigY, pageWidth - 20, sigY);
+    doc.line(rightColX - sigLineW / 2, sigLineY, rightColX + sigLineW / 2, sigLineY);
+    doc.setTextColor(0);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text("Sebastián Frías Thompson", pageWidth - 50, sigY + 5, { align: 'center' });
-    doc.text("Gerente EcoNexo", pageWidth - 50, sigY + 10, { align: 'center' });
+    doc.text("Sebastián Frías Thompson", rightColX, sigLineY + 5, { align: 'center' });
+    doc.text("Gerente EcoNexo", rightColX, sigLineY + 10, { align: 'center' });
 
-    // --- 7. FOOTER BAR (reference image — exact match) ---
+    // --- 7. FOOTER BAR + WATERMARK (en todas las páginas) ---
     const footerH = 14;
-    if (CGM_FOOTER_BAR) {
-        try {
-            // Image ratio: 1822×98 ≈ 18.59 — render full page width, proportional height
-            const imgH = pageWidth / (1822 / 98); // ~11.3mm
-            const imgY = pageHeight - imgH;
-            doc.addImage(CGM_FOOTER_BAR, 'PNG', 0, imgY, pageWidth, imgH);
-        } catch (e) {
-            // Fallback: plain green bar
+    for (let p = 1; p <= doc.getNumberOfPages(); p++) {
+        doc.setPage(p);
+        if (CGM_FOOTER_BAR) {
+            try {
+                // Image ratio: 1822×98 ≈ 18.59 — render full page width, proportional height
+                const imgH = pageWidth / (1822 / 98); // ~11.3mm
+                const imgY = pageHeight - imgH;
+                doc.addImage(CGM_FOOTER_BAR, 'PNG', 0, imgY, pageWidth, imgH);
+            } catch (e) {
+                // Fallback: plain green bar
+                doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
+                doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
+            }
+        } else {
             doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
             doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
         }
-    } else {
-        doc.setFillColor(HEADER_GREEN[0], HEADER_GREEN[1], HEADER_GREEN[2]);
-        doc.rect(0, pageHeight - footerH, pageWidth, footerH, 'F');
-    }
 
-    if (ECONEXO_WATERMARK) {
-        try {
-            doc.saveGraphicsState();
-            doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
-            const wmSize = 160;
-            doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, 70, wmSize, wmSize);
-            doc.restoreGraphicsState();
-        } catch (e) { }
+        if (ECONEXO_WATERMARK) {
+            try {
+                doc.saveGraphicsState();
+                doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
+                const wmSize = 160;
+                doc.addImage(ECONEXO_WATERMARK, 'PNG', (pageWidth - wmSize) / 2, 70, wmSize, wmSize);
+                doc.restoreGraphicsState();
+            } catch (e) { }
+        }
     }
 
     if (action === 'preview') {
