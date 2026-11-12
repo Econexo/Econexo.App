@@ -191,7 +191,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                             <span className="material-symbols-outlined text-orange-500">build</span>
                             Corregir Certificados
                         </h2>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mt-0.5">
+                        <p className="text-[0.625rem] uppercase font-bold text-gray-400 tracking-widest mt-0.5">
                             Editar fechas y direcciones
                         </p>
                     </div>
@@ -203,7 +203,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                 {/* Filters */}
                 <div className="px-6 py-4 bg-white/50 border-b border-white/40 flex items-center gap-4 flex-wrap shrink-0">
                     <div className="flex items-center gap-2">
-                        <label className="text-[10px] font-black uppercase text-primary tracking-widest">Fecha:</label>
+                        <label className="text-[0.625rem] font-black uppercase text-primary tracking-widest">Fecha:</label>
                         <input
                             type="date"
                             value={filterDate}
@@ -213,11 +213,11 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                     </div>
                     <button
                         onClick={() => setShowAll(!showAll)}
-                        className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showAll ? 'bg-primary text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                        className={`px-3 py-2 rounded-xl text-[0.625rem] font-black uppercase tracking-widest transition-all ${showAll ? 'bg-primary text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                     >
                         {showAll ? 'Mostrando Todos' : 'Ver Últimos 100'}
                     </button>
-                    <span className="text-[10px] font-bold text-gray-400">
+                    <span className="text-[0.625rem] font-bold text-gray-400">
                         {certs.length} certificados encontrados
                     </span>
                 </div>
@@ -244,31 +244,31 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                                 {/* Title Row */}
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase ${isTransportDoc(cert.type) ? 'bg-primary/10 text-primary' : cert.type === 'CGM' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                        <span className={`text-[0.5rem] px-2 py-0.5 rounded-full font-black uppercase ${isTransportDoc(cert.type) ? 'bg-primary/10 text-primary' : cert.type === 'CGM' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
                                             {isTransportDoc(cert.type) ? DOC_TYPE.TRANSPORTE : cert.type}
                                         </span>
                                         <p className="font-bold text-sm text-gray-900 truncate">
                                             {isTransportDoc(cert.type) ? toTransportLabel(cert.title) : cert.title}
                                         </p>
                                         {cert._isUnregistered && (
-                                            <span className="text-[8px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full font-black uppercase shrink-0">Manual</span>
+                                            <span className="text-[0.5rem] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full font-black uppercase shrink-0">Manual</span>
                                         )}
                                     </div>
                                     {cert.changed && (
-                                        <span className="text-[8px] bg-orange-500 text-white px-2 py-0.5 rounded-full font-black uppercase animate-pulse shrink-0">
+                                        <span className="text-[0.5rem] bg-orange-500 text-white px-2 py-0.5 rounded-full font-black uppercase animate-pulse shrink-0">
                                             Modificado
                                         </span>
                                     )}
                                 </div>
 
-                                <p className="text-[10px] text-primary font-black uppercase mb-3">{cert._companyName}</p>
+                                <p className="text-[0.625rem] text-primary font-black uppercase mb-3">{cert._companyName}</p>
 
                                 {/* Editable Fields */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {/* Date Field */}
                                     <div className="space-y-1">
-                                        <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[12px]">calendar_today</span>
+                                        <label className="text-[0.5625rem] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[0.75rem]">calendar_today</span>
                                             Fecha del Retiro
                                         </label>
                                         <input
@@ -278,7 +278,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                                             className={`w-full bg-white/80 border rounded-xl px-3 py-2.5 text-xs font-bold text-gray-900 outline-none transition-colors ${cert.newDate !== cert.originalDate ? 'border-orange-400 bg-orange-50/50' : 'border-gray-200 focus:border-primary/50'}`}
                                         />
                                         {cert.newDate !== cert.originalDate && (
-                                            <p className="text-[9px] text-orange-600 font-bold">
+                                            <p className="text-[0.5625rem] text-orange-600 font-bold">
                                                 Antes: {new Date(cert.originalDate + 'T12:00:00').toLocaleDateString('es-CL')}
                                             </p>
                                         )}
@@ -286,8 +286,8 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
 
                                     {/* Address Field */}
                                     <div className="space-y-1">
-                                        <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[12px]">location_on</span>
+                                        <label className="text-[0.5625rem] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[0.75rem]">location_on</span>
                                             Dirección
                                         </label>
                                         <input
@@ -298,7 +298,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                                             className={`w-full bg-white/80 border rounded-xl px-3 py-2.5 text-xs font-bold text-gray-900 outline-none transition-colors ${cert.newAddress !== cert.originalAddress ? 'border-orange-400 bg-orange-50/50' : 'border-gray-200 focus:border-primary/50'}`}
                                         />
                                         {cert.newAddress !== cert.originalAddress && cert.originalAddress && (
-                                            <p className="text-[9px] text-orange-600 font-bold">
+                                            <p className="text-[0.5625rem] text-orange-600 font-bold">
                                                 Antes: {cert.originalAddress || '(vacío)'}
                                             </p>
                                         )}
@@ -306,7 +306,7 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                                 </div>
 
                                 {/* Current DB date (small info) */}
-                                <p className="text-[8px] text-gray-400 font-bold mt-2">
+                                <p className="text-[0.5rem] text-gray-400 font-bold mt-2">
                                     Registrado en BD: {new Date(cert.created_at).toLocaleString('es-CL')} • ID: {cert.id.slice(0, 8)}...
                                 </p>
                             </div>
@@ -329,14 +329,14 @@ const FixCertificatesModal: React.FC<Props> = ({ onClose, onDataFixed }) => {
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
-                            className="px-5 py-3 bg-gray-100 text-gray-600 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors"
+                            className="px-5 py-3 bg-gray-100 text-gray-600 rounded-xl font-black uppercase tracking-widest text-[0.625rem] hover:bg-gray-200 transition-colors"
                         >
                             Cerrar
                         </button>
                         <button
                             onClick={handleSaveAll}
                             disabled={changedCount === 0 || saving}
-                            className="px-6 py-3 bg-primary text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-6 py-3 bg-primary text-white rounded-xl font-black uppercase tracking-widest text-[0.625rem] shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {saving ? (
                                 <>

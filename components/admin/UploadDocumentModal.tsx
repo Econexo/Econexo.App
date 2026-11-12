@@ -6,6 +6,9 @@
 
 import React, { useMemo, useState } from 'react';
 import { AdminUserProfile } from './types';
+import WeighTicketFields from './WeighTicketFields';
+import { WEIGH_TICKET_TYPE } from '../../utils/weighTicket';
+import type { WasteDestination } from '../../utils/wasteClassification';
 
 interface UploadDocumentModalProps {
     show: boolean;
@@ -22,6 +25,11 @@ interface UploadDocumentModalProps {
     onSourceChange: (source: 'gestor' | 'econexo') => void;
     files: File[];
     onFilesChange: (files: File[]) => void;
+    /** Kg y destino, solo cuando el tipo es ticket de pesaje. */
+    ticketKg: string;
+    onTicketKgChange: (kg: string) => void;
+    ticketDestination: WasteDestination;
+    onTicketDestinationChange: (d: WasteDestination) => void;
     loading: boolean;
     /** Progreso de la carga en curso, para que una carga larga no parezca colgada. */
     progress: { done: number; total: number } | null;
@@ -66,6 +74,10 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
     onSourceChange,
     files,
     onFilesChange,
+    ticketKg,
+    onTicketKgChange,
+    ticketDestination,
+    onTicketDestinationChange,
     loading,
     progress,
     onUpload,
@@ -97,7 +109,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
 
                 {/* Source selector */}
                 <div className="mb-5">
-                    <label className="text-[10px] font-black uppercase text-gray-500 block mb-2">Origen del Documento</label>
+                    <label className="text-[0.625rem] font-black uppercase text-gray-500 block mb-2">Origen del Documento</label>
                     <div className="flex gap-2">
                         <button
                             onClick={() => onSourceChange('gestor')}
@@ -126,10 +138,10 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                     {/* Empresas destino: varias */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                            <label className="text-[10px] font-black uppercase text-gray-500">
+                            <label className="text-[0.625rem] font-black uppercase text-gray-500">
                                 Empresas Destino
                             </label>
-                            <span className={`text-[10px] font-black uppercase tracking-wider ${selectedIds.length > 0 ? 'text-primary' : 'text-gray-400'}`}>
+                            <span className={`text-[0.625rem] font-black uppercase tracking-wider ${selectedIds.length > 0 ? 'text-primary' : 'text-gray-400'}`}>
                                 {selectedIds.length} seleccionada{selectedIds.length === 1 ? '' : 's'}
                             </span>
                         </div>
@@ -144,7 +156,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
 
                         <div className="border border-white/60 rounded-xl bg-white/50 max-h-48 overflow-y-auto divide-y divide-gray-100">
                             {visibleUsers.length === 0 ? (
-                                <p className="px-4 py-6 text-center text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                <p className="px-4 py-6 text-center text-[0.625rem] font-bold uppercase tracking-widest text-gray-400">
                                     Sin resultados
                                 </p>
                             ) : (
@@ -163,7 +175,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                                             />
                                             <span className="min-w-0 flex-1">
                                                 <span className="block text-xs font-bold text-gray-900 truncate">{u.company_name}</span>
-                                                {u.rut && <span className="block text-[9px] font-bold text-gray-400">{u.rut}</span>}
+                                                {u.rut && <span className="block text-[0.5625rem] font-bold text-gray-400">{u.rut}</span>}
                                             </span>
                                         </label>
                                     );
@@ -174,7 +186,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                         {visibleIds.length > 0 && (
                             <button
                                 onClick={() => onSetMany(visibleIds, !allVisibleSelected)}
-                                className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                                className="text-[0.625rem] font-black uppercase tracking-widest text-primary hover:underline"
                             >
                                 {allVisibleSelected
                                     ? `Quitar las ${visibleIds.length} visibles`
@@ -184,7 +196,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-gray-500">Tipo de Documento</label>
+                        <label className="text-[0.625rem] font-black uppercase text-gray-500">Tipo de Documento</label>
                         <select
                             className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
                             value={uploadType}
@@ -196,8 +208,24 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                         </select>
                     </div>
 
+                    {uploadType === WEIGH_TICKET_TYPE && (
+                        <div className="space-y-2">
+                            <WeighTicketFields
+                                kg={ticketKg}
+                                onKgChange={onTicketKgChange}
+                                destination={ticketDestination}
+                                onDestinationChange={onTicketDestinationChange}
+                            />
+                            {ticketKg.trim() !== '' && totalUploads > 1 && (
+                                <p className="text-[0.625rem] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                    Los Kg son de un solo ticket: sube un archivo a una empresa a la vez.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-gray-500">Fecha del Documento</label>
+                        <label className="text-[0.625rem] font-black uppercase text-gray-500">Fecha del Documento</label>
                         <input
                             type="date"
                             className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none"
@@ -207,7 +235,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-gray-500">
+                        <label className="text-[0.625rem] font-black uppercase text-gray-500">
                             Archivos (PDF / Imagen)
                         </label>
                         <input
@@ -218,14 +246,14 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                             onChange={(e) => onFilesChange(e.target.files ? Array.from(e.target.files) : [])}
                         />
                         {files.length > 0 && (
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 pt-1">
+                            <p className="text-[0.5625rem] font-bold uppercase tracking-wider text-gray-400 pt-1">
                                 {files.length} archivo{files.length === 1 ? '' : 's'}: {files.map(f => f.name).join(', ')}
                             </p>
                         )}
                     </div>
 
                     {totalUploads > 1 && (
-                        <p className="text-[10px] font-bold text-gray-500 bg-white/60 border border-white/70 rounded-xl px-3 py-2">
+                        <p className="text-[0.625rem] font-bold text-gray-500 bg-white/60 border border-white/70 rounded-xl px-3 py-2">
                             Se crearán <span className="font-black text-gray-900">{totalUploads}</span> documentos:
                             cada archivo queda en cada empresa seleccionada.
                         </p>

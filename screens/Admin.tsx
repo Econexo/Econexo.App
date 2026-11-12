@@ -6,6 +6,8 @@ import { monthRange, todayLocalDate } from '../utils/dateRange';
 import { issueTransportCertificate } from '../services/certificateService';
 import { fetchActiveTransportistas, TransportistaOption } from '../services/transportistas';
 import { bulkUploadDocuments } from '../services/bulkDocumentUpload';
+import { WEIGH_TICKET_TYPE, parseTicketKg, buildWeighTicket, type WeighTicket } from '../utils/weighTicket';
+import type { WasteDestination } from '../utils/wasteClassification';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import Navbar from '../components/Navbar';
@@ -76,6 +78,8 @@ const Admin: React.FC = () => {
     const [uploadDate, setUploadDate] = useState<string>(todayLocalDate());
     const [uploadType, setUploadType] = useState('declaration');
     const [uploadSource, setUploadSource] = useState<'gestor' | 'econexo'>('gestor');
+    const [uploadTicketKg, setUploadTicketKg] = useState('');
+    const [uploadTicketDest, setUploadTicketDest] = useState<WasteDestination>('relleno_sanitario');
 
     // Unregistered clients
     const [unregisteredClients, setUnregisteredClients] = useState<{ id: string; company_name: string; rut: string; address: string }[]>([]);
@@ -314,12 +318,29 @@ const Admin: React.FC = () => {
         setUploadDate(todayLocalDate());
         setUploadSource('gestor');
         setUploadType('declaration');
+        setUploadTicketKg('');
+        setUploadTicketDest('relleno_sanitario');
     };
 
     const handleUploadDocuments = async () => {
         if (uploadFiles.length === 0 || uploadUserIds.length === 0 || !uploadDate) {
             toast.warning('Elige al menos un archivo, una empresa y la fecha del documento.');
             return;
+        }
+
+        // Kg del ticket de pesaje: si se escribió algo tiene que ser un número.
+        let pesaje: WeighTicket | undefined;
+        if (uploadType === WEIGH_TICKET_TYPE && uploadTicketKg.trim() !== '') {
+            const kg = parseTicketKg(uploadTicketKg);
+            if (kg === null) {
+                toast.warning('Los Kg del ticket deben ser un número mayor que cero.');
+                return;
+            }
+            if (uploadFiles.length * uploadUserIds.length > 1) {
+                toast.warning('Los Kg son de un solo ticket: sube un archivo a una empresa a la vez.');
+                return;
+            }
+            pesaje = buildWeighTicket(kg, uploadTicketDest);
         }
 
         const companies = users
@@ -348,6 +369,7 @@ const Admin: React.FC = () => {
                 type: uploadType,
                 source: uploadSource,
                 documentDate: uploadDate,
+                pesaje,
                 onProgress: (done, total) => setUploadProgress({ done, total }),
             });
 
@@ -448,7 +470,7 @@ const Admin: React.FC = () => {
     };
 
     return (
-        <div className="relative font-sans bg-[#f0f4f0] min-h-screen text-slate-900 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
+        <div className="relative font-sans bg-[#f0f4f0] min-h-dvh text-slate-900 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip">
             {/* Decorative Background */}
             <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
             <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -458,7 +480,7 @@ const Admin: React.FC = () => {
             <div className="p-6 sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-white/40 flex items-center justify-between shadow-sm">
                 <div>
                     <h2 className="text-xl font-display font-black text-gray-900">Panel Administrador</h2>
-                    <span className="text-[10px] font-bold text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">v1.6.8 - Pixel Perfect Final v5</span>
+                    <span className="text-[0.625rem] font-bold text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">v1.6.8 - Pixel Perfect Final v5</span>
                 </div>
                 <button onClick={fetchAdminData} className="size-10 flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-full text-primary border border-primary/20 transition-all">
                     <span className="material-symbols-outlined">refresh</span>
@@ -507,6 +529,10 @@ const Admin: React.FC = () => {
                     onSourceChange={(src) => { setUploadSource(src); setUploadType(src === 'econexo' ? DOC_TYPE.TRANSPORTE : 'declaration'); }}
                     files={uploadFiles}
                     onFilesChange={setUploadFiles}
+                    ticketKg={uploadTicketKg}
+                    onTicketKgChange={setUploadTicketKg}
+                    ticketDestination={uploadTicketDest}
+                    onTicketDestinationChange={setUploadTicketDest}
                     loading={loading}
                     progress={uploadProgress}
                     onUpload={handleUploadDocuments}
@@ -535,31 +561,31 @@ const Admin: React.FC = () => {
                 <section className="grid grid-cols-2 gap-4">
                     <button onClick={() => setShowDocEditor(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">edit_document</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Crear Doc. Especial</span>
+                        <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Crear Doc. Especial</span>
                     </button>
                     <button onClick={() => setShowUploadModal(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 border border-blue-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">cloud_upload</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento</span>
+                        <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-900 group-hover:text-blue-500 transition-colors">Subir Documento</span>
                     </button>
                     <button onClick={() => navigate('/scan')} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">document_scanner</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Escanear Documento</span>
+                        <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-900 group-hover:text-primary transition-colors">Escanear Documento</span>
                     </button>
                     <button onClick={() => setShowCommunityManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
                         <div className="size-10 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">nature_people</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-green-600 transition-colors">Retiros Comunitarios</span>
+                        <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-900 group-hover:text-green-600 transition-colors">Retiros Comunitarios</span>
                     </button>
                     <button onClick={() => setShowFixCerts(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 border border-orange-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">build</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-500 transition-colors text-center">Corregir Fechas / Direcciones</span>
+                        <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-900 group-hover:text-orange-500 transition-colors text-center">Corregir Fechas / Direcciones</span>
                     </button>
                     <button onClick={() => setShowDestinationsManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group">
                         <div className="size-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 border border-teal-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">pin_drop</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-teal-600 transition-colors text-center">Destinos CGM</span>
+                        <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-900 group-hover:text-teal-600 transition-colors text-center">Destinos CGM</span>
                     </button>
                     <button onClick={() => setShowTransportistasManager(true)} className="p-4 bg-white/60 backdrop-blur-2xl hover:bg-white/80 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex flex-col items-center gap-2 transition-all group col-span-2">
                         <div className="size-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 border border-teal-100 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined">local_shipping</span></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 group-hover:text-teal-600 transition-colors text-center">Transportistas</span>
+                        <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-900 group-hover:text-teal-600 transition-colors text-center">Transportistas</span>
                     </button>
                 </section>
 
@@ -594,7 +620,7 @@ const Admin: React.FC = () => {
                 />
             </main>
 
-            <div className="absolute bottom-2 right-4 text-[10px] text-gray-400 font-bold z-50">v1.4</div>
+            <div className="absolute bottom-2 right-4 text-[0.625rem] text-gray-400 font-bold z-50">v1.4</div>
             <Navbar />
 
             {/* Unregistered Clients Modal */}

@@ -32,14 +32,14 @@ const PasswordUpdateModal: React.FC<PasswordUpdateModalProps> = ({
                         <span className="material-symbols-outlined text-2xl">lock</span>
                     </div>
                     <h3 className="text-lg font-display font-black text-gray-900">Nueva Contraseña</h3>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-2 mt-1">
+                    <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-widest px-2 mt-1">
                         Asegúrate de usar una contraseña segura.
                     </p>
                 </div>
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Nueva Contraseña</label>
+                        <label className="text-[0.625rem] font-black uppercase tracking-widest ml-1 text-primary">Nueva Contraseña</label>
                         <input
                             type="password"
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-300"
@@ -49,7 +49,7 @@ const PasswordUpdateModal: React.FC<PasswordUpdateModalProps> = ({
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Confirmar Contraseña</label>
+                        <label className="text-[0.625rem] font-black uppercase tracking-widest ml-1 text-primary">Confirmar Contraseña</label>
                         <input
                             type="password"
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-300"
@@ -69,7 +69,7 @@ const PasswordUpdateModal: React.FC<PasswordUpdateModalProps> = ({
                         </button>
                         <button
                             onClick={onClose}
-                            className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                            className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[0.625rem] uppercase tracking-widest active:scale-95 transition-all"
                         >
                             Cancelar
                         </button>

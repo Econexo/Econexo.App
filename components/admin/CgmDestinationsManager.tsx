@@ -130,7 +130,7 @@ const CgmDestinationsManager: React.FC<Props> = ({ onClose }) => {
                             <span className="material-symbols-outlined text-teal-600">pin_drop</span>
                             Destinos Autorizados
                         </h2>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mt-0.5">
+                        <p className="text-[0.625rem] uppercase font-bold text-gray-400 tracking-widest mt-0.5">
                             Aparecen seleccionables al generar un CGM
                         </p>
                     </div>
@@ -141,7 +141,7 @@ const CgmDestinationsManager: React.FC<Props> = ({ onClose }) => {
 
                 {/* Form */}
                 <div className="px-6 py-4 bg-white/50 border-b border-white/40 shrink-0 space-y-3">
-                    <p className="text-[10px] font-black uppercase text-primary tracking-widest">
+                    <p className="text-[0.625rem] font-black uppercase text-primary tracking-widest">
                         {editingId ? 'Editar destino' : 'Nuevo destino'}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -171,7 +171,7 @@ const CgmDestinationsManager: React.FC<Props> = ({ onClose }) => {
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="px-5 py-2.5 bg-primary text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-50 flex items-center gap-2"
+                            className="px-5 py-2.5 bg-primary text-white rounded-xl font-black uppercase tracking-widest text-[0.625rem] shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-50 flex items-center gap-2"
                         >
                             <span className="material-symbols-outlined text-sm">{editingId ? 'save' : 'add'}</span>
                             {saving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Agregar destino'}
@@ -179,7 +179,7 @@ const CgmDestinationsManager: React.FC<Props> = ({ onClose }) => {
                         {editingId && (
                             <button
                                 onClick={cancelEdit}
-                                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors"
+                                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-black uppercase tracking-widest text-[0.625rem] hover:bg-gray-200 transition-colors"
                             >
                                 Cancelar
                             </button>
@@ -209,12 +209,12 @@ const CgmDestinationsManager: React.FC<Props> = ({ onClose }) => {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <p className="font-black text-sm text-gray-900 break-words">{d.name}</p>
-                                        {d.rut && <span className="text-[10px] text-gray-500 font-bold">RUT: {d.rut}</span>}
+                                        {d.rut && <span className="text-[0.625rem] text-gray-500 font-bold">RUT: {d.rut}</span>}
                                         {!d.active && (
-                                            <span className="text-[8px] bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-black uppercase shrink-0">Inactivo</span>
+                                            <span className="text-[0.5rem] bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-black uppercase shrink-0">Inactivo</span>
                                         )}
                                     </div>
-                                    {d.resolution && <p className="text-[11px] text-gray-600 font-bold mt-1 break-words">{d.resolution}</p>}
+                                    {d.resolution && <p className="text-[0.6875rem] text-gray-600 font-bold mt-1 break-words">{d.resolution}</p>}
                                 </div>
                                 <div className="flex gap-1 shrink-0">
                                     <button

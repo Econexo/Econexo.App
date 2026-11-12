@@ -41,11 +41,11 @@ const RepProducerSection: React.FC<RepProducerSectionProps> = ({ data, saving, o
   return (
     <section>
       <div className="flex items-center justify-between mb-2 pl-2">
-        <h4 className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+        <h4 className="text-[0.625rem] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
           Perfil Ley REP
         </h4>
         {saving && (
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Guardando…</span>
+          <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400">Guardando…</span>
         )}
       </div>
 
@@ -55,7 +55,7 @@ const RepProducerSection: React.FC<RepProducerSectionProps> = ({ data, saving, o
             <h5 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">
               ¿Eres productor de productos prioritarios?
             </h5>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold leading-snug">
+            <p className="text-[0.6875rem] text-gray-500 dark:text-gray-400 font-bold leading-snug">
               Marca esto solo si tu empresa <strong>importa, fabrica o vende bajo marca propia</strong>{' '}
               productos envasados. Botar envases no te convierte en productor.
             </p>
@@ -75,7 +75,7 @@ const RepProducerSection: React.FC<RepProducerSectionProps> = ({ data, saving, o
           <>
             <div className="h-px bg-gray-100 dark:bg-white/10" />
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
+              <label className="block text-[0.625rem] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
                 Envases puestos en el mercado en {year}
               </label>
               <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ const RepProducerSection: React.FC<RepProducerSectionProps> = ({ data, saving, o
                 />
                 <span className="text-sm font-black text-gray-400 shrink-0">kg</span>
               </div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold leading-relaxed">
+              <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold leading-relaxed">
                 Este dato lo tiene tu empresa: son los kilos de envase que comercializaste, no los
                 que retiramos. Bajo 300 kg anuales quedas exento de metas de recuperación, aunque
                 mantienes la obligación de registro.
@@ -102,7 +102,7 @@ const RepProducerSection: React.FC<RepProducerSectionProps> = ({ data, saving, o
             <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base shrink-0">
               check_circle
             </span>
-            <p className="text-[11px] text-green-900 dark:text-green-200/90 font-medium leading-relaxed">
+            <p className="text-[0.6875rem] text-green-900 dark:text-green-200/90 font-medium leading-relaxed">
               Como generadora, la Ley REP no te alcanza. Tus obligaciones se miden por lo que
               generas, en SINADER, y las revisa el asistente de la pantalla Ley REP.
             </p>

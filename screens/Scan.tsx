@@ -365,13 +365,13 @@ const Scan: React.FC = () => {
                 <div className="flex flex-col gap-2 w-full max-w-[220px]">
                   <button
                     onClick={camera.retry}
-                    className="h-11 rounded-xl bg-white/10 text-white text-[10px] font-black uppercase tracking-widest border border-white/20"
+                    className="h-11 rounded-xl bg-white/10 text-white text-[0.625rem] font-black uppercase tracking-widest border border-white/20"
                   >
                     Reintentar
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="h-11 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest"
+                    className="h-11 rounded-xl bg-primary text-white text-[0.625rem] font-black uppercase tracking-widest"
                   >
                     Usar una foto
                   </button>
@@ -400,7 +400,7 @@ const Scan: React.FC = () => {
           {/* Pista inferior */}
           {camera.status === 'ready' && (
             <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
-              <p className="px-3.5 py-2 rounded-full bg-black/50 backdrop-blur-md text-white text-[11px] font-bold text-center leading-tight">
+              <p className="px-3.5 py-2 rounded-full bg-black/50 backdrop-blur-md text-white text-[0.6875rem] font-bold text-center leading-tight">
                 {hintText}
               </p>
             </div>
@@ -435,7 +435,7 @@ const Scan: React.FC = () => {
               />
             </svg>
             <span className="size-[52px] rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-[28px]">photo_camera</span>
+              <span className="material-symbols-outlined text-white text-[1.75rem]">photo_camera</span>
             </span>
           </button>
 
@@ -446,7 +446,7 @@ const Scan: React.FC = () => {
               className="relative size-12 rounded-2xl overflow-hidden border-2 border-primary shadow-sm active:scale-95 transition-transform"
             >
               <img src={pages[pages.length - 1].dataUrl} alt="" className="size-full object-cover" />
-              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center border-2 border-white">
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-white text-[0.625rem] font-black flex items-center justify-center border-2 border-white">
                 {pages.length}
               </span>
             </button>
@@ -467,10 +467,10 @@ const Scan: React.FC = () => {
             {autoCapture ? 'motion_photos_auto' : 'photo_camera'}
           </span>
           <span className="flex-1 text-left">
-            <span className="block text-[11px] font-black uppercase tracking-widest">
+            <span className="block text-[0.6875rem] font-black uppercase tracking-widest">
               Captura automática {autoCapture ? 'activada' : 'desactivada'}
             </span>
-            <span className="block text-[10px] font-bold opacity-70">
+            <span className="block text-[0.625rem] font-bold opacity-70">
               {autoCapture ? 'Dispara solo al estabilizar el encuadre' : 'Solo captura al pulsar el botón'}
             </span>
           </span>
@@ -488,7 +488,7 @@ const Scan: React.FC = () => {
   };
 
   return (
-    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-4xl mx-auto pb-28 md:pb-8 overflow-hidden">
+    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-4xl mx-auto pb-28 md:pb-8 overflow-clip">
       <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/40 dark:border-slate-700/40 p-4 flex items-center justify-between shadow-sm">
         <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 rounded-full border border-white/40 dark:border-slate-600/40 shadow-sm text-gray-700 dark:text-gray-300">
           <span className="material-symbols-outlined">arrow_back</span>
@@ -529,13 +529,13 @@ const Scan: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={redetectCorners}
-                className="flex-1 h-10 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/60 dark:border-white/10 text-gray-600 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
+                className="flex-1 h-10 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/60 dark:border-white/10 text-gray-600 dark:text-gray-300 text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-base">auto_fix_high</span> Detectar
               </button>
               <button
                 onClick={resetCornersToFullFrame}
-                className="flex-1 h-10 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/60 dark:border-white/10 text-gray-600 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
+                className="flex-1 h-10 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/60 dark:border-white/10 text-gray-600 dark:text-gray-300 text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-base">crop_free</span> Toda la foto
               </button>
@@ -552,16 +552,16 @@ const Scan: React.FC = () => {
                     }`}
                 >
                   <span className="material-symbols-outlined text-lg">{f.icon}</span>
-                  <span className="text-[9px] font-black uppercase tracking-wider">{f.label}</span>
+                  <span className="text-[0.5625rem] font-black uppercase tracking-wider">{f.label}</span>
                 </button>
               ))}
             </div>
 
             <div className="flex gap-2">
-              <button onClick={discardCapture} className="flex-1 h-12 bg-white/50 dark:bg-slate-800/50 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/60 dark:border-white/10 text-gray-600 dark:text-gray-300">
+              <button onClick={discardCapture} className="flex-1 h-12 bg-white/50 dark:bg-slate-800/50 rounded-xl text-[0.625rem] font-black uppercase tracking-widest border border-white/60 dark:border-white/10 text-gray-600 dark:text-gray-300">
                 Descartar
               </button>
-              <button onClick={confirmCrop} className="flex-1 h-12 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+              <button onClick={confirmCrop} className="flex-1 h-12 bg-primary text-white rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-base">check</span> Usar página
               </button>
             </div>
@@ -570,7 +570,7 @@ const Scan: React.FC = () => {
 
         {stage === 'review' && (
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-1">
+            <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-1">
               {pages.length} página{pages.length === 1 ? '' : 's'}
             </h3>
 
@@ -583,14 +583,14 @@ const Scan: React.FC = () => {
                     <button onClick={() => movePage(i, 1)} aria-label="Mover después" className="size-6 bg-black/50 text-white rounded-full flex items-center justify-center"><span className="material-symbols-outlined text-sm">arrow_forward</span></button>
                   </div>
                   <button onClick={() => removePage(i)} aria-label="Eliminar página" className="absolute top-1 right-1 size-6 bg-red-500 text-white rounded-full flex items-center justify-center"><span className="material-symbols-outlined text-sm">close</span></button>
-                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-black/60 text-white text-[9px] font-black">{i + 1}</span>
+                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-black/60 text-white text-[0.5625rem] font-black">{i + 1}</span>
                 </div>
               ))}
             </div>
 
             {/* Recambio de filtro sobre el recorte original */}
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-1">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-1">
                 Filtro de todas las páginas
               </p>
               <div className="grid grid-cols-4 gap-2">
@@ -605,13 +605,13 @@ const Scan: React.FC = () => {
                       }`}
                   >
                     <span className="material-symbols-outlined text-base">{f.icon}</span>
-                    <span className="text-[9px] font-black uppercase tracking-wider">{f.label}</span>
+                    <span className="text-[0.5625rem] font-black uppercase tracking-wider">{f.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <button onClick={() => setStage('capture')} className="w-full h-12 bg-white/60 dark:bg-slate-800/60 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/60 dark:border-white/10 text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2">
+            <button onClick={() => setStage('capture')} className="w-full h-12 bg-white/60 dark:bg-slate-800/60 rounded-xl text-[0.625rem] font-black uppercase tracking-widest border border-white/60 dark:border-white/10 text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2">
               <span className="material-symbols-outlined text-base">add_a_photo</span> Añadir página
             </button>
             <button onClick={() => setShowFinalize(true)} disabled={pages.length === 0} className="w-full h-14 bg-primary text-white rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50 text-xs">
@@ -628,15 +628,15 @@ const Scan: React.FC = () => {
             <h3 className="text-lg font-display font-black text-gray-900 text-center">Asignar a cliente</h3>
 
             <div className="space-y-1 text-left">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Origen del Documento</label>
+              <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 pl-1">Origen del Documento</label>
               <div className="flex gap-2">
-                <button onClick={() => setSource('gestor')} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${source === 'gestor' ? 'bg-slate-700 text-white border-slate-700' : 'bg-white/50 text-gray-500 border-white/60'}`}>Gestor</button>
-                <button onClick={() => setSource('econexo')} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${source === 'econexo' ? 'bg-primary text-white border-primary' : 'bg-white/50 text-gray-500 border-white/60'}`}>EcoNexo</button>
+                <button onClick={() => setSource('gestor')} className={`flex-1 py-2.5 rounded-xl text-[0.625rem] font-black uppercase tracking-widest border transition-all ${source === 'gestor' ? 'bg-slate-700 text-white border-slate-700' : 'bg-white/50 text-gray-500 border-white/60'}`}>Gestor</button>
+                <button onClick={() => setSource('econexo')} className={`flex-1 py-2.5 rounded-xl text-[0.625rem] font-black uppercase tracking-widest border transition-all ${source === 'econexo' ? 'bg-primary text-white border-primary' : 'bg-white/50 text-gray-500 border-white/60'}`}>EcoNexo</button>
               </div>
             </div>
 
             <div className="space-y-1 text-left">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Empresa Destino</label>
+              <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 pl-1">Empresa Destino</label>
               <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary">
                 <option value="">Seleccionar Empresa...</option>
                 {clients.map((c) => <option key={c.id} value={c.id}>{c.company_name || c.id}</option>)}
@@ -644,27 +644,27 @@ const Scan: React.FC = () => {
             </div>
 
             <div className="space-y-1 text-left">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Tipo de Documento</label>
+              <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 pl-1">Tipo de Documento</label>
               <select value={docType} onChange={(e) => setDocType(e.target.value)} className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary">
                 {docTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
 
             <div className="space-y-1 text-left">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Fecha del Documento</label>
+              <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 pl-1">Fecha del Documento</label>
               <input type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary" />
             </div>
 
             <div className="space-y-1 text-left">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Título</label>
+              <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 pl-1">Título</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Documento escaneado" className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:ring-primary focus:border-primary" />
             </div>
 
-            <button onClick={handleSave} disabled={saving} className="w-full h-14 bg-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+            <button onClick={handleSave} disabled={saving} className="w-full h-14 bg-primary text-white rounded-2xl text-[0.6875rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <span className="material-symbols-outlined">save</span>}
               {saving ? 'Guardando…' : 'Guardar y asignar'}
             </button>
-            <button onClick={() => setShowFinalize(false)} className="w-full h-10 text-gray-400 text-[10px] font-black uppercase tracking-widest">Cancelar</button>
+            <button onClick={() => setShowFinalize(false)} className="w-full h-10 text-gray-400 text-[0.625rem] font-black uppercase tracking-widest">Cancelar</button>
           </div>
         </div>
       )}

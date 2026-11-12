@@ -11,6 +11,7 @@ import { createNotification } from './notificationService';
 import { buildUploadPlan, UploadTargetCompany } from '../utils/bulkUpload';
 
 import { localDayToISO } from '../utils/dateRange';
+import type { WeighTicket } from '../utils/weighTicket';
 export interface BulkUploadParams {
   files: File[];
   companies: UploadTargetCompany[];
@@ -20,6 +21,8 @@ export interface BulkUploadParams {
   source: 'gestor' | 'econexo';
   /** Fecha del documento, 'YYYY-MM-DD'. */
   documentDate: string;
+  /** Kg y destino de un ticket de pesaje. Solo con un archivo y una empresa. */
+  pesaje?: WeighTicket;
   onProgress?: (done: number, total: number) => void;
 }
 
@@ -38,12 +41,17 @@ export interface BulkUploadResult {
 }
 
 export async function bulkUploadDocuments(
-  { files, companies, type, source, documentDate, onProgress }: BulkUploadParams,
+  { files, companies, type, source, documentDate, pesaje, onProgress }: BulkUploadParams,
 ): Promise<BulkUploadResult> {
   if (files.length === 0) throw new Error('Selecciona al menos un archivo.');
   if (companies.length === 0) throw new Error('Selecciona al menos una empresa.');
 
   const plan = buildUploadPlan(files, companies);
+  // Los kilos de un ticket son de una carga: copiarlos a varias empresas o
+  // archivos los sumaría varias veces.
+  if (pesaje && plan.length > 1) {
+    throw new Error('Los Kg son de un solo ticket: sube un archivo a una empresa a la vez.');
+  }
   const createdAt = localDayToISO(documentDate);
   const failures: BulkUploadFailure[] = [];
   // Nombres subidos por empresa: sirven para mandar un solo aviso por empresa.
@@ -69,6 +77,7 @@ export async function bulkUploadDocuments(
           mime_type: file.type,
           uploaded_by: 'admin',
           source,
+          pesaje,
           // Marca de que vino de una carga masiva, con cuántas empresas la
           // recibieron: útil para entender después por qué el mismo documento
           // aparece en varias cuentas.

@@ -30,7 +30,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
                     </div>
                     <div>
                         <h3 className="text-xl font-display font-black text-gray-900 tracking-tight">Reportar Problema</h3>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-4 leading-relaxed mt-1">
+                        <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-widest px-4 leading-relaxed mt-1">
                             Describe el inconveniente para recibir ayuda de nuestro equipo.
                         </p>
                     </div>
@@ -38,7 +38,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Asunto</label>
+                        <label className="text-[0.625rem] font-black uppercase tracking-widest ml-1 text-primary">Asunto</label>
                         <input
                             className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-gray-400"
                             placeholder="Ej: Error al cargar documentos"
@@ -48,7 +48,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-primary">Descripción</label>
+                        <label className="text-[0.625rem] font-black uppercase tracking-widest ml-1 text-primary">Descripción</label>
                         <textarea
                             className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all min-h-[100px] resize-none placeholder:text-gray-400 custom-scrollbar"
                             placeholder="Cuéntanos qué pasó..."
@@ -74,7 +74,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
                         </button>
                         <button
                             onClick={onClose}
-                            className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                            className="w-full py-3 text-gray-500 hover:text-gray-900 font-display font-black text-[0.625rem] uppercase tracking-widest active:scale-95 transition-all"
                         >
                             Cancelar
                         </button>

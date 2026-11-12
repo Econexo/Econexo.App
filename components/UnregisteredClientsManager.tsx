@@ -178,7 +178,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                 <div className="p-6 bg-white/70 backdrop-blur-md border-b border-white/40 flex items-center justify-between shrink-0 shadow-sm z-10">
                     <div>
                         <h2 className="text-xl font-display font-black text-gray-900">Clientes Manuales</h2>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mt-0.5">Empresas no registradas</p>
+                        <p className="text-[0.625rem] uppercase font-bold text-gray-400 tracking-widest mt-0.5">Empresas no registradas</p>
                     </div>
                     <button onClick={onClose} className="size-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center text-gray-500 shadow-sm transition-colors">
                         <span className="material-symbols-outlined text-lg">close</span>
@@ -211,7 +211,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-bold text-sm text-gray-900 truncate">{client.company_name}</p>
-                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">{client.rut} • {client.email}</p>
+                                                <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-widest mt-0.5">{client.rut} • {client.email}</p>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {onGenerateCR && (
@@ -258,7 +258,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-primary ml-1">Razón Social</label>
+                                    <label className="text-[0.625rem] font-black uppercase text-primary ml-1">Razón Social</label>
                                     <input 
                                         required
                                         value={formData.company_name}
@@ -267,7 +267,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-primary ml-1">RUT</label>
+                                    <label className="text-[0.625rem] font-black uppercase text-primary ml-1">RUT</label>
                                     <input 
                                         required
                                         value={formData.rut}
@@ -278,7 +278,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                             </div>
                             
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase text-primary ml-1">Dirección Completa</label>
+                                <label className="text-[0.625rem] font-black uppercase text-primary ml-1">Dirección Completa</label>
                                 <input 
                                     required
                                     value={formData.address}
@@ -288,7 +288,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                             </div>
                             
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase text-primary ml-1">Email de Contacto</label>
+                                <label className="text-[0.625rem] font-black uppercase text-primary ml-1">Email de Contacto</label>
                                 <input 
                                     type="email"
                                     value={formData.email}
@@ -322,7 +322,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase text-primary ml-1">Seleccionar Cuenta Registrada</label>
+                                <label className="text-[0.625rem] font-black uppercase text-primary ml-1">Seleccionar Cuenta Registrada</label>
                                 <select 
                                     value={selectedUserIdToLink}
                                     onChange={e => setSelectedUserIdToLink(e.target.value)}
@@ -345,7 +345,7 @@ const UnregisteredClientsManager: React.FC<Props> = ({ onClose, onGenerateCR, on
                                         <>Procesando...</>
                                     ) : (
                                         <>
-                                            <span className="material-symbols-outlined text-[14px]">link</span>
+                                            <span className="material-symbols-outlined text-[0.875rem]">link</span>
                                             Vincular y Migrar
                                         </>
                                     )}

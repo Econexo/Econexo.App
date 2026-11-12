@@ -44,7 +44,7 @@ const ForgotPassword: React.FC = () => {
     };
 
     return (
-        <div className="relative font-sans text-slate-900 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased selection:bg-primary/30 bg-[#f0f4f0]">
+        <div className="relative font-sans text-slate-900 min-h-dvh flex flex-col justify-between overflow-x-hidden antialiased selection:bg-primary/30 bg-[#f0f4f0]">
             <style>{`
             @keyframes blob {
                 0% { transform: translate(0px, 0px) scale(1); }
@@ -78,14 +78,14 @@ const ForgotPassword: React.FC = () => {
                 </div>
 
                 {error && (
-                    <div className="w-full p-4 mb-6 bg-red-100 border border-red-200 rounded-2xl text-red-500 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
+                    <div className="w-full p-4 mb-6 bg-red-100 border border-red-200 rounded-2xl text-red-500 text-[0.6875rem] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
                         <span className="material-symbols-outlined text-sm">error</span>
                         <span className="flex-1">{error}</span>
                     </div>
                 )}
 
                 {success && (
-                    <div className="w-full p-4 mb-6 bg-green-100 border border-green-200 rounded-2xl text-green-500 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
+                    <div className="w-full p-4 mb-6 bg-green-100 border border-green-200 rounded-2xl text-green-500 text-[0.6875rem] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
                         <span className="material-symbols-outlined text-sm">check_circle</span>
                         <span className="flex-1">{success}</span>
                     </div>
@@ -93,9 +93,9 @@ const ForgotPassword: React.FC = () => {
 
                 <form className="w-full flex flex-col gap-4 bg-white/60 backdrop-blur-2xl rounded-[32px] p-6 border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]" onSubmit={handleSubmit}>
                     <div className="flex flex-col group">
-                        <label className="text-gray-500 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
+                        <label className="text-gray-500 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
                         <div className="relative">
-                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">mail</span>
                             <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-xl bg-white/50 h-14 pl-12 pr-4 border border-white/60 focus:border-primary/50 text-gray-900 shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 focus:bg-white/80" placeholder="usuario@empresa.cl" required />
                         </div>
                     </div>
@@ -109,14 +109,14 @@ const ForgotPassword: React.FC = () => {
                     </button>
                 </form>
 
-                <button onClick={() => navigate('/')} className="mt-8 text-gray-500 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 group">
+                <button onClick={() => navigate('/')} className="mt-8 text-gray-500 hover:text-gray-900 text-[0.625rem] font-black uppercase tracking-widest transition-colors flex items-center gap-2 group">
                     <span className="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_back</span>
                     <span>Volver al inicio</span>
                 </button>
             </div>
 
             <div className="relative z-10 w-full p-6 text-center">
-                <p className="text-gray-400 text-[9px] font-black uppercase tracking-[0.2em] hover:text-gray-600 transition-colors cursor-default">Econexo © 2024 • Gestión Inteligente de Residuos</p>
+                <p className="text-gray-400 text-[0.5625rem] font-black uppercase tracking-[0.2em] hover:text-gray-600 transition-colors cursor-default">Econexo © 2024 • Gestión Inteligente de Residuos</p>
             </div>
         </div>
     );

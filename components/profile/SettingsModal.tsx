@@ -50,7 +50,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">Modo Oscuro</p>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Apariencia Visual</p>
+                                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Apariencia Visual</p>
                             </div>
                         </div>
                         <div className="relative">
@@ -67,7 +67,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">Notificaciones</p>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Alertas y Avisos</p>
+                                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Alertas y Avisos</p>
                             </div>
                         </div>
                         <div className="relative">
@@ -87,7 +87,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">Reportar Problema</p>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Soporte Técnico</p>
+                                <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-wider">Soporte Técnico</p>
                             </div>
                         </div>
                         <span className="material-symbols-outlined text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
@@ -104,7 +104,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-green-600 transition-colors">Cambiar Contraseña</p>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Seguridad</p>
+                                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Seguridad</p>
                             </div>
                         </div>
                         <span className="material-symbols-outlined text-green-300 group-hover:text-green-500 transition-colors">chevron_right</span>
@@ -121,7 +121,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-red-600">Eliminar Cuenta</p>
-                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Acción Irreversible</p>
+                                <p className="text-[0.625rem] text-red-400 font-bold uppercase tracking-wider">Acción Irreversible</p>
                             </div>
                         </div>
                         <span className="material-symbols-outlined text-red-300 group-hover:text-red-500 transition-colors">chevron_right</span>

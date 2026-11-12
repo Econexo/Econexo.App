@@ -18,6 +18,7 @@ import { subscribeToPush, isPushSubscribed } from '../services/pushService';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import FeedbackCard from '../components/FeedbackCard';
 import { useCountUp } from '../hooks/useCountUp';
+import { WEIGH_TICKET_TYPE, weighTicketItems } from '../utils/weighTicket';
 
 import FitText from '../components/ui/FitText';
 import { todayLocalDate } from '../utils/dateRange';
@@ -280,7 +281,15 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         query = query.eq('user_id', user.id);
       }
 
-      const { data: docs } = await query;
+      // Tickets de pesaje de relleno o RESCON: suman solo al desglose por
+      // destino, nunca al reciclado ni al CO₂ (ver utils/weighTicket.ts).
+      let ticketQuery = supabase
+        .from('documents')
+        .select('type, created_at, metadata')
+        .eq('type', WEIGH_TICKET_TYPE);
+      if (!isUserAdmin) ticketQuery = ticketQuery.eq('user_id', user.id);
+
+      const [{ data: docs }, { data: tickets }] = await Promise.all([query, ticketQuery]);
 
       let total = 0;
       const trendData: Record<string, number> = {};
@@ -341,7 +350,22 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
       setAvailableYears(Array.from(uniqueYears).sort((a, b) => b - a));
 
-      const destTotals = summarizeByDestination(periodItems);
+      // Mismo filtro de período que los CT, pero fuera de periodItems: el CO₂
+      // y el total recuperado se calculan sobre periodItems más abajo.
+      const ticketItems: any[] = [];
+      (tickets ?? []).forEach((doc: any) => {
+        const date = new Date(doc.created_at);
+        if (isNaN(date.getTime())) return;
+        const y = date.getFullYear();
+        const included =
+          selectedYear === 'all'
+          || (typeof selectedYear === 'number' && y === selectedYear)
+          || (selectedYear === 'range' && y >= rangeStart && y <= rangeEnd)
+          || (selectedYear === 'month' && y === monthYear && date.getMonth() === selectedMonth);
+        if (included) ticketItems.push(...weighTicketItems(doc));
+      });
+
+      const destTotals = summarizeByDestination([...periodItems, ...ticketItems]);
       setDestinationTotals(destTotals);
 
       // CO₂ evitado solo por lo que se valoriza. Un residuo que va a relleno
@@ -568,7 +592,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               <div className="size-2 rounded-full bg-primary shrink-0"></div>
               <p className="text-primary font-display font-black text-sm">{`${payload[0].value} Kg`}</p>
               {showComparison && typeof selectedYear === 'number' && (
-                <p className="text-gray-400 text-[9px] font-bold">{selectedYear}</p>
+                <p className="text-gray-400 text-[0.5625rem] font-bold">{selectedYear}</p>
               )}
             </div>
           )}
@@ -577,11 +601,11 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               <div className="size-2 rounded-full bg-secondary shrink-0"></div>
               <p className="text-[#b4d351] font-display font-black text-sm">{`${payload[1].value} Kg`}</p>
               {typeof selectedYear === 'number' && (
-                <p className="text-gray-400 text-[9px] font-bold">{selectedYear - 1}</p>
+                <p className="text-gray-400 text-[0.5625rem] font-bold">{selectedYear - 1}</p>
               )}
             </div>
           )}
-          <p className="text-gray-400 text-[9px] uppercase tracking-widest font-bold border-t border-gray-100 dark:border-slate-700 pt-1.5">Residuos Recuperados</p>
+          <p className="text-gray-400 text-[0.5625rem] uppercase tracking-widest font-bold border-t border-gray-100 dark:border-slate-700 pt-1.5">Residuos Recuperados</p>
         </div>
       );
     }
@@ -629,7 +653,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
   ];
 
   return (
-    <div className="relative font-sans flex min-h-screen w-full flex-col pb-28 md:pb-8 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-hidden transition-colors duration-300">
+    <div className="relative font-sans flex min-h-dvh w-full flex-col pb-28 md:pb-8 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto bg-[#f0f4f0] dark:bg-slate-950 animate-in fade-in duration-500 overflow-clip transition-colors duration-300">
       {/* Decorative Background Blobs for Glassmorphism */}
       <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -644,7 +668,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-20 pb-2 border-b border-gray-100">
               <div>
                 <h3 className="text-xl font-display font-black text-gray-900 tracking-tight">Registrar Retiro</h3>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Gestión de Residuos</p>
+                <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Gestión de Residuos</p>
               </div>
               <button
                 onClick={() => setShowWithdrawalModal(false)}
@@ -668,8 +692,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                      Since I must overwrite, I WILL include the form logic but styled for light mode.
                  */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[14px]">domain</span>
+                <label className="text-[0.625rem] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[0.875rem]">domain</span>
                   Seleccionar Cliente
                 </label>
                 {!selectedClient ? (
@@ -685,7 +709,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold truncate text-gray-800 group-hover:text-primary transition-colors">{client.company_name}</p>
-                          <p className="text-[10px] text-gray-400 font-bold">{client.rut}</p>
+                          <p className="text-[0.625rem] text-gray-400 font-bold">{client.rut}</p>
                         </div>
                         <span className="material-symbols-outlined text-gray-400 group-hover:text-primary ml-auto text-sm">chevron_right</span>
                       </button>
@@ -704,7 +728,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                         {selectedClient.company_name?.[0] || 'C'}
                       </div>
                       <div>
-                        <p className="text-[10px] text-primary font-black uppercase tracking-widest">Cliente Activo</p>
+                        <p className="text-[0.625rem] text-primary font-black uppercase tracking-widest">Cliente Activo</p>
                         <p className="text-gray-900 font-bold text-sm truncate max-w-[180px]">{selectedClient.company_name}</p>
                       </div>
                     </div>
@@ -718,15 +742,15 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
 
               {/* Date Input */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">Fecha</label>
+                <label className="text-[0.625rem] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">Fecha</label>
                 <input type="date" value={withdrawalDate} onChange={(e) => setWithdrawalDate(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-primary" />
               </div>
 
               {/* Transportista: de su ficha sale la resolución sanitaria del certificado */}
               {transportistas.length > 0 && (
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[14px]">local_shipping</span>
+                  <label className="text-[0.625rem] font-black uppercase tracking-widest text-primary ml-1 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[0.875rem]">local_shipping</span>
                     Transportista
                   </label>
                   <select
@@ -741,7 +765,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                   {(() => {
                     const chosen = transportistas.find(t => t.id === selectedTransportistaId);
                     return chosen ? (
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 ml-1">
+                      <p className="text-[0.5625rem] font-bold uppercase tracking-wider text-gray-400 ml-1">
                         Resolución N° : {chosen.resolution}
                       </p>
                     ) : null;
@@ -769,7 +793,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                       {categories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
                     </select>
                     <div className="space-y-1.5">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Destino</p>
+                      <p className="text-[0.5625rem] font-black uppercase tracking-widest text-gray-400">Destino</p>
                       <div className="grid grid-cols-3 gap-1.5">
                         {WASTE_DESTINATIONS.map(d => {
                           const active = (currentWaste.destination || defaultDestinationFor(currentWaste.waste_type)) === d.value;
@@ -779,7 +803,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                               type="button"
                               title={d.description}
                               onClick={() => setCurrentWaste({ ...currentWaste, destination: d.value })}
-                              className={`py-2 px-1 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${active ? 'text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}`}
+                              className={`py-2 px-1 rounded-lg text-[0.5625rem] font-black uppercase tracking-wide border transition-all ${active ? 'text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}`}
                               style={active ? { backgroundColor: d.color } : undefined}
                             >
                               {d.short}
@@ -793,7 +817,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                       <input type="number" placeholder="Cant." className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.quantity} onChange={(e) => setCurrentWaste({ ...currentWaste, quantity: e.target.value })} />
                       <input type="text" placeholder="Unidad" className="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-xs font-bold text-gray-800 outline-none" value={currentWaste.unit} onChange={(e) => setCurrentWaste({ ...currentWaste, unit: e.target.value })} />
                     </div>
-                    <button onClick={handleAddWasteItem} className="w-full py-3 bg-white hover:bg-gray-50 text-gray-800 rounded-xl text-[10px] font-black uppercase border border-gray-200">Agregar Item</button>
+                    <button onClick={handleAddWasteItem} className="w-full py-3 bg-white hover:bg-gray-50 text-gray-800 rounded-xl text-[0.625rem] font-black uppercase border border-gray-200">Agregar Item</button>
                   </div>
 
                   <button onClick={handleGenerateCR} className="w-full py-4 bg-primary text-white rounded-2xl font-display font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:shadow-primary/40 flex items-center justify-center gap-2">
@@ -872,7 +896,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           <div className="flex items-center gap-4 relative z-10 min-w-0 flex-1">
             <span className="material-symbols-outlined shrink-0 text-5xl text-[#b4d351] font-black drop-shadow-sm group-hover:scale-110 transition-transform">recycling</span>
             <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-              <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest">
+              <span className="text-white/90 text-[0.625rem] font-bold uppercase tracking-widest">
                 Total Residuos Gestionados
                 {selectedYear === 'month' && ` · ${MONTH_LABELS[selectedMonth]} ${monthYear}`}
                 {typeof selectedYear === 'number' && ` · ${selectedYear}`}
@@ -930,7 +954,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                     </span>
                     {principal && isPriorityProducer && (
                       <span
-                        className="text-[8px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded"
+                        className="text-[0.5rem] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded"
                         title="Tu empresa figura como productor de productos prioritarios"
                       >
                         Ley REP
@@ -943,10 +967,10 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                   >
                     <FitText>{formatKg(kg)}</FitText>
                   </p>
-                  <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
+                  <p className="text-[0.5625rem] font-black uppercase tracking-wider text-gray-400 mt-0.5">
                     kg · {share}%
                   </p>
-                  <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 leading-tight mt-1">
+                  <p className="text-[0.625rem] font-bold text-gray-600 dark:text-gray-300 leading-tight mt-1">
                     {d.label}
                   </p>
                 </div>
@@ -986,9 +1010,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               </div>
               <div>
                 <h3 className="text-gray-900 dark:text-white text-2xl font-display font-black tracking-tight flex items-center gap-2 transition-colors">
-                  {animatedPoints.toLocaleString('es-CL')} <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mt-1">Pts</span>
+                  {animatedPoints.toLocaleString('es-CL')} <span className="text-gray-500 text-[0.625rem] uppercase tracking-widest font-bold mt-1">Pts</span>
                 </h3>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight group-hover:text-yellow-600 transition-colors">
+                <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-tight group-hover:text-yellow-600 transition-colors">
                   Próximo Nivel: {Math.floor(stats.ecoPoints / 1000) + 1}
                 </p>
               </div>
@@ -999,7 +1023,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           </div>
 
           <div className="mt-4">
-            <div className="flex justify-between text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+            <div className="flex justify-between text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest mb-1.5">
               <span>Progreso</span>
               <span>{1000 - (stats.ecoPoints % 1000)} pts faltantes</span>
             </div>
@@ -1022,7 +1046,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-black text-gray-900 dark:text-white group-hover:text-primary transition-colors">Calculadora de Huella</h3>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">Calcula tu CO₂ mensual</p>
+            <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">Calcula tu CO₂ mensual</p>
           </div>
           <div className="size-10 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-400 group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
             <span className="material-symbols-outlined">arrow_forward</span>
@@ -1039,7 +1063,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           </span>
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-black text-gray-900 dark:text-white">¿Debo declarar este año?</span>
-            <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
+            <span className="block text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
               Revisa tus kilos contra los umbrales de RETC, SINADER y SIDREP
             </span>
           </span>
@@ -1059,7 +1083,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 );
                 setShowComparison(false);
               }}
-              className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+              className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-[0.625rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
             >
               <option value="all">Todos los años</option>
               <option value="range">Por rango</option>
@@ -1073,19 +1097,19 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
           {/* Range pickers — only shown for range mode */}
           {selectedYear === 'range' && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">De</span>
+              <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400">De</span>
               <select
                 value={rangeStart}
                 onChange={(e) => setRangeStart(Number(e.target.value))}
-                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[0.625rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
               >
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">A</span>
+              <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400">A</span>
               <select
                 value={rangeEnd}
                 onChange={(e) => setRangeEnd(Number(e.target.value))}
-                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[0.625rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
               >
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -1098,18 +1122,18 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[0.625rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
               >
                 {MONTH_LABELS.map((m, i) => <option key={m} value={i}>{m}</option>)}
               </select>
               <select
                 value={monthYear}
                 onChange={(e) => setMonthYear(Number(e.target.value))}
-                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
+                className="bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-[0.625rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl outline-none"
               >
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
-              <span className="text-[10px] font-bold text-gray-400">
+              <span className="text-[0.625rem] font-bold text-gray-400">
                 El gráfico muestra el año completo; el resto del panel, solo ese mes.
               </span>
             </div>
@@ -1120,7 +1144,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowComparison(prev => !prev)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[0.625rem] font-black uppercase tracking-widest border transition-all ${
                   showComparison
                     ? 'bg-primary/10 border-primary/30 text-primary'
                     : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-400 dark:text-gray-500 hover:border-primary/20'
@@ -1130,7 +1154,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                 Comparar vs {selectedYear - 1}
               </button>
               {showComparison && (
-                <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                <div className="flex items-center gap-3 text-[0.5625rem] font-black uppercase tracking-widest text-gray-400">
                   <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-primary"></span>{selectedYear}</span>
                   <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-[#b4d351]"></span>{selectedYear - 1}</span>
                 </div>
@@ -1224,7 +1248,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
             <span className="material-symbols-outlined text-primary text-xl shrink-0">monitoring</span>
             <span className="flex-1 min-w-0">
               <span className="block text-xs font-black text-gray-900 dark:text-white">Panel mensual de residuos</span>
-              <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-bold">Desglose por material e impacto, mes a mes</span>
+              <span className="block text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold">Desglose por material e impacto, mes a mes</span>
             </span>
             <span className="material-symbols-outlined text-primary text-base shrink-0">chevron_right</span>
           </button>
@@ -1239,7 +1263,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-600 dark:text-gray-300 text-[9px] font-bold uppercase tracking-wider mb-0.5 leading-tight">{stat.label}</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-[0.5625rem] font-bold uppercase tracking-wider mb-0.5 leading-tight">{stat.label}</p>
                   <p className="text-lg font-display font-black text-gray-900 dark:text-white leading-none transition-colors">{stat.value.toLocaleString('es-CL')}</p>
                 </div>
               </div>
@@ -1250,7 +1274,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         {/* Annual Comparison Cards */}
         {showComparison && typeof selectedYear === 'number' && (
           <section className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">
+            <h3 className="text-[0.6875rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">
               Comparación {selectedYear} vs {selectedYear - 1}
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -1294,14 +1318,14 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                   <div key={metric.label} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[24px] border border-white/80 dark:border-slate-600/50 shadow-sm p-4 space-y-3">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-lg">{metric.icon}</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 leading-tight">{metric.label}</span>
+                      <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 leading-tight">{metric.label}</span>
                     </div>
                     <div>
                       <p className="text-xl font-black text-gray-900 dark:text-white leading-none">
                         {metric.format(metric.curr)}
-                        <span className="text-[10px] text-gray-400 font-bold ml-1">{metric.unit}</span>
+                        <span className="text-[0.625rem] text-gray-400 font-bold ml-1">{metric.unit}</span>
                       </p>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-1">
+                      <p className="text-[0.625rem] text-gray-400 dark:text-gray-500 font-bold mt-1">
                         {selectedYear - 1}: {metric.format(metric.prev)} {metric.unit}
                       </p>
                     </div>
@@ -1312,7 +1336,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                       </div>
                     )}
                     {diff === null && (
-                      <p className="text-[10px] text-gray-300 dark:text-slate-600 font-bold">Sin datos {selectedYear - 1}</p>
+                      <p className="text-[0.625rem] text-gray-300 dark:text-slate-600 font-bold">Sin datos {selectedYear - 1}</p>
                     )}
                   </div>
                 );
@@ -1325,8 +1349,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
         {recentDocs.length > 0 && (
           <section className="space-y-3">
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Actividad Reciente</h3>
-              <Link to="/documents" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Ver todos</Link>
+              <h3 className="text-[0.6875rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Actividad Reciente</h3>
+              <Link to="/documents" className="text-[0.625rem] font-black text-primary uppercase tracking-widest hover:underline">Ver todos</Link>
             </div>
             <div className="space-y-3">
               {recentDocs.map(doc => (
@@ -1336,13 +1360,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLeyRep }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-black text-gray-900 dark:text-white truncate">{doc.cert_number}</p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5 truncate">
+                    <p className="text-[0.625rem] text-gray-400 dark:text-gray-500 font-bold mt-0.5 truncate">
                       {doc.materials.slice(0, 2).join(' · ')}{doc.materials.length > 2 ? ` +${doc.materials.length - 2}` : ''}
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-black text-primary">{doc.totalKg.toLocaleString('es-CL')} kg</p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">{doc.date}</p>
+                    <p className="text-[0.625rem] text-gray-400 dark:text-gray-500 font-bold">{doc.date}</p>
                   </div>
                 </div>
               ))}

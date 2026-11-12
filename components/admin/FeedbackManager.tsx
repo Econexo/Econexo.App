@@ -30,7 +30,7 @@ const newItem = (type: FeedbackItemType): FeedbackItem => ({
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 const inputCls = 'w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:border-primary';
-const labelCls = 'text-[10px] font-black uppercase text-gray-400';
+const labelCls = 'text-[0.625rem] font-black uppercase text-gray-400';
 
 const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyName, onClose }) => {
     const toast = useToast();
@@ -176,9 +176,9 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
     };
 
     const statusBadge = (r: FeedbackReport) => {
-        if (r.status === 'draft') return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Borrador</span>;
-        if (r.read_at) return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-green-50 text-green-700">Leído el {fmtDate(r.read_at)}</span>;
-        return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">Publicado · sin leer</span>;
+        if (r.status === 'draft') return <span className="text-[0.5625rem] font-black uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Borrador</span>;
+        if (r.read_at) return <span className="text-[0.5625rem] font-black uppercase px-2 py-0.5 rounded-full bg-green-50 text-green-700">Leído el {fmtDate(r.read_at)}</span>;
+        return <span className="text-[0.5625rem] font-black uppercase px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">Publicado · sin leer</span>;
     };
 
     const years = [...new Set([now.getFullYear() - 1, now.getFullYear(), year, quarterYear])].sort();
@@ -196,7 +196,7 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
                     )}
                     <div className="flex-1 min-w-0">
                         <h2 className="font-black text-gray-900 text-lg leading-tight truncate">Retroalimentación</h2>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{companyName}</p>
+                        <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest truncate">{companyName}</p>
                     </div>
                     <button onClick={onClose} disabled={saving} className="size-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
                         <span className="material-symbols-outlined text-gray-500 text-lg">close</span>
@@ -311,7 +311,7 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
                                                 <button
                                                     key={t}
                                                     onClick={() => changeType(item.id, t)}
-                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase border transition-colors ${item.type === t ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200'}`}
+                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.625rem] font-black uppercase border transition-colors ${item.type === t ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200'}`}
                                                 >
                                                     <span className="material-symbols-outlined text-sm">{ITEM_TYPE_META[t].icon}</span>
                                                     {ITEM_TYPE_META[t].label}
@@ -341,7 +341,7 @@ const FeedbackManager: React.FC<FeedbackManagerProps> = ({ companyId, companyNam
                                         <button
                                             key={t}
                                             onClick={() => setDraft({ ...draft, items: [...draft.items, newItem(t)] })}
-                                            className="flex items-center justify-center gap-1 py-2 rounded-xl border border-dashed border-gray-300 text-[10px] font-black uppercase text-gray-500 hover:border-primary hover:text-primary"
+                                            className="flex items-center justify-center gap-1 py-2 rounded-xl border border-dashed border-gray-300 text-[0.625rem] font-black uppercase text-gray-500 hover:border-primary hover:text-primary"
                                         >
                                             <span className="material-symbols-outlined text-sm">add</span>
                                             {ITEM_TYPE_META[t].label}

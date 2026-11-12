@@ -242,7 +242,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
                 {/* Toolbar & Meta */}
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-gray-100 dark:border-white/5">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Título del Documento</label>
+                        <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-500 ml-1">Título del Documento</label>
                         <input
                             className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary font-bold transition-all"
                             placeholder="Ej: Carta de Compromiso Ambiental"
@@ -251,7 +251,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Destinatario (Cliente)</label>
+                        <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-500 ml-1">Destinatario (Cliente)</label>
                         <select
                             className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary font-bold transition-all appearance-none cursor-pointer"
                             value={selectedUserId}
@@ -303,7 +303,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
                         {/* Visual Header Mockup */}
                         <div className="flex justify-between items-start border-b-2 border-primary pb-6 mb-8 opacity-50 pointer-events-none select-none grayscale">
                             <img src="/logo_econexo_new.png" className="h-12 w-auto object-contain" alt="Logo" />
-                            <div className="text-right text-[10px] text-gray-500 leading-tight">
+                            <div className="text-right text-[0.625rem] text-gray-500 leading-tight">
                                 <p className="font-bold uppercase tracking-widest text-primary">Gestión Ambiental</p>
                                 <p>Certificación y Trazabilidad</p>
                                 <p>Antofagasta</p>
@@ -323,7 +323,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ users, onClose, onSucce
 
                         {/* Visual Footer Mockup */}
                         <div className="mt-12 pt-8 border-t border-gray-100 text-center opacity-50 pointer-events-none select-none grayscale">
-                            <p className="text-[10px] text-gray-400 font-medium">Documento generado oficialmente por plataforma Econexo.</p>
+                            <p className="text-[0.625rem] text-gray-400 font-medium">Documento generado oficialmente por plataforma Econexo.</p>
                         </div>
                     </div>
                 </div>

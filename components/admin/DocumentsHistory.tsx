@@ -124,7 +124,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                         <span className="material-symbols-outlined text-gray-600 text-sm">arrow_back</span>
                     </button>
                     <div>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Sección</p>
+                        <p className="text-[0.5625rem] font-bold text-gray-400 uppercase tracking-widest">Sección</p>
                         <p className="text-xs font-black text-gray-900">Generar Certificados Mensuales</p>
                     </div>
                 </div>
@@ -140,12 +140,12 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                                 </div>
                                 <div className="min-w-0">
                                     <p className="font-bold text-sm truncate text-gray-900">{u.company_name}</p>
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p>
+                                    <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => onOpenMonthlyModal(u)}
-                                className="px-3 py-2 bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all flex items-center gap-1.5 shrink-0"
+                                className="px-3 py-2 bg-orange-500 text-white rounded-xl text-[0.625rem] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all flex items-center gap-1.5 shrink-0"
                             >
                                 <span className="material-symbols-outlined text-base">post_add</span>
                                 Generar CGM
@@ -165,14 +165,14 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
 
             {/* Header */}
             <div className="flex items-center justify-between px-1">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Documentos Emitidos</h3>
+                <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500">Documentos Emitidos</h3>
                 <div className="flex items-center gap-2">
-                    <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full">{certs.length} total</span>
+                    <span className="bg-primary/20 text-primary text-[0.625rem] font-black px-2 py-0.5 rounded-full">{certs.length} total</span>
                     <button
                         onClick={() => setShowCGMPanel(true)}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-full text-[0.625rem] font-black uppercase tracking-widest transition-colors"
                     >
-                        <span className="material-symbols-outlined text-[12px]">calendar_add_on</span>
+                        <span className="material-symbols-outlined text-[0.75rem]">calendar_add_on</span>
                         Generar CGM
                     </button>
                 </div>
@@ -223,7 +223,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                 <div className="flex flex-wrap gap-1.5">
                     <button
                         onClick={() => setFilterMonth(null)}
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-black transition-colors ${filterMonth === null ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                        className={`px-2.5 py-1 rounded-full text-[0.625rem] font-black transition-colors ${filterMonth === null ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                     >
                         Todo
                     </button>
@@ -237,7 +237,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                             <button
                                 key={idx}
                                 onClick={() => hasData ? toggleMonth(idx) : undefined}
-                                className={`px-2.5 py-1 rounded-full text-[10px] font-black transition-colors ${
+                                className={`px-2.5 py-1 rounded-full text-[0.625rem] font-black transition-colors ${
                                     isSelected
                                         ? 'bg-primary text-white'
                                         : hasData
@@ -253,24 +253,24 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
 
                 {/* Row 3: Stats for current filter */}
                 <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-600">
-                        <span className="material-symbols-outlined text-[14px] text-primary">description</span>
+                    <div className="flex items-center gap-1.5 text-[0.625rem] font-bold text-gray-600">
+                        <span className="material-symbols-outlined text-[0.875rem] text-primary">description</span>
                         <span><strong className="text-gray-900">{stats.total}</strong> docs</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-600">
-                        <span className="material-symbols-outlined text-[14px] text-green-600">scale</span>
+                    <div className="flex items-center gap-1.5 text-[0.625rem] font-bold text-gray-600">
+                        <span className="material-symbols-outlined text-[0.875rem] text-green-600">scale</span>
                         <span><strong className="text-gray-900">{fmtKg(stats.totalKg)}</strong> Kg gestionados</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-600">
-                        <span className="material-symbols-outlined text-[14px] text-blue-500">verified</span>
+                    <div className="flex items-center gap-1.5 text-[0.625rem] font-bold text-gray-600">
+                        <span className="material-symbols-outlined text-[0.875rem] text-blue-500">verified</span>
                         <span><strong className="text-gray-900">{stats.crCount}</strong> CRs</span>
                     </div>
                     {(filterMonth !== null || filterCompany || filterType) && (
                         <button
                             onClick={() => { setFilterMonth(null); setFilterCompany(''); setFilterType(''); }}
-                            className="ml-auto text-[10px] font-black text-red-400 hover:text-red-600 flex items-center gap-0.5"
+                            className="ml-auto text-[0.625rem] font-black text-red-400 hover:text-red-600 flex items-center gap-0.5"
                         >
-                            <span className="material-symbols-outlined text-[12px]">close</span>
+                            <span className="material-symbols-outlined text-[0.75rem]">close</span>
                             Limpiar filtros
                         </button>
                     )}
@@ -282,7 +282,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                 <div className="p-10 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-dashed border-gray-200">
                     <span className="material-symbols-outlined text-4xl text-gray-300 block mb-2">search_off</span>
                     <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Sin resultados</p>
-                    <p className="text-[10px] text-gray-400 mt-1">Prueba cambiando los filtros</p>
+                    <p className="text-[0.625rem] text-gray-400 mt-1">Prueba cambiando los filtros</p>
                 </div>
             ) : filterMonth === null && byMonth ? (
                 // ── GROUPED BY MONTH (when no month filter) ──
@@ -302,7 +302,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                                     {/* Month header */}
                                     <div className="flex items-center gap-3 mb-2 px-1">
                                         <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-primary text-[14px]">calendar_month</span>
+                                            <span className="material-symbols-outlined text-primary text-[0.875rem]">calendar_month</span>
                                         </div>
                                         <div className="flex-1 flex items-baseline gap-2">
                                             <button
@@ -311,7 +311,7 @@ const DocumentsHistory: React.FC<DocumentsHistoryProps> = ({
                                             >
                                                 {MONTH_NAMES[Number(monthIdx)]} {filterYear}
                                             </button>
-                                            <span className="text-[10px] text-gray-400 font-bold">{monthCerts.length} docs · {fmtKg(monthKg)} Kg</span>
+                                            <span className="text-[0.625rem] text-gray-400 font-bold">{monthCerts.length} docs · {fmtKg(monthKg)} Kg</span>
                                         </div>
                                     </div>
                                     {/* Certs in this month */}
@@ -380,18 +380,18 @@ const CertCard: React.FC<CertCardProps> = ({ cert, expanded, onToggle, onViewCer
                 <button onClick={onToggle} className="flex-1 flex items-center gap-3 text-left min-w-0 overflow-hidden">
                     <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${typeInfo.color}`}>{typeInfo.label}</span>
+                            <span className={`text-[0.5625rem] font-black px-1.5 py-0.5 rounded-md shrink-0 ${typeInfo.color}`}>{typeInfo.label}</span>
                             <p className="text-xs font-bold text-gray-900 truncate min-w-0">{cert._companyName || 'Sin nombre'}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <p className="text-[10px] text-gray-500 truncate max-w-[160px]">{isTransportDoc(cert.type)
+                            <p className="text-[0.625rem] text-gray-500 truncate max-w-[160px]">{isTransportDoc(cert.type)
                                 ? toTransportLabel(cert.metadata?.cert_number || cert.title)
                                 : (cert.metadata?.cert_number || cert.title)}</p>
-                            <span className="text-[9px] text-gray-400">{certDate}</span>
+                            <span className="text-[0.5625rem] text-gray-400">{certDate}</span>
                         </div>
                     </div>
                     {totalKg > 0 && (
-                        <span className="text-[10px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 shrink-0">
+                        <span className="text-[0.625rem] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 shrink-0">
                             {totalKg % 1 === 0 ? totalKg : totalKg.toFixed(2)} Kg
                         </span>
                     )}
@@ -407,21 +407,21 @@ const CertCard: React.FC<CertCardProps> = ({ cert, expanded, onToggle, onViewCer
                         title="Vista previa"
                         className="size-7 bg-primary/10 text-primary rounded-lg flex items-center justify-center hover:bg-primary/20 transition-colors"
                     >
-                        <span className="material-symbols-outlined text-[14px]">visibility</span>
+                        <span className="material-symbols-outlined text-[0.875rem]">visibility</span>
                     </button>
                     <button
                         onClick={() => onViewCert(cert, 'save')}
                         title="Descargar"
                         className="size-7 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
                     >
-                        <span className="material-symbols-outlined text-[14px]">download</span>
+                        <span className="material-symbols-outlined text-[0.875rem]">download</span>
                     </button>
                     <button
                         onClick={() => onDeleteCert(cert)}
                         title="Eliminar"
                         className="size-7 bg-red-50 text-red-400 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors"
                     >
-                        <span className="material-symbols-outlined text-[14px]">delete</span>
+                        <span className="material-symbols-outlined text-[0.875rem]">delete</span>
                     </button>
                 </div>
             </div>
@@ -432,14 +432,14 @@ const CertCard: React.FC<CertCardProps> = ({ cert, expanded, onToggle, onViewCer
                     {/* Waste breakdown */}
                     {details.length > 0 && (
                         <div className="space-y-1">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Residuos</p>
+                            <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">Residuos</p>
                             {details.map((item: any, i: number) => (
-                                <div key={i} className="flex items-center justify-between text-[10px]">
+                                <div key={i} className="flex items-center justify-between text-[0.625rem]">
                                     <span className="text-gray-700 font-bold">{item.waste_type}{item.description ? ` — ${item.description}` : ''}</span>
                                     <span className="font-black text-green-700">{item.quantity} {item.unit}</span>
                                 </div>
                             ))}
-                            <div className="flex justify-between text-[10px] font-black border-t border-gray-200 pt-1 mt-1">
+                            <div className="flex justify-between text-[0.625rem] font-black border-t border-gray-200 pt-1 mt-1">
                                 <span className="text-gray-500">Total</span>
                                 <span className="text-green-700">{totalKg % 1 === 0 ? totalKg : totalKg.toFixed(2)} Kg</span>
                             </div>
@@ -449,9 +449,9 @@ const CertCard: React.FC<CertCardProps> = ({ cert, expanded, onToggle, onViewCer
                     {certUser && cert.type !== 'CGM' && (
                         <button
                             onClick={() => onOpenCRModal(certUser)}
-                            className="w-full py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition-colors"
+                            className="w-full py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[0.625rem] font-black flex items-center justify-center gap-1 transition-colors"
                         >
-                            <span className="material-symbols-outlined text-[12px]">add</span>
+                            <span className="material-symbols-outlined text-[0.75rem]">add</span>
                             Nuevo CT para esta empresa
                         </button>
                     )}

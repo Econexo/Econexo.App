@@ -27,7 +27,7 @@ const FeedbackItemList: React.FC<{ items: FeedbackItem[]; dark?: boolean }> = ({
         <div className="space-y-5">
             {groups.map(group => (
                 <div key={group.type}>
-                    <h4 className={`text-[10px] font-black uppercase tracking-widest mb-2 ${TYPE_STYLE[group.type].chip}`}>
+                    <h4 className={`text-[0.625rem] font-black uppercase tracking-widest mb-2 ${TYPE_STYLE[group.type].chip}`}>
                         {ITEM_TYPE_META[group.type].plural} · {group.items.length}
                     </h4>
                     <ul className="space-y-2">
@@ -40,7 +40,7 @@ const FeedbackItemList: React.FC<{ items: FeedbackItem[]; dark?: boolean }> = ({
                                     <div className="flex flex-wrap items-center gap-2">
                                         <p className={`text-sm font-black leading-snug ${title}`}>{item.title}</p>
                                         {item.type === 'hallazgo' && (
-                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${PRIORITY_STYLE[item.priority ?? 'media']}`}>
+                                            <span className={`text-[0.5625rem] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${PRIORITY_STYLE[item.priority ?? 'media']}`}>
                                                 {PRIORITY_LABEL[item.priority ?? 'media']}
                                             </span>
                                         )}

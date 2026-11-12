@@ -9,6 +9,9 @@ import { useConfirm } from '../components/ui/ConfirmDialog';
 import { createNotification } from '../services/notificationService';
 import { getDocEmisor, Emisor } from '../utils/documentEmisor';
 import FeedbackManager from './admin/FeedbackManager';
+import WeighTicketFields from './admin/WeighTicketFields';
+import { WEIGH_TICKET_TYPE, WEIGH_TICKET_DESTINATIONS, weighTicketOf, parseTicketKg, buildWeighTicket } from '../utils/weighTicket';
+import type { WasteDestination } from '../utils/wasteClassification';
 
 // Types an admin can assign to an uploaded/scanned document.
 const DOC_TYPE_OPTIONS: { value: string; label: string }[] = [
@@ -69,6 +72,8 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
     const [editingDocId, setEditingDocId] = useState<string | null>(null);
     const [editType, setEditType] = useState<string>('guia');
     const [editEmisor, setEditEmisor] = useState<Emisor>('econexo');
+    const [editTicketKg, setEditTicketKg] = useState('');
+    const [editTicketDest, setEditTicketDest] = useState<WasteDestination>('relleno_sanitario');
     const [savingDocEdit, setSavingDocEdit] = useState(false);
     const [ecoPoints, setEcoPoints] = useState(0);
 
@@ -313,12 +318,27 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
         setEditingDocId(doc.id);
         setEditType(doc.type || 'guia');
         setEditEmisor(getDocEmisor(doc));
+        const ticket = weighTicketOf(doc);
+        setEditTicketKg(ticket ? String(ticket.kg).replace('.', ',') : '');
+        setEditTicketDest(ticket?.destination ?? 'relleno_sanitario');
     };
 
     const saveDocEdit = async (doc: any) => {
+        // Kg del ticket: vacío los quita; si hay texto tiene que ser un número.
+        const ticketKg = editType === WEIGH_TICKET_TYPE && editTicketKg.trim() !== ''
+            ? parseTicketKg(editTicketKg)
+            : null;
+        if (editType === WEIGH_TICKET_TYPE && editTicketKg.trim() !== '' && ticketKg === null) {
+            toast.warning('Los Kg del ticket deben ser un número mayor que cero.');
+            return;
+        }
         setSavingDocEdit(true);
         try {
-            const newMeta = { ...(doc.metadata || {}), emisor: editEmisor };
+            const newMeta: any = { ...(doc.metadata || {}), emisor: editEmisor };
+            // Si deja de ser ticket, o se borran los Kg, el pesaje se va con él:
+            // si no, seguiría sumando a los residuos del cliente.
+            if (ticketKg !== null) newMeta.pesaje = buildWeighTicket(ticketKg, editTicketDest);
+            else delete newMeta.pesaje;
             const { error } = await supabase
                 .from('documents')
                 .update({ type: editType, metadata: newMeta })
@@ -391,7 +411,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                 </button>
                             </div>
                         )}
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{user.rut}</p>
+                        <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest">{user.rut}</p>
                     </div>
                     <button onClick={onClose} className="size-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
                         <span className="material-symbols-outlined text-gray-500 text-lg">close</span>
@@ -410,22 +430,22 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-green-50 border border-green-100 rounded-2xl p-4 text-center">
                                     <p className="text-2xl font-black text-green-700">{fmtKg(stats.totalKg)}</p>
-                                    <p className="text-[9px] font-black text-green-500 uppercase tracking-widest mt-0.5">Kg Reciclados</p>
+                                    <p className="text-[0.5625rem] font-black text-green-500 uppercase tracking-widest mt-0.5">Kg Reciclados</p>
                                 </div>
                                 <div className="bg-sky-50 border border-sky-100 rounded-2xl p-4 text-center">
                                     <p className="text-2xl font-black text-sky-700">{fmtKg(stats.co2Evitado)}</p>
-                                    <p className="text-[9px] font-black text-sky-500 uppercase tracking-widest mt-0.5">Kg CO₂ Evitado</p>
+                                    <p className="text-[0.5625rem] font-black text-sky-500 uppercase tracking-widest mt-0.5">Kg CO₂ Evitado</p>
                                 </div>
                                 <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 text-center">
                                     <p className="text-2xl font-black text-yellow-700">{ecoPoints.toLocaleString('es-CL')}</p>
-                                    <p className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mt-0.5">Eco-Puntos</p>
+                                    <p className="text-[0.5625rem] font-black text-yellow-500 uppercase tracking-widest mt-0.5">Eco-Puntos</p>
                                 </div>
                             </div>
 
                             {/* ── Material Breakdown ── */}
                             {stats.breakdown.length > 0 && (
                                 <div>
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Breakdown por Material</h3>
+                                    <h3 className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 mb-3">Breakdown por Material</h3>
                                     <div className="space-y-2">
                                         {stats.breakdown.map(item => {
                                             const pct = stats.totalKg > 0 ? (item.kg / stats.totalKg) * 100 : 0;
@@ -436,7 +456,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                     <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                                                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: item.color }} />
                                                     </div>
-                                                    <span className="text-[10px] font-black text-gray-500 w-16 text-right shrink-0">{fmtKg(item.kg)} kg</span>
+                                                    <span className="text-[0.625rem] font-black text-gray-500 w-16 text-right shrink-0">{fmtKg(item.kg)} kg</span>
                                                 </div>
                                             );
                                         })}
@@ -449,7 +469,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
 
                             {/* ── Actions ── */}
                             <div>
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Generar Documentos</h3>
+                                <h3 className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 mb-3">Generar Documentos</h3>
                                 <div className="grid grid-cols-3 gap-3">
                                     <button
                                         onClick={() => { onClose(); onGenerateCR(); }}
@@ -458,7 +478,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                         <div className="size-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <span className="material-symbols-outlined">verified</span>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase text-primary leading-tight text-center">Cert. Transporte</span>
+                                        <span className="text-[0.625rem] font-black uppercase text-primary leading-tight text-center">Cert. Transporte</span>
                                     </button>
 
                                     <button
@@ -468,7 +488,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                         <div className="size-10 bg-orange-100 text-orange-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <span className="material-symbols-outlined">calendar_add_on</span>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase text-orange-600 leading-tight text-center">CGM Mensual</span>
+                                        <span className="text-[0.625rem] font-black uppercase text-orange-600 leading-tight text-center">CGM Mensual</span>
                                     </button>
 
                                     <button
@@ -478,7 +498,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                         <div className="size-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <span className="material-symbols-outlined">bar_chart_4_bars</span>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase text-green-700 leading-tight text-center">Eco-Reporte</span>
+                                        <span className="text-[0.625rem] font-black uppercase text-green-700 leading-tight text-center">Eco-Reporte</span>
                                     </button>
                                 </div>
                             </div>
@@ -493,7 +513,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                 </div>
                                 <div className="text-left flex-1">
                                     <p className="text-xs font-black uppercase text-sky-700">Retroalimentación</p>
-                                    <p className="text-[10px] font-bold text-sky-600/70">Hallazgos, sugerencias y logros del período</p>
+                                    <p className="text-[0.625rem] font-bold text-sky-600/70">Hallazgos, sugerencias y logros del período</p>
                                 </div>
                                 <span className="material-symbols-outlined text-sky-400">chevron_right</span>
                             </button>
@@ -504,7 +524,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                     <h4 className="text-xs font-black uppercase text-gray-600">Configurar Eco-Reporte</h4>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-gray-400">Tipo</label>
+                                            <label className="text-[0.625rem] font-black uppercase text-gray-400">Tipo</label>
                                             <select
                                                 value={reportPeriodType}
                                                 onChange={e => setReportPeriodType(e.target.value as any)}
@@ -515,7 +535,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-gray-400">Año</label>
+                                            <label className="text-[0.625rem] font-black uppercase text-gray-400">Año</label>
                                             <input
                                                 type="number"
                                                 value={reportYear}
@@ -526,7 +546,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                     </div>
                                     {reportPeriodType === 'month' && (
                                         <div>
-                                            <label className="text-[10px] font-black uppercase text-gray-400">Mes</label>
+                                            <label className="text-[0.625rem] font-black uppercase text-gray-400">Mes</label>
                                             <select
                                                 value={reportMonth}
                                                 onChange={e => setReportMonth(Number(e.target.value))}
@@ -556,8 +576,8 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                             {/* ── All Documents ── */}
                             <div>
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Documentos de la Empresa</h3>
-                                    <span className="text-[10px] font-bold text-gray-400">{documents.length} total</span>
+                                    <h3 className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400">Documentos de la Empresa</h3>
+                                    <span className="text-[0.625rem] font-bold text-gray-400">{documents.length} total</span>
                                 </div>
                                 {recentDocs.length === 0 ? (
                                     <p className="text-xs text-gray-400 font-bold text-center py-4">Sin documentos</p>
@@ -566,6 +586,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                         {recentDocs.map(doc => {
                                             const emisor = getDocEmisor(doc);
                                             const isGenerated = !!doc.metadata?.waste_details;
+                                            const ticket = weighTicketOf(doc);
                                             return (
                                             <div key={doc.id} className="bg-gray-50 border border-gray-100 rounded-xl">
                                                 <div className="flex items-center gap-3 p-3">
@@ -578,12 +599,17 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                         <p className="text-xs font-bold text-gray-900 truncate">
                                                             {isTransportDoc(doc.type) ? toTransportLabel(doc.title) : doc.title}
                                                         </p>
-                                                        <p className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1.5 flex-wrap">
+                                                        <p className="text-[0.625rem] text-gray-400 font-bold uppercase flex items-center gap-1.5 flex-wrap">
                                                             <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                                                             <span className="text-primary">{isTransportDoc(doc.type) ? DOC_TYPE.TRANSPORTE : doc.type}</span>
-                                                            <span className={`px-1.5 py-0.5 rounded-full text-[8px] ${emisor === 'econexo' ? 'bg-primary/10 text-primary' : 'bg-blue-100 text-blue-600'}`}>
+                                                            <span className={`px-1.5 py-0.5 rounded-full text-[0.5rem] ${emisor === 'econexo' ? 'bg-primary/10 text-primary' : 'bg-blue-100 text-blue-600'}`}>
                                                                 {emisor === 'econexo' ? 'EcoNexo' : 'Gestor'}
                                                             </span>
+                                                            {ticket && (
+                                                                <span className="px-1.5 py-0.5 rounded-full text-[0.5rem] bg-amber-100 text-amber-700 normal-case">
+                                                                    {fmtKg(ticket.kg)} kg · {WEIGH_TICKET_DESTINATIONS.find(d => d.value === ticket.destination)?.label}
+                                                                </span>
+                                                            )}
                                                         </p>
                                                     </div>
                                                     {!isGenerated && (
@@ -608,7 +634,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                 {editingDocId === doc.id && (
                                                     <div className="px-3 pb-3 pt-1 border-t border-gray-200/70 space-y-2">
                                                         <div>
-                                                            <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Tipo</label>
+                                                            <label className="text-[0.5625rem] font-black uppercase text-gray-400 tracking-widest">Tipo</label>
                                                             <select
                                                                 value={editType}
                                                                 onChange={(e) => setEditType(e.target.value)}
@@ -617,16 +643,25 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                                 {DOC_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                             </select>
                                                         </div>
+                                                        {editType === WEIGH_TICKET_TYPE && (
+                                                            <WeighTicketFields
+                                                                compact
+                                                                kg={editTicketKg}
+                                                                onKgChange={setEditTicketKg}
+                                                                destination={editTicketDest}
+                                                                onDestinationChange={setEditTicketDest}
+                                                            />
+                                                        )}
                                                         <div>
-                                                            <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Emisor</label>
+                                                            <label className="text-[0.5625rem] font-black uppercase text-gray-400 tracking-widest">Emisor</label>
                                                             <div className="flex gap-2 mt-0.5">
                                                                 <button
                                                                     onClick={() => setEditEmisor('econexo')}
-                                                                    className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${editEmisor === 'econexo' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-500 border-gray-200'}`}
+                                                                    className={`flex-1 py-2 rounded-lg text-[0.625rem] font-black uppercase tracking-widest border transition-all ${editEmisor === 'econexo' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-500 border-gray-200'}`}
                                                                 >EcoNexo</button>
                                                                 <button
                                                                     onClick={() => setEditEmisor('gestor')}
-                                                                    className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${editEmisor === 'gestor' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'}`}
+                                                                    className={`flex-1 py-2 rounded-lg text-[0.625rem] font-black uppercase tracking-widest border transition-all ${editEmisor === 'gestor' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'}`}
                                                                 >Gestor</button>
                                                             </div>
                                                         </div>
@@ -634,11 +669,11 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                                                             <button
                                                                 onClick={() => saveDocEdit(doc)}
                                                                 disabled={savingDocEdit}
-                                                                className="flex-1 py-2 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                                                                className="flex-1 py-2 bg-primary text-white rounded-lg text-[0.625rem] font-black uppercase tracking-widest disabled:opacity-50"
                                                             >{savingDocEdit ? 'Guardando...' : 'Guardar'}</button>
                                                             <button
                                                                 onClick={() => setEditingDocId(null)}
-                                                                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                                                                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-[0.625rem] font-black uppercase tracking-widest"
                                                             >Cancelar</button>
                                                         </div>
                                                     </div>
@@ -653,40 +688,40 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
                             {/* ── Client Info footer ── */}
                             <div className="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-3 text-xs">
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">RUT</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">RUT</p>
                                     <p className="font-bold text-gray-700 mt-0.5 break-words">{user.rut || '—'}</p>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Teléfono</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">Teléfono</p>
                                     <p className="font-bold text-gray-700 mt-0.5 break-words">{user.phone || '—'}</p>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Dirección</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">Dirección</p>
                                     <p className="font-bold text-gray-700 mt-0.5 break-words">{user.address || '—'}</p>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Email</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">Email</p>
                                     <p className="font-bold text-gray-700 mt-0.5 truncate">{user.company_email || '—'}</p>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">N° Trabajadores</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">N° Trabajadores</p>
                                     <p className="font-bold text-gray-700 mt-0.5">{user.workers_count ?? '—'}</p>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tamaño empresa</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">Tamaño empresa</p>
                                     <p className="font-bold text-gray-700 mt-0.5 break-words">{user.company_size || '—'}</p>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Documentos totales</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">Documentos totales</p>
                                     <p className="font-bold text-gray-700 mt-0.5">{documents.length}</p>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">CRs emitidos</p>
+                                    <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">CRs emitidos</p>
                                     <p className="font-bold text-gray-700 mt-0.5">{documents.filter(d => isTransportDoc(d.type)).length}</p>
                                 </div>
                                 {user.waste_types && user.waste_types.length > 0 && (
                                     <div className="col-span-2 min-w-0">
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tipos de residuo</p>
+                                        <p className="text-[0.5625rem] font-black text-gray-400 uppercase tracking-widest">Tipos de residuo</p>
                                         <p className="font-bold text-gray-700 mt-0.5 break-words">{user.waste_types.join(', ')}</p>
                                     </div>
                                 )}
@@ -694,7 +729,7 @@ const ClientOverviewModal: React.FC<ClientOverviewModalProps> = ({ user, onClose
 
                             {/* ── Zona de peligro ── */}
                             <div className="border-t-2 border-red-100 pt-4">
-                                <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-3">Zona de peligro</p>
+                                <p className="text-[0.5625rem] font-black text-red-400 uppercase tracking-widest mb-3">Zona de peligro</p>
                                 {suspendError && (
                                     <p className="text-xs text-red-500 font-bold mb-2">{suspendError}</p>
                                 )}

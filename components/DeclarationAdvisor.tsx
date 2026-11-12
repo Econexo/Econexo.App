@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { WASTE_DOC_TYPES } from '../utils/documentTypes';
+import { WEIGH_TICKET_TYPE, weighTicketItems } from '../utils/weighTicket';
 import { supabase } from '../services/supabase';
 import { evaluateDeclarations, type Verdict } from '../utils/declarationAdvisor';
 import { wasteItemsOf } from '../utils/wasteClassification';
@@ -77,7 +78,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const [{ data: profile }, { data: docs }] = await Promise.all([
+        const [{ data: profile }, { data: docs }, { data: tickets }] = await Promise.all([
           supabase.from('profiles').select('rep_producer_data').eq('id', user.id).single(),
           supabase
             .from('documents')
@@ -85,6 +86,13 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
             .eq('user_id', user.id)
             .in('type', WASTE_DOC_TYPES)
             .eq('verified', true),
+          // Lo que fue a relleno o RESCON con ticket de pesaje también es
+          // residuo generado: cuenta para el umbral de SINADER.
+          supabase
+            .from('documents')
+            .select('type, created_at, metadata')
+            .eq('user_id', user.id)
+            .eq('type', WEIGH_TICKET_TYPE),
         ]);
 
         if (cancelled) return;
@@ -95,10 +103,11 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
           market_kg_by_year: rep.market_kg_by_year ?? {},
         });
 
-        const delAnio = (docs ?? []).filter(
-          (d: any) => new Date(d.created_at).getFullYear() === targetYear,
-        );
-        setItems(delAnio.flatMap(wasteItemsOf));
+        const delAnio = (d: any) => new Date(d.created_at).getFullYear() === targetYear;
+        setItems([
+          ...(docs ?? []).filter(delAnio).flatMap(wasteItemsOf),
+          ...(tickets ?? []).filter(delAnio).flatMap(weighTicketItems),
+        ]);
       } catch (err) {
         console.error('Error cargando el asistente de declaración:', err);
       } finally {
@@ -139,16 +148,16 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
           <h3 className="text-lg font-display font-black text-gray-900 dark:text-white tracking-tight leading-tight">
             ¿Debo declarar este año?
           </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
+          <p className="text-[0.6875rem] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
             RETC · Ventanilla Única · SINADER · SIDREP — {targetYear}
           </p>
         </div>
         {summary.actionableCount > 0 ? (
-          <span className="shrink-0 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider">
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[0.625rem] font-black uppercase tracking-wider">
             {summary.actionableCount} por resolver
           </span>
         ) : (
-          <span className="shrink-0 px-2.5 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-[10px] font-black uppercase tracking-wider">
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-[0.625rem] font-black uppercase tracking-wider">
             Sin pendientes
           </span>
         )}
@@ -178,7 +187,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
                   <span className="text-sm font-black text-gray-900 dark:text-white flex-1 min-w-0">
                     {f.title}
                   </span>
-                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider shrink-0 ${style.chip}`}>
+                  <span className={`px-2 py-0.5 rounded-md text-[0.5625rem] font-black uppercase tracking-wider shrink-0 ${style.chip}`}>
                     {style.label}
                   </span>
                   <span
@@ -189,7 +198,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
                   </span>
                 </div>
 
-                <p className="text-[11px] text-gray-600 dark:text-gray-300 font-bold leading-snug">
+                <p className="text-[0.6875rem] text-gray-600 dark:text-gray-300 font-bold leading-snug">
                   {f.summary}
                 </p>
 
@@ -202,7 +211,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="text-[10px] font-black tabular-nums text-gray-400 shrink-0">
+                    <span className="text-[0.625rem] font-black tabular-nums text-gray-400 shrink-0">
                       {f.progress}% de {f.thresholdKg} kg
                     </span>
                   </div>
@@ -212,7 +221,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
               {isOpen && (
                 <div className="px-4 pb-4 space-y-3 animate-in fade-in duration-200">
                   <div className="rounded-xl bg-white/80 dark:bg-slate-900/60 border border-white/80 dark:border-white/10 p-3">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                    <p className="text-[0.5625rem] font-black uppercase tracking-widest text-gray-400 mb-1">
                       Qué hacer
                     </p>
                     <p className="text-xs text-gray-700 dark:text-gray-200 font-medium leading-relaxed">
@@ -221,7 +230,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
                   </div>
                   {f.trigger && (
                     <div className="rounded-xl bg-blue-50/70 dark:bg-blue-900/15 border border-blue-100 dark:border-blue-700/25 p-3">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70 mb-1">
+                      <p className="text-[0.5625rem] font-black uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70 mb-1">
                         Cuándo cambiaría
                       </p>
                       <p className="text-xs text-blue-900 dark:text-blue-200/90 font-medium leading-relaxed">
@@ -230,10 +239,10 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
                     </div>
                   )}
                   <div className="rounded-xl bg-gray-50/80 dark:bg-slate-900/40 border border-gray-100 dark:border-white/5 p-3">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                    <p className="text-[0.5625rem] font-black uppercase tracking-widest text-gray-400 mb-1">
                       En qué se basa · {f.systemLabel}
                     </p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
+                    <p className="text-[0.6875rem] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
                       {f.basis}
                     </p>
                   </div>
@@ -247,7 +256,7 @@ const DeclarationAdvisor: React.FC<DeclarationAdvisorProps> = ({ year }) => {
       {/* Advertencia de alcance. Va siempre visible, no escondida en un modal. */}
       <div className="m-6 mt-3 p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-900/15 border border-amber-200/60 dark:border-amber-700/30 flex gap-2.5">
         <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base shrink-0">info</span>
-        <p className="text-[11px] text-amber-900 dark:text-amber-200/90 font-medium leading-relaxed">
+        <p className="text-[0.6875rem] text-amber-900 dark:text-amber-200/90 font-medium leading-relaxed">
           Esto es <strong className="font-black">orientación, no asesoría legal</strong>. SINADER se
           calcula con lo que EcoNexo retiró, que es exactamente lo que ese régimen mide. La Ley REP,
           en cambio, se mide sobre lo que tu empresa{' '}

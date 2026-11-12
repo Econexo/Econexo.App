@@ -11,6 +11,7 @@ import { supabase } from '../services/supabase';
 import { useToast } from '../components/ui/Toast';
 import { materialColor } from '../utils/materialCalculations';
 import { WASTE_DESTINATIONS } from '../utils/wasteClassification';
+import { WEIGH_TICKET_TYPE, addTicketsToDestinations } from '../utils/weighTicket';
 import { formatKg, truncateTo, sumTruncated } from '../utils/formatKg';
 import { downloadXlsx } from '../utils/xlsx';
 import {
@@ -18,6 +19,7 @@ import {
     breakdownToSheet,
     emptySummary,
     monthOverMonth,
+    periodKeyOf,
     periodLabel,
     previousPeriod,
     trailingPeriods,
@@ -51,6 +53,8 @@ const MonthlyPanel: React.FC = () => {
     const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
     const [companyFilter, setCompanyFilter] = useState<string>('all');
     const [allDocs, setAllDocs] = useState<any[]>([]);
+    // Tickets de pesaje: solo alimentan el desglose por destino del mes.
+    const [tickets, setTickets] = useState<any[]>([]);
     const [period, setPeriod] = useState(currentPeriodKey);
     const [expanded, setExpanded] = useState<string | null>(null);
     // «Cierre mensual» es solo para el admin.
@@ -84,8 +88,15 @@ const MonthlyPanel: React.FC = () => {
                 // Mismo criterio que el Dashboard: el admin ve todo.
                 if (!admin) query = query.eq('user_id', user.id);
 
-                const { data: docs } = await query;
+                let ticketQuery = supabase
+                    .from('documents')
+                    .select('user_id, type, created_at, metadata')
+                    .eq('type', WEIGH_TICKET_TYPE);
+                if (!admin) ticketQuery = ticketQuery.eq('user_id', user.id);
+
+                const [{ data: docs }, { data: ticketDocs }] = await Promise.all([query, ticketQuery]);
                 setAllDocs((docs ?? []) as any[]);
+                setTickets((ticketDocs ?? []) as any[]);
 
                 if (admin) {
                     const { data: perfiles } = await supabase
@@ -116,7 +127,15 @@ const MonthlyPanel: React.FC = () => {
         return buildMonthlyBreakdown(visibles as CrDoc[]);
     }, [allDocs, companyFilter]);
 
-    const summary = byPeriod.get(period) ?? emptySummary(period);
+    const baseSummary = byPeriod.get(period) ?? emptySummary(period);
+    // Los tickets de relleno o RESCON del mes suman al desglose por destino,
+    // no al "Recuperado" ni al impacto (ver utils/weighTicket.ts).
+    const summary = useMemo(() => {
+        const delMes = tickets.filter(t =>
+            periodKeyOf(t.created_at) === period
+            && (companyFilter === 'all' || t.user_id === companyFilter));
+        return { ...baseSummary, destinations: addTicketsToDestinations(baseSummary.destinations, delMes) };
+    }, [baseSummary, tickets, period, companyFilter]);
     const previous = byPeriod.get(previousPeriod(period)) ?? emptySummary(previousPeriod(period));
     const delta = monthOverMonth(summary.totalKg, previous.totalKg);
 
@@ -248,7 +267,7 @@ const MonthlyPanel: React.FC = () => {
     };
 
     return (
-        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 animate-in fade-in duration-500 overflow-hidden">
+        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 animate-in fade-in duration-500 overflow-clip">
             {/* Fondos decorativos */}
             <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute top-[35%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none" />
@@ -258,7 +277,7 @@ const MonthlyPanel: React.FC = () => {
                     onClick={() => navigate(-1)}
                     className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 transition-all active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
                 >
-                    <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[22px]">arrow_back</span>
+                    <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[1.375rem]">arrow_back</span>
                 </button>
                 <h1 className="text-xl font-display font-black tracking-tight text-gray-900 dark:text-white">Panel Mensual</h1>
                 {view === 'resumen' ? (
@@ -268,14 +287,14 @@ const MonthlyPanel: React.FC = () => {
                             title="Exportar Excel"
                             className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 transition-all active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
                         >
-                            <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">table_view</span>
+                            <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[1.25rem]">table_view</span>
                         </button>
                         <button
                             onClick={handleExportPdf}
                             title="Exportar PDF"
                             className="size-10 flex items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-all active:scale-90 border border-primary/20 shadow-sm"
                         >
-                            <span className="material-symbols-outlined text-primary text-[20px]">picture_as_pdf</span>
+                            <span className="material-symbols-outlined text-primary text-[1.25rem]">picture_as_pdf</span>
                         </button>
                     </div>
                 ) : (
@@ -357,7 +376,7 @@ const MonthlyPanel: React.FC = () => {
                         {/* ── Total del mes ── */}
                         <div className="relative overflow-hidden bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6">
                             <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-bl-[64px] pointer-events-none" />
-                            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">
+                            <p className="text-[0.625rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">
                                 Recuperado en {periodLabel(period)}
                             </p>
                             <div className="flex items-end gap-3 mt-2 flex-wrap">
@@ -367,19 +386,19 @@ const MonthlyPanel: React.FC = () => {
                                 <p className="text-lg font-black text-gray-400 dark:text-gray-500 mb-0.5">kg</p>
                                 {delta !== null && (
                                     <span
-                                        className={`mb-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-0.5 ${delta >= 0
+                                        className={`mb-1 px-2.5 py-1 rounded-full text-[0.625rem] font-black uppercase tracking-widest flex items-center gap-0.5 ${delta >= 0
                                             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                             : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                                             }`}
                                     >
-                                        <span className="material-symbols-outlined text-[14px]">
+                                        <span className="material-symbols-outlined text-[0.875rem]">
                                             {delta >= 0 ? 'trending_up' : 'trending_down'}
                                         </span>
                                         {delta > 0 ? '+' : ''}{delta}%
                                     </span>
                                 )}
                             </div>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold mt-2">
+                            <p className="text-[0.6875rem] text-gray-500 dark:text-gray-400 font-bold mt-2">
                                 {summary.docCount} certificado{summary.docCount === 1 ? '' : 's'} de transporte
                                 {delta !== null && ` · mes anterior: ${fmt(previous.totalKg)} kg`}
                             </p>
@@ -387,12 +406,12 @@ const MonthlyPanel: React.FC = () => {
 
                         {/* Destino de los residuos del mes. El valorizado no
                             incluye relleno sanitario ni RESCON. */}
-                        {summary.totalKg > 0 && (
+                        {summary.destinations.total > 0 && (
                             <div className="grid grid-cols-3 gap-3">
                                 {WASTE_DESTINATIONS.map(d => {
                                     const kg = summary.destinations[d.value];
                                     const principal = d.value === 'valorizacion';
-                                    const share = summary.totalKg > 0 ? Math.round((kg / summary.totalKg) * 100) : 0;
+                                    const share = summary.destinations.total > 0 ? Math.round((kg / summary.destinations.total) * 100) : 0;
                                     return (
                                         <div
                                             key={d.value}
@@ -410,10 +429,10 @@ const MonthlyPanel: React.FC = () => {
                                             >
                                                 {fmt(kg)}
                                             </p>
-                                            <p className="text-[9px] font-black uppercase tracking-wider text-gray-400 mt-0.5">
+                                            <p className="text-[0.5625rem] font-black uppercase tracking-wider text-gray-400 mt-0.5">
                                                 kg · {share}%
                                             </p>
-                                            <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 leading-tight mt-1">
+                                            <p className="text-[0.625rem] font-bold text-gray-600 dark:text-gray-300 leading-tight mt-1">
                                                 {d.label}
                                             </p>
                                         </div>
@@ -428,7 +447,7 @@ const MonthlyPanel: React.FC = () => {
                                 <p className="text-sm font-black text-gray-500 dark:text-gray-400">
                                     Sin movimientos en {periodLabel(period)}
                                 </p>
-                                <p className="text-[11px] text-gray-400 font-bold max-w-xs mx-auto leading-relaxed">
+                                <p className="text-[0.6875rem] text-gray-400 font-bold max-w-xs mx-auto leading-relaxed">
                                     Aquí verás el desglose por material apenas se emita un Certificado de Transporte de este mes.
                                 </p>
                             </div>
@@ -436,7 +455,7 @@ const MonthlyPanel: React.FC = () => {
                             <>
                                 {/* ── Desglose por material ── */}
                                 <section className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6 space-y-4">
-                                    <h4 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">
+                                    <h4 className="text-[0.625rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">
                                         Desglose por material
                                     </h4>
 
@@ -460,7 +479,7 @@ const MonthlyPanel: React.FC = () => {
                                                                 {m.material}
                                                             </span>
                                                             {m.repCategory && (
-                                                                <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[9px] font-black uppercase tracking-wider shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[0.5625rem] font-black uppercase tracking-wider shrink-0">
                                                                     REP
                                                                 </span>
                                                             )}
@@ -482,7 +501,7 @@ const MonthlyPanel: React.FC = () => {
                                                                     style={{ width: `${m.share}%`, backgroundColor: color }}
                                                                 />
                                                             </div>
-                                                            <span className="text-[11px] font-black tabular-nums w-11 text-right" style={{ color }}>
+                                                            <span className="text-[0.6875rem] font-black tabular-nums w-11 text-right" style={{ color }}>
                                                                 {fmt(m.share)}%
                                                             </span>
                                                         </div>
@@ -497,14 +516,14 @@ const MonthlyPanel: React.FC = () => {
                                                             ].map(cell => (
                                                                 <div key={cell.label} className="rounded-xl bg-white/70 dark:bg-slate-800/70 border border-white/80 dark:border-white/10 p-2.5">
                                                                     <span className={`material-symbols-outlined text-base ${cell.tint}`}>{cell.icon}</span>
-                                                                    <p className="text-[13px] font-black text-gray-900 dark:text-white leading-tight mt-0.5 tabular-nums">
+                                                                    <p className="text-[0.8125rem] font-black text-gray-900 dark:text-white leading-tight mt-0.5 tabular-nums">
                                                                         {cell.value}
                                                                     </p>
-                                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{cell.label}</p>
+                                                                    <p className="text-[0.5625rem] text-gray-400 font-bold uppercase tracking-wider">{cell.label}</p>
                                                                 </div>
                                                             ))}
                                                             {m.repCategory && (
-                                                                <p className="col-span-3 text-[10px] text-gray-400 font-bold pt-0.5">
+                                                                <p className="col-span-3 text-[0.625rem] text-gray-400 font-bold pt-0.5">
                                                                     Categoría Ley REP: {m.repCategory}
                                                                 </p>
                                                             )}
@@ -535,9 +554,9 @@ const MonthlyPanel: React.FC = () => {
                                                 <p className="text-xl font-display font-black text-gray-900 dark:text-white leading-none tracking-tight tabular-nums">
                                                     {card.value}
                                                 </p>
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mt-0.5">{card.unit}</p>
+                                                <p className="text-[0.625rem] font-black text-gray-400 uppercase tracking-wider mt-0.5">{card.unit}</p>
                                             </div>
-                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold leading-tight">{card.label}</p>
+                                            <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold leading-tight">{card.label}</p>
                                         </div>
                                     ))}
                                 </section>
@@ -546,7 +565,7 @@ const MonthlyPanel: React.FC = () => {
 
                         {/* ── Tendencia 12 meses ── */}
                         <section className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6 space-y-4">
-                            <h4 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">
+                            <h4 className="text-[0.625rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">
                                 Últimos 12 meses
                             </h4>
                             <div className="h-40 -mx-2">
@@ -580,12 +599,12 @@ const MonthlyPanel: React.FC = () => {
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
-                            <p className="text-[10px] text-gray-400 font-bold text-center">
+                            <p className="text-[0.625rem] text-gray-400 font-bold text-center">
                                 Toca una barra para ver ese mes
                             </p>
                         </section>
 
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold text-center leading-relaxed px-4">
+                        <p className="text-[0.625rem] text-gray-400 dark:text-gray-500 font-bold text-center leading-relaxed px-4">
                             Basado en los Certificados de Transporte verificados de tu empresa.<br />
                             Factores de impacto: EPA WARM v16 · Water Footprint Network.
                         </p>

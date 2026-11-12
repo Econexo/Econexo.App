@@ -12,8 +12,8 @@ const PendingDocsList: React.FC<PendingDocsListProps> = ({ docs, onValidate, onP
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between px-2">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Documentos por Validar</h3>
-                <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full">{docs.length}</span>
+                <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500">Documentos por Validar</h3>
+                <span className="bg-primary/20 text-primary text-[0.625rem] font-black px-2 py-0.5 rounded-full">{docs.length}</span>
             </div>
 
             {docs.length === 0 ? (
@@ -26,7 +26,7 @@ const PendingDocsList: React.FC<PendingDocsListProps> = ({ docs, onValidate, onP
                         <div key={doc.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-2xl border border-white/80 shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] flex items-center justify-between gap-4">
                             <div className="flex-1 min-w-0">
                                 <p className="font-bold text-sm truncate text-gray-900">{doc.title}</p>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">ID: {doc.user_id.slice(0, 8)}...</p>
+                                <p className="text-[0.625rem] text-gray-500 font-bold uppercase mt-0.5">ID: {doc.user_id.slice(0, 8)}...</p>
                             </div>
                             <div className="shrink-0 flex gap-1.5">
                                 <button

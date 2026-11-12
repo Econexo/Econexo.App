@@ -12,16 +12,16 @@ const UsersList: React.FC<UsersListProps> = ({ users, onViewClient, onShowUnregi
         <section className="space-y-4">
             <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Usuarios Registrados</h3>
+                    <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500">Usuarios Registrados</h3>
                     <button
                         onClick={onShowUnregistered}
-                        className="bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-colors flex items-center gap-1"
+                        className="bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-full text-[0.5625rem] font-black uppercase tracking-widest transition-colors flex items-center gap-1"
                     >
-                        <span className="material-symbols-outlined text-[12px]">engineering</span>
+                        <span className="material-symbols-outlined text-[0.75rem]">engineering</span>
                         Clientes Manuales
                     </button>
                 </div>
-                <span className="bg-white/50 text-gray-600 text-[10px] font-black px-2 py-0.5 rounded-full border border-gray-200">{users.length}</span>
+                <span className="bg-white/50 text-gray-600 text-[0.625rem] font-black px-2 py-0.5 rounded-full border border-gray-200">{users.length}</span>
             </div>
 
             <div className="space-y-3">
@@ -34,16 +34,16 @@ const UsersList: React.FC<UsersListProps> = ({ users, onViewClient, onShowUnregi
                             <div className="flex items-center gap-2 min-w-0">
                                 <p className="font-bold text-sm truncate text-gray-900">{u.company_name}</p>
                                 {u.is_active === false && (
-                                    <span className="shrink-0 bg-red-100 text-red-700 text-[9px] font-black uppercase tracking-widest rounded px-2 py-0.5">
+                                    <span className="shrink-0 bg-red-100 text-red-700 text-[0.5625rem] font-black uppercase tracking-widest rounded px-2 py-0.5">
                                         Suspendida
                                     </span>
                                 )}
                             </div>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p>
+                            <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-widest">{u.rut}</p>
                         </div>
                         <button
                             onClick={() => onViewClient(u)}
-                            className="shrink-0 flex items-center gap-1 px-2.5 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors text-[10px] font-black uppercase tracking-wide"
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors text-[0.625rem] font-black uppercase tracking-wide"
                         >
                             <span className="material-symbols-outlined text-base">manage_accounts</span>
                             <span className="hidden sm:inline">Ver Empresa</span>

@@ -179,7 +179,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
   };
 
   return (
-    <div className="relative font-sans text-slate-900 dark:text-white min-h-screen flex flex-col justify-between overflow-x-hidden antialiased selection:bg-primary/30 bg-[#f0f4f0] dark:bg-slate-950 transition-colors duration-300">
+    <div className="relative font-sans text-slate-900 dark:text-white min-h-dvh flex flex-col justify-between overflow-x-hidden antialiased selection:bg-primary/30 bg-[#f0f4f0] dark:bg-slate-950 transition-colors duration-300">
       <style>{`
             @keyframes blob {
                 0% { transform: translate(0px, 0px) scale(1); }
@@ -211,7 +211,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
           <h1 className="text-gray-900 dark:text-white tracking-tighter text-4xl font-display font-black leading-tight mb-2 transition-colors">Econexo</h1>
           <div className="flex items-center justify-center gap-2">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50"></div>
-            <p className="text-primary/80 text-[10px] font-bold uppercase tracking-[0.3em]">
+            <p className="text-primary/80 text-[0.625rem] font-bold uppercase tracking-[0.3em]">
               {isRegistering ? `Registro - Paso ${registrationStep} de 4` : 'Plataforma Ambiental'}
             </p>
             <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50"></div>
@@ -221,14 +221,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
         {renderStepIndicator()}
 
         {error && (
-          <div className="w-full p-4 mb-6 bg-red-100 border border-red-200 rounded-2xl text-red-500 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
+          <div className="w-full p-4 mb-6 bg-red-100 border border-red-200 rounded-2xl text-red-500 text-[0.6875rem] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
             <span className="material-symbols-outlined text-sm">error</span>
             <span className="flex-1">{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="w-full p-4 mb-6 bg-green-100 border border-green-200 rounded-2xl text-green-500 text-[11px] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
+          <div className="w-full p-4 mb-6 bg-green-100 border border-green-200 rounded-2xl text-green-500 text-[0.6875rem] font-bold uppercase tracking-tight text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4 backdrop-blur-sm">
             <span className="material-symbols-outlined text-sm">check_circle</span>
             <span className="flex-1">{success}</span>
           </div>
@@ -240,30 +240,30 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 1 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Nombre Completo</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Nombre Completo</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">person</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">person</span>
                       <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Juan Pérez" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Cargo / Rol</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Cargo / Rol</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">badge</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">badge</span>
                       <input type="text" value={role} onChange={e => setRole(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Encargado de Medio Ambiente" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">mail</span>
                       <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="usuario@empresa.cl" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">lock</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">lock</span>
                       <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="••••••••" required />
                     </div>
                   </div>
@@ -273,37 +273,37 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 2 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Razón Social</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Razón Social</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">domain</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">domain</span>
                       <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="EcoEmpresa S.A." required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">RUT Empresa</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">RUT Empresa</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">fingerprint</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">fingerprint</span>
                       <input type="text" value={rut} onChange={e => setRut(formatRut(e.target.value))} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="12.345.678-9" maxLength={12} required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Dirección Corporativa</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Dirección Corporativa</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">location_on</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">location_on</span>
                       <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Av. Siempre Viva 123" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Correo de Contacto</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Correo de Contacto</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">alternate_email</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">alternate_email</span>
                       <input type="email" value={companyEmail} onChange={e => setCompanyEmail(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="contacto@empresa.cl" required />
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Teléfono</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Teléfono</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">call</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">call</span>
                       <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="+56 9 ..." required />
                     </div>
                   </div>
@@ -313,9 +313,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 3 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Tamaño de Empresa</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Tamaño de Empresa</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">business</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">business</span>
                       <select value={companySize} onChange={e => setCompanySize(e.target.value as any)} className="w-full rounded-xl bg-white/50 h-14 pl-12 pr-4 border border-white/60 focus:border-primary/50 text-gray-900 shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium appearance-none cursor-pointer focus:bg-white/80">
                         <option value="Pequeña">Pequeña (1-10)</option>
                         <option value="Mediana">Mediana (11-50)</option>
@@ -326,17 +326,17 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
                     </div>
                   </div>
                   <div className="flex flex-col group">
-                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Número de Trabajadores</label>
+                    <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Número de Trabajadores</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">groups</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">groups</span>
                       <input type="number" value={workersCount} onChange={e => setWorkersCount(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="Ej: 25" />
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Tipos de Residuos Generados</label>
+                    <label className="text-gray-500 text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Tipos de Residuos Generados</label>
                     <div className="grid grid-cols-2 gap-2">
                       {wasteOptions.map(opt => (
-                        <button key={opt.id} type="button" onClick={() => handleToggleWaste(opt.id)} className={`p-3 rounded-xl border flex items-center justify-center text-[10px] font-black uppercase tracking-tight transition-all duration-300 ${wasteTypes.includes(opt.id) ? 'bg-primary border-primary text-background-dark shadow-glow' : 'bg-white/50 border-white/60 text-gray-500 hover:bg-white/80'}`}>
+                        <button key={opt.id} type="button" onClick={() => handleToggleWaste(opt.id)} className={`p-3 rounded-xl border flex items-center justify-center text-[0.625rem] font-black uppercase tracking-tight transition-all duration-300 ${wasteTypes.includes(opt.id) ? 'bg-primary border-primary text-background-dark shadow-glow' : 'bg-white/50 border-white/60 text-gray-500 hover:bg-white/80'}`}>
                           {opt.label}
                         </button>
                       ))}
@@ -348,10 +348,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
               {registrationStep === 4 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex flex-col">
-                    <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Certificaciones Vigentes</label>
+                    <label className="text-gray-500 text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Certificaciones Vigentes</label>
                     <div className="flex flex-wrap gap-2">
                       {certificationOptions.map(cert => (
-                        <button key={cert} type="button" onClick={() => handleToggleCert(cert)} className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-tight transition-all duration-300 ${certifications.includes(cert) ? 'bg-primary border-primary text-background-dark shadow-glow transform scale-105' : 'bg-white/50 border-white/60 text-gray-500 hover:bg-white/80'}`}>
+                        <button key={cert} type="button" onClick={() => handleToggleCert(cert)} className={`px-4 py-2 rounded-full border text-[0.625rem] font-black uppercase tracking-tight transition-all duration-300 ${certifications.includes(cert) ? 'bg-primary border-primary text-background-dark shadow-glow transform scale-105' : 'bg-white/50 border-white/60 text-gray-500 hover:bg-white/80'}`}>
                           {cert}
                         </button>
                       ))}
@@ -365,7 +365,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
                       </div>
                       <div>
                         <span className="text-xs font-black uppercase tracking-tight text-gray-900 group-hover:text-primary transition-colors">Declaro bajo Ley REP</span>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Activa métricas legales</p>
+                        <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Activa métricas legales</p>
                       </div>
                     </label>
                   </div>
@@ -390,20 +390,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
           ) : (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="flex flex-col group">
-                <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
+                <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Email Corporativo</label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">mail</span>
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-xl bg-white/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 border border-white/60 dark:border-white/10 focus:border-primary/50 text-gray-900 dark:text-white shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:bg-white/80 dark:focus:bg-slate-800/80" placeholder="usuario@empresa.cl" required />
                 </div>
               </div>
               <div className="flex flex-col group">
-                <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[10px] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
+                <label className="text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors text-[0.625rem] font-black uppercase tracking-widest pb-2 pl-1">Contraseña</label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">lock</span>
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors text-[1.25rem]">lock</span>
                   <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl bg-white/50 h-14 pl-12 pr-12 border border-white/60 focus:border-primary/50 text-gray-900 shadow-sm focus:shadow-primary/10 transition-all outline-none font-medium placeholder:text-gray-400 focus:bg-white/80" placeholder="••••••••" required />
                 </div>
                 <div className="flex justify-end">
-                  <button type="button" onClick={() => navigate('/forgot-password')} className="text-[10px] text-primary hover:text-green-700 font-bold uppercase tracking-widest transition-colors">
+                  <button type="button" onClick={() => navigate('/forgot-password')} className="text-[0.625rem] text-primary hover:text-green-700 font-bold uppercase tracking-widest transition-colors">
                     ¿Olvidaste tu contraseña?
                   </button>
                 </div>
@@ -419,14 +419,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, onLeyRepChange, currentLeyRep })
           )}
         </form>
 
-        <button onClick={() => { setIsRegistering(!isRegistering); setRegistrationStep(1); }} className="mt-8 text-gray-500 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2 group">
+        <button onClick={() => { setIsRegistering(!isRegistering); setRegistrationStep(1); }} className="mt-8 text-gray-500 hover:text-gray-900 text-[0.625rem] font-black uppercase tracking-widest transition-colors flex items-center gap-2 group">
           <span className="group-hover:-translate-x-1 transition-transform">{isRegistering ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}</span>
           <span className="text-primary group-hover:underline decoration-2 underline-offset-4">{isRegistering ? 'Inicia Sesión' : 'Regístrate aquí'}</span>
         </button>
       </div>
 
       <div className="relative z-10 w-full p-6 text-center">
-        <p className="text-gray-400 text-[9px] font-black uppercase tracking-[0.2em] hover:text-gray-600 transition-colors cursor-default">Econexo © 2024 • Gestión Inteligente de Residuos</p>
+        <p className="text-gray-400 text-[0.5625rem] font-black uppercase tracking-[0.2em] hover:text-gray-600 transition-colors cursor-default">Econexo © 2024 • Gestión Inteligente de Residuos</p>
       </div>
     </div>
   );

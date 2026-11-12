@@ -185,7 +185,7 @@ const CarbonCalculator: React.FC = () => {
   const benchmark = getBenchmark();
 
   return (
-    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
+    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip">
       {/* Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
       <div className="absolute bottom-[20%] right-[-15%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-yellow-400/10 rounded-full blur-[80px] pointer-events-none" />
@@ -193,19 +193,19 @@ const CarbonCalculator: React.FC = () => {
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-md px-5 py-5 border-b border-white/40 dark:border-slate-700/40 shadow-sm">
         <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 border border-white/40 dark:border-slate-600/40 shadow-sm transition-all active:scale-90">
-          <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[22px]">arrow_back</span>
+          <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[1.375rem]">arrow_back</span>
         </button>
         <div className="text-center">
           <h1 className="text-lg font-display font-black text-gray-900 dark:text-white">Huella de Carbono</h1>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Calculadora mensual</p>
+          <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest">Calculadora mensual</p>
         </div>
         {calculated ? (
           <div className="flex items-center gap-2">
             <button onClick={handleShare} className="size-10 flex items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 shadow-sm active:scale-90">
-              <span className="material-symbols-outlined text-blue-500 text-[22px]">{navigator.share ? 'share' : 'content_copy'}</span>
+              <span className="material-symbols-outlined text-blue-500 text-[1.375rem]">{navigator.share ? 'share' : 'content_copy'}</span>
             </button>
             <button onClick={handleExportPDF} className="size-10 flex items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm active:scale-90">
-              <span className="material-symbols-outlined text-primary text-[22px]">picture_as_pdf</span>
+              <span className="material-symbols-outlined text-primary text-[1.375rem]">picture_as_pdf</span>
             </button>
           </div>
         ) : <div className="size-10" />}
@@ -218,13 +218,13 @@ const CarbonCalculator: React.FC = () => {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[0.6875rem] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                 activeCategory === cat.id
                   ? `${cat.color} text-white border-transparent shadow-md`
                   : 'bg-white/60 dark:bg-slate-800/60 text-gray-500 dark:text-gray-400 border-white/60 dark:border-slate-600/50'
               }`}
             >
-              <span className="material-symbols-outlined text-[14px]">{cat.icon}</span>
+              <span className="material-symbols-outlined text-[0.875rem]">{cat.icon}</span>
               {cat.label}
             </button>
           ))}
@@ -241,7 +241,7 @@ const CarbonCalculator: React.FC = () => {
             </div>
             {cat.fields.map(field => (
               <div key={field.key} className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
                   {field.label}
                 </label>
                 <div className="flex items-center bg-white/50 dark:bg-slate-700/50 border border-white/60 dark:border-slate-600/50 rounded-2xl px-4 h-12 focus-within:border-primary/40 transition-all">
@@ -253,7 +253,7 @@ const CarbonCalculator: React.FC = () => {
                     placeholder={field.placeholder}
                     className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-300 dark:placeholder:text-slate-600"
                   />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-2">{field.unit}</span>
+                  <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-2">{field.unit}</span>
                 </div>
               </div>
             ))}
@@ -272,11 +272,11 @@ const CarbonCalculator: React.FC = () => {
         {/* Results */}
         {calculated && (
           <section id="results-section" className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">Resultado</h3>
+            <h3 className="text-[0.6875rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">Resultado</h3>
 
             {/* Total card */}
             <div className="bg-primary rounded-[28px] p-6 text-white space-y-2 shadow-lg shadow-primary/20">
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/70">Huella mensual total</p>
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.25em] text-white/70">Huella mensual total</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-6xl font-display font-black tracking-tighter">{total.toFixed(2)}</span>
                 <span className="text-lg font-black text-white/70">ton CO₂e</span>
@@ -292,7 +292,7 @@ const CarbonCalculator: React.FC = () => {
 
             {/* Category breakdown */}
             <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-sm p-6 space-y-4">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Desglose por categoría</h4>
+              <h4 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Desglose por categoría</h4>
               {CATEGORIES.map(cat => {
                 const val = categoryTotals[cat.id as keyof typeof categoryTotals];
                 const pct = total > 0 ? (val / total) * 100 : 0;
@@ -300,13 +300,13 @@ const CarbonCalculator: React.FC = () => {
                   <div key={cat.id} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-gray-500">{cat.icon}</span>
+                        <span className="material-symbols-outlined text-[1rem] text-gray-500">{cat.icon}</span>
                         <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{cat.label}</span>
                       </div>
                       <div className="text-right">
                         <span className="text-xs font-black text-gray-900 dark:text-white">{val.toFixed(3)}</span>
-                        <span className="text-[10px] text-gray-400 ml-1">ton</span>
-                        <span className="text-[10px] text-primary font-black ml-2">{pct.toFixed(0)}%</span>
+                        <span className="text-[0.625rem] text-gray-400 ml-1">ton</span>
+                        <span className="text-[0.625rem] text-primary font-black ml-2">{pct.toFixed(0)}%</span>
                       </div>
                     </div>
                     <div className="h-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -322,7 +322,7 @@ const CarbonCalculator: React.FC = () => {
 
             {/* Recommendations */}
             <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-sm p-6 space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Recomendaciones</h4>
+              <h4 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">Recomendaciones</h4>
               {categoryTotals.energy > 1 && (
                 <div className="flex gap-3 items-start">
                   <div className="size-8 rounded-xl bg-yellow-50 text-yellow-500 flex items-center justify-center border border-yellow-100 flex-shrink-0">
