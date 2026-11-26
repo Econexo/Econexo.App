@@ -178,7 +178,7 @@ const NotificationBell: React.FC = () => {
             >
                 <span className="material-symbols-outlined text-gray-700">notifications</span>
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 size-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-pulse">
+                    <span className="absolute -top-1 -right-1 size-5 bg-red-500 text-white text-[0.625rem] font-black rounded-full flex items-center justify-center animate-pulse">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -193,7 +193,7 @@ const NotificationBell: React.FC = () => {
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllAsRead}
-                                className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest"
+                                className="text-[0.625rem] font-bold text-primary hover:underline uppercase tracking-widest"
                             >
                                 Marcar todas
                             </button>
@@ -238,7 +238,7 @@ const NotificationBell: React.FC = () => {
                                                 )}
                                             </div>
                                             <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notification.message}</p>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                                            <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest mt-1">
                                                 {getRelativeTime(notification.created_at)}
                                             </p>
                                         </div>

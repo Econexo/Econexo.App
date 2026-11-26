@@ -126,7 +126,7 @@ const Chat: React.FC = () => {
             <h2 className="text-sm font-black text-gray-900 dark:text-white">Asistente Eco</h2>
             <div className="flex items-center gap-1">
               <span className="size-1.5 rounded-full bg-primary animate-pulse"></span>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Online</span>
+              <span className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Online</span>
             </div>
           </div>
         </div>
@@ -169,7 +169,7 @@ const Chat: React.FC = () => {
                   className="absolute -bottom-2 right-2 size-6 rounded-full bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Copiar"
                 >
-                  <span className="material-symbols-outlined text-[12px] text-gray-500 dark:text-gray-400">
+                  <span className="material-symbols-outlined text-[0.75rem] text-gray-500 dark:text-gray-400">
                     {copiedIdx === i ? 'check' : 'content_copy'}
                   </span>
                 </button>

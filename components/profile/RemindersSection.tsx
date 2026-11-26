@@ -27,11 +27,11 @@ const RemindersSection: React.FC<RemindersSectionProps> = ({ prefs, saving, onCh
     return (
         <section>
             <div className="flex items-center justify-between mb-2 pl-2">
-                <h4 className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                <h4 className="text-[0.625rem] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
                     Recordatorios
                 </h4>
                 {saving && (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Guardando…</span>
+                    <span className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400">Guardando…</span>
                 )}
             </div>
 
@@ -42,7 +42,7 @@ const RemindersSection: React.FC<RemindersSectionProps> = ({ prefs, saving, onCh
                         <h5 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">
                             Avisos automáticos
                         </h5>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold leading-snug">
+                        <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold leading-snug">
                             Retiros próximos y certificado mensual, por app, push y correo.
                         </p>
                     </div>
@@ -64,7 +64,7 @@ const RemindersSection: React.FC<RemindersSectionProps> = ({ prefs, saving, onCh
                     <div className="space-y-2.5">
                         <div className="flex items-center gap-2.5">
                             <span className="material-symbols-outlined text-primary text-lg">local_shipping</span>
-                            <p className="text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
+                            <p className="text-[0.625rem] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
                                 Avisarme de un retiro
                             </p>
                         </div>
@@ -75,7 +75,7 @@ const RemindersSection: React.FC<RemindersSectionProps> = ({ prefs, saving, onCh
                                     <button
                                         key={d}
                                         onClick={() => toggleDay(d)}
-                                        className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${on
+                                        className={`px-3 py-2 rounded-xl text-[0.625rem] font-black uppercase tracking-widest border transition-all active:scale-95 ${on
                                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/25'
                                             : 'bg-white/50 dark:bg-slate-800/50 text-gray-500 dark:text-gray-400 border-white/60 dark:border-white/10'
                                             }`}
@@ -93,7 +93,7 @@ const RemindersSection: React.FC<RemindersSectionProps> = ({ prefs, saving, onCh
                     <div className="space-y-2.5">
                         <div className="flex items-center gap-2.5">
                             <span className="material-symbols-outlined text-primary text-lg">workspace_premium</span>
-                            <p className="text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
+                            <p className="text-[0.625rem] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
                                 Certificado mensual
                             </p>
                         </div>
@@ -107,7 +107,7 @@ const RemindersSection: React.FC<RemindersSectionProps> = ({ prefs, saving, onCh
                                     <option key={d} value={d}>Día {d}</option>
                                 ))}
                             </select>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold leading-snug flex-1">
+                            <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold leading-snug flex-1">
                                 de cada mes te avisamos si el certificado del mes anterior ya está disponible
                                 o sigue pendiente.
                             </p>
@@ -119,10 +119,10 @@ const RemindersSection: React.FC<RemindersSectionProps> = ({ prefs, saving, onCh
                     {/* Copia a correos adicionales */}
                     <div className="flex items-center justify-between gap-4">
                         <div className="space-y-1 min-w-0">
-                            <h5 className="text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
+                            <h5 className="text-[0.625rem] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
                                 Copiar a los correos de aviso
                             </h5>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold leading-snug">
+                            <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold leading-snug">
                                 Los recordatorios también llegan a los correos adicionales.
                             </p>
                         </div>

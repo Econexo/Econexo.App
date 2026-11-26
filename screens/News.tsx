@@ -64,7 +64,7 @@ const News: React.FC = () => {
   }, [search, allArticles]);
 
   return (
-    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -104,7 +104,7 @@ const News: React.FC = () => {
               >
                 <img src={a.image} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" alt={a.title} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent p-5 flex flex-col justify-end text-white">
-                  <span className="bg-primary/90 backdrop-blur-sm text-[10px] font-black text-white px-2 py-1 rounded-md w-fit mb-2 uppercase shadow-sm border border-white/10">{a.category}</span>
+                  <span className="bg-primary/90 backdrop-blur-sm text-[0.625rem] font-black text-white px-2 py-1 rounded-md w-fit mb-2 uppercase shadow-sm border border-white/10">{a.category}</span>
                   <h3 className="font-display font-black leading-tight drop-shadow-md text-lg">{a.title}</h3>
                 </div>
               </a>
@@ -143,10 +143,10 @@ const News: React.FC = () => {
                   <img src={a.image} className="size-20 rounded-xl object-cover shadow-sm" alt={a.title} onError={(e) => (e.currentTarget.src = 'https://picsum.photos/100')} />
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
-                      <span className="text-[10px] font-black text-primary uppercase tracking-wider">{a.category}</span>
+                      <span className="text-[0.625rem] font-black text-primary uppercase tracking-wider">{a.category}</span>
                       <h4 className="font-display font-bold text-sm text-gray-900 dark:text-white leading-snug line-clamp-2 mt-1">{a.title}</h4>
                     </div>
-                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{a.time}</span>
+                    <span className="text-[0.625rem] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{a.time}</span>
                   </div>
                 </a>
               ))

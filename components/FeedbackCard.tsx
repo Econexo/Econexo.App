@@ -43,12 +43,12 @@ const FeedbackCard: React.FC = () => {
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm font-black text-gray-900 dark:text-white truncate">Retroalimentación de Econexo</h3>
-                        {unread && <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-white">Nuevo</span>}
+                        {unread && <span className="text-[0.5625rem] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-white">Nuevo</span>}
                     </div>
-                    <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400">{report.period_label}</p>
+                    <p className="text-[0.6875rem] font-bold text-gray-500 dark:text-gray-400">{report.period_label}</p>
                     <div className="flex flex-wrap gap-3 mt-1.5">
                         {(Object.keys(counts) as FeedbackItemType[]).filter(t => counts[t] > 0).map(t => (
-                            <span key={t} className="flex items-center gap-1 text-[10px] font-black text-gray-600 dark:text-gray-300">
+                            <span key={t} className="flex items-center gap-1 text-[0.625rem] font-black text-gray-600 dark:text-gray-300">
                                 <span className="material-symbols-outlined text-sm">{ITEM_TYPE_META[t].icon}</span>
                                 {counts[t]} {(counts[t] === 1 ? ITEM_TYPE_META[t].label : ITEM_TYPE_META[t].plural).toLowerCase()}
                             </span>

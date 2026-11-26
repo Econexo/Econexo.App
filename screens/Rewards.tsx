@@ -155,7 +155,7 @@ const Rewards: React.FC = () => {
     };
 
     return (
-        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
+        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip">
             {/* Decorative Background Blobs */}
             <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
             <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -185,17 +185,17 @@ const Rewards: React.FC = () => {
                     <div className="relative z-10 space-y-6">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em]">Rango Actual</p>
+                                <p className="text-white/80 text-[0.625rem] font-black uppercase tracking-[0.2em]">Rango Actual</p>
                                 <div className="flex items-center gap-2">
                                     <span className={`material-symbols-outlined font-bold text-2xl ${currentLevel.iconColor} drop-shadow-glow`}>{currentLevel.icon}</span>
                                     <h3 className="text-2xl font-display font-black text-white tracking-tight uppercase italic">{currentLevel.title}</h3>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em]">Impacto</p>
+                                <p className="text-white/70 text-[0.625rem] font-black uppercase tracking-[0.2em]">Impacto</p>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-2xl font-display font-black text-white">{animatedPoints.toLocaleString('es-CL')}</span>
-                                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">pts</span>
+                                    <span className="text-[0.625rem] font-black text-white/50 uppercase tracking-widest">pts</span>
                                 </div>
                             </div>
                         </div>
@@ -210,7 +210,7 @@ const Rewards: React.FC = () => {
                                     <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-shimmer"></div>
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                            <div className="flex justify-between items-center text-[0.625rem] font-black uppercase tracking-widest">
                                 <span className="text-white/50">{points} pts</span>
                                 {nextLevel ? (
                                     <span className="text-white drop-shadow-md">Próximo nivel: {nextLevel.title} ({nextLevel.min} pts)</span>
@@ -220,7 +220,7 @@ const Rewards: React.FC = () => {
                             </div>
                         </div>
 
-                        <p className="text-white/80 text-[11px] font-bold leading-relaxed">
+                        <p className="text-white/80 text-[0.6875rem] font-bold leading-relaxed">
                             {nextLevel
                                 ? `Te faltan ${(nextLevel.min - points).toLocaleString('es-CL')} puntos para convertirte en ${nextLevel.title}. ¡Sigue recuperando residuos!`
                                 : "Has alcanzado la cima de la sostenibilidad forestal. Eres un guardián de la economía circular."}
@@ -230,13 +230,13 @@ const Rewards: React.FC = () => {
 
                 {/* Available Rewards */}
                 <section className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Canjear Recompensas</h3>
+                    <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Canjear Recompensas</h3>
                     <div className="space-y-4">
                         {loading ? Array(3).fill(0).map((_, i) => <RewardSkeleton key={i} />) : rewards.map(reward => (
                             <div key={reward.id} className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 dark:border-slate-600/50 flex items-center gap-4 group relative overflow-hidden transition-all hover:border-primary/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                                 {/* Subtle Icon Watermark */}
                                 <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
-                                    <span className="material-symbols-outlined text-[120px]">{reward.icon}</span>
+                                    <span className="material-symbols-outlined text-[7.5rem]">{reward.icon}</span>
                                 </div>
 
                                 <div className={`relative z-10 size-14 rounded-2xl ${reward.color}/10 text-${reward.color.replace('bg-', '')} flex items-center justify-center border border-${reward.color.replace('bg-', '')}/20 group-hover:scale-110 transition-transform shadow-sm`}>
@@ -246,7 +246,7 @@ const Rewards: React.FC = () => {
                                     <div className="flex flex-col">
                                         {reward.title.includes('%') ? (
                                             <>
-                                                <span className="bg-primary text-white text-[10px] font-black px-2 py-0.5 rounded-md w-fit mb-1 shadow-sm">
+                                                <span className="bg-primary text-white text-[0.625rem] font-black px-2 py-0.5 rounded-md w-fit mb-1 shadow-sm">
                                                     {reward.title.split(' ')[0]}
                                                 </span>
                                                 <h4 className="font-display font-black text-sm text-gray-900 dark:text-white leading-tight">
@@ -257,7 +257,7 @@ const Rewards: React.FC = () => {
                                             <h4 className="font-display font-black text-sm text-gray-900 dark:text-white leading-tight">{reward.title}</h4>
                                         )}
                                     </div>
-                                    <p className="text-[11px] text-gray-600 dark:text-gray-400 font-bold leading-tight line-clamp-2">{reward.description}</p>
+                                    <p className="text-[0.6875rem] text-gray-600 dark:text-gray-400 font-bold leading-tight line-clamp-2">{reward.description}</p>
                                     <div className="pt-2 flex items-center gap-2">
                                         <span className="text-xs font-black text-primary bg-green-50/50 px-2 py-0.5 rounded-md border border-green-100 backdrop-blur-sm">{reward.cost.toLocaleString('es-CL')} pts</span>
                                     </div>
@@ -265,7 +265,7 @@ const Rewards: React.FC = () => {
                                 <button
                                     disabled={points < reward.cost || redeeming}
                                     onClick={() => handleRedeem(reward)}
-                                    className={`relative z-10 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${points >= reward.cost
+                                    className={`relative z-10 px-4 py-2 rounded-xl text-[0.625rem] font-black uppercase tracking-widest transition-all ${points >= reward.cost
                                         ? 'bg-primary text-white shadow-glow active:scale-95 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]'
                                         : 'bg-white/20 text-gray-400 border border-white/10 cursor-not-allowed'
                                         }`}
@@ -279,7 +279,7 @@ const Rewards: React.FC = () => {
 
                 {/* History */}
                 <section className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Historial de Puntos</h3>
+                    <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 px-2">Historial de Puntos</h3>
                     {loading ? (
                         <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/80 dark:border-slate-600/50 animate-pulse">
                             {Array(3).fill(0).map((_, i) => (
@@ -302,8 +302,8 @@ const Rewards: React.FC = () => {
                             {transactions.map((t, idx) => (
                                 <div key={t.id} className={`p-4 flex items-center justify-between ${idx !== transactions.length - 1 ? 'border-b border-white/40 dark:border-slate-700/40' : ''} hover:bg-white/40 dark:hover:bg-slate-700/40 transition-colors`}>
                                     <div className="space-y-1">
-                                        <p className="text-[13px] font-bold text-gray-900 dark:text-white">{t.reason}</p>
-                                        <p className="text-[9px] text-gray-500 dark:text-gray-400 font-black uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
+                                        <p className="text-[0.8125rem] font-bold text-gray-900 dark:text-white">{t.reason}</p>
+                                        <p className="text-[0.5625rem] text-gray-500 dark:text-gray-400 font-black uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <span className={`font-display font-black text-sm ${t.amount > 0 ? 'text-primary' : 'text-red-400'}`}>
                                         {t.amount > 0 ? '+' : ''}{t.amount.toLocaleString('es-CL')}

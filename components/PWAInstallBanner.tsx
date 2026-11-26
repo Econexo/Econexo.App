@@ -24,11 +24,11 @@ const PWAInstallBanner: React.FC = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-black text-primary">Instala la app</p>
-          <p className="text-[10px] text-gray-500 font-bold">Accede más rápido desde tu pantalla de inicio</p>
+          <p className="text-[0.625rem] text-gray-500 font-bold">Accede más rápido desde tu pantalla de inicio</p>
         </div>
         <button
           onClick={isIOS ? () => setShowIOSModal(true) : install}
-          className="px-3 py-1.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shrink-0 active:scale-95 transition-transform shadow-sm"
+          className="px-3 py-1.5 bg-primary text-white rounded-xl text-[0.625rem] font-black uppercase tracking-widest shrink-0 active:scale-95 transition-transform shadow-sm"
         >
           Instalar
         </button>
@@ -48,7 +48,7 @@ const PWAInstallBanner: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-black text-gray-900 text-sm">Instalar en iPhone</h3>
-                <p className="text-[10px] text-gray-500 font-bold">Sigue estos pasos en Safari</p>
+                <p className="text-[0.625rem] text-gray-500 font-bold">Sigue estos pasos en Safari</p>
               </div>
             </div>
 
@@ -60,7 +60,7 @@ const PWAInstallBanner: React.FC = () => {
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-[10px] font-black text-primary">{i + 1}</span>
+                    <span className="text-[0.625rem] font-black text-primary">{i + 1}</span>
                   </div>
                   <div className="flex items-start gap-2 flex-1">
                     <span className="material-symbols-outlined text-primary text-base mt-0.5 shrink-0">{step.icon}</span>

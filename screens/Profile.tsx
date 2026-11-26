@@ -332,7 +332,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
   };
 
   return (
-    <div className="relative font-sans bg-[#f0f4f0] dark:bg-slate-950 min-h-screen text-slate-900 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden transition-colors duration-300">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-slate-950 min-h-dvh text-slate-900 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip transition-colors duration-300">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -366,7 +366,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest transition-colors">Estado Declarativo</h4>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tighter transition-colors">¿Sujeto a obligaciones Ley REP?</p>
+                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tighter transition-colors">¿Sujeto a obligaciones Ley REP?</p>
               </div>
               <label className="inline-flex items-center cursor-pointer">
                 <input type="checkbox" checked={isLeyRep} onChange={(e) => handleLeyRepToggle(e.target.checked)} className="sr-only peer" />
@@ -422,14 +422,14 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Instalar App</h4>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
+                  <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold mt-0.5">
                     {isInstalled ? 'Ya instalada en tu dispositivo' : 'Agrega Econexo a tu pantalla de inicio'}
                   </p>
                 </div>
                 <button
                   onClick={isIOS ? () => setShowIOSModal(true) : install}
                   disabled={isInstalled}
-                  className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-transform disabled:opacity-50 shrink-0"
+                  className="px-4 py-2 bg-primary text-white rounded-xl text-[0.625rem] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-transform disabled:opacity-50 shrink-0"
                 >
                   {isInstalled ? 'Instalada' : 'Instalar'}
                 </button>
@@ -443,7 +443,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
             <span className="material-symbols-outlined text-green-600 text-xl">check_circle</span>
             <div>
               <p className="text-xs font-black text-green-800 dark:text-green-300">App instalada</p>
-              <p className="text-[10px] text-green-600 dark:text-green-400 font-bold">Estás usando Econexo como app nativa</p>
+              <p className="text-[0.625rem] text-green-600 dark:text-green-400 font-bold">Estás usando Econexo como app nativa</p>
             </div>
           </div>
         ) : null}
@@ -467,7 +467,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
               </div>
               <div>
                 <h3 className="font-black text-gray-900 text-sm">Instalar en iPhone</h3>
-                <p className="text-[10px] text-gray-500 font-bold">Sigue estos pasos en Safari</p>
+                <p className="text-[0.625rem] text-gray-500 font-bold">Sigue estos pasos en Safari</p>
               </div>
             </div>
             <div className="space-y-4">
@@ -478,7 +478,7 @@ const Profile: React.FC<ProfileProps> = ({ isLeyRep, onLeyRepChange, isDarkMode,
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-[10px] font-black text-primary">{i + 1}</span>
+                    <span className="text-[0.625rem] font-black text-primary">{i + 1}</span>
                   </div>
                   <div className="flex items-start gap-2 flex-1">
                     <span className="material-symbols-outlined text-primary text-base mt-0.5 shrink-0">{step.icon}</span>

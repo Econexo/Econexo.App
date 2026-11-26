@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
   <title>Econexo - Plataforma de Trazabilidad Ambiental</title>
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="/logo_econexo_new.png">
@@ -53,11 +53,49 @@
     }
   </script>
   <style>
+    /* ── Marco fijo de app ───────────────────────────────────────────────
+       En el celular la página entera se arrastraba y rebotaba al hacer
+       scroll, como una web. Ahora el documento no se desplaza nunca: el que
+       hace scroll es #root, que ocupa justo la pantalla visible, y sin rebote.
+       Así la barra inferior y los encabezados `sticky` de cada pantalla
+       quedan quietos y solo se mueve el contenido.
+
+       El zoom de accesibilidad NO se bloquea (el meta viewport no lleva
+       maximum-scale ni user-scalable) y el texto se dimensiona en rem para
+       seguir el tamaño de letra que el usuario elige en su teléfono. */
+    html {
+      font-size: 100%;
+      /* 100%, no none: evita que iOS agrande el texto al girar el teléfono
+         sin impedir que el usuario lo agrande él. */
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    html,
     body {
+      height: 100%;
       margin: 0;
-      min-height: 100vh;
-      background-color: #ffffff;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    body {
+      background-color: #f0f4f0;
       font-family: 'Nunito', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #root {
+      position: fixed;
+      inset: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    html.dark body {
+      background-color: #020617;
     }
 
     .no-scrollbar::-webkit-scrollbar {

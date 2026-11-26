@@ -233,15 +233,15 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                         </div>
                         <div>
                             <h3 className="text-gray-800 text-lg font-display font-bold tracking-tight">Retiros Programados</h3>
-                            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Gestión de Recolección</p>
+                            <p className="text-[0.6875rem] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Gestión de Recolección</p>
                         </div>
                     </div>
                     {isAdmin && (
                         <button
                             onClick={() => setShowModal(true)}
-                            className="px-4 py-2 bg-primary hover:bg-[#285004] rounded-full text-[10px] font-bold uppercase tracking-widest text-white transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
+                            className="px-4 py-2 bg-primary hover:bg-[#285004] rounded-full text-[0.625rem] font-bold uppercase tracking-widest text-white transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
                         >
-                            <span className="material-symbols-outlined text-[14px]">add</span>
+                            <span className="material-symbols-outlined text-[0.875rem]">add</span>
                             Agendar
                         </button>
                     )}
@@ -266,7 +266,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                                 <div key={item.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-sm transition-all group/item">
                                     {/* Date Box */}
                                     <div className="flex flex-col items-center justify-center size-12 rounded-xl bg-white border border-gray-100 text-center shrink-0 shadow-sm">
-                                        <span className="text-[10px] font-black uppercase text-gray-400 leading-none">
+                                        <span className="text-[0.625rem] font-black uppercase text-gray-400 leading-none">
                                             {dateObj.toLocaleDateString('es-CL', { month: 'short' }).slice(0, 3)}
                                         </span>
                                         <span className="text-xl font-display font-black text-gray-800 leading-none mt-0.5">
@@ -279,7 +279,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                                         <p className="text-sm font-bold text-gray-800 truncate group-hover/item:text-primary transition-colors">
                                             {meta.waste_type || 'Retiro General'}
                                         </p>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                                        <p className="text-[0.625rem] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
                                             <span className={`size-1.5 rounded-full ${meta.status === 'prográmado' ? 'bg-yellow-400' : meta.status === 'realizado' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                                             {meta.status ? meta.status.charAt(0).toUpperCase() + meta.status.slice(1) : 'Pendiente'}
                                         </p>
@@ -307,7 +307,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                         <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
                             <div>
                                 <h3 className="text-xl font-display font-bold text-gray-900 tracking-tight">Agendar Retiro</h3>
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Nueva Solicitud</p>
+                                <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Nueva Solicitud</p>
                             </div>
                             <button
                                 onClick={() => setShowModal(false)}
@@ -319,7 +319,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
 
                         <form onSubmit={handleSchedule} className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Fecha Preferida</label>
+                                <label className="text-[0.625rem] font-black uppercase tracking-widest text-primary ml-1">Fecha Preferida</label>
                                 <input
                                     type="date"
                                     required
@@ -331,7 +331,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Cliente</label>
+                                <label className="text-[0.625rem] font-black uppercase tracking-widest text-primary ml-1">Cliente</label>
                                 <div className="relative">
                                     <select
                                         required
@@ -349,7 +349,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Tipo de Residuo</label>
+                                <label className="text-[0.625rem] font-black uppercase tracking-widest text-primary ml-1">Tipo de Residuo</label>
                                 <div className="relative">
                                     <select
                                         required
@@ -367,7 +367,7 @@ const ScheduledWithdrawals: React.FC<ScheduledWithdrawalsProps> = ({ isAdmin }) 
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Notas Adicionales</label>
+                                <label className="text-[0.625rem] font-black uppercase tracking-widest text-primary ml-1">Notas Adicionales</label>
                                 <textarea
                                     rows={3}
                                     value={newDescription}

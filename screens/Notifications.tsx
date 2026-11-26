@@ -112,7 +112,7 @@ const Notifications: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip">
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none" />
       <div className="absolute bottom-[20%] left-[-15%] w-[380px] h-[380px] bg-primary/10 rounded-full blur-[110px] animate-pulse pointer-events-none" />
@@ -126,10 +126,10 @@ const Notifications: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-display font-black text-gray-900 dark:text-white">Notificaciones</h2>
             {unreadCount > 0 && (
-              <span className="size-5 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center leading-none">{unreadCount}</span>
+              <span className="size-5 bg-primary text-white text-[0.625rem] font-black rounded-full flex items-center justify-center leading-none">{unreadCount}</span>
             )}
           </div>
-          <button onClick={handleMarkAllRead} className="text-primary text-[10px] font-black uppercase tracking-widest hover:text-green-600 transition-colors">
+          <button onClick={handleMarkAllRead} className="text-primary text-[0.625rem] font-black uppercase tracking-widest hover:text-green-600 transition-colors">
             Leer todo
           </button>
         </div>
@@ -140,13 +140,13 @@ const Notifications: React.FC = () => {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shrink-0 transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.625rem] font-black uppercase tracking-widest border shrink-0 transition-all ${
                 filter === f.key
                   ? 'bg-primary text-white border-primary shadow-sm'
                   : 'bg-white/60 dark:bg-slate-800/60 text-gray-500 dark:text-gray-400 border-white/60 dark:border-slate-600/50 hover:border-primary/30'
               }`}
             >
-              <span className="material-symbols-outlined text-[12px]">{f.icon}</span>
+              <span className="material-symbols-outlined text-[0.75rem]">{f.icon}</span>
               {f.label}
             </button>
           ))}
@@ -172,7 +172,7 @@ const Notifications: React.FC = () => {
               <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Te avisaremos cuando haya novedades</p>
             </div>
             {filter !== 'all' && (
-              <button onClick={() => setFilter('all')} className="text-primary text-[10px] font-black uppercase tracking-widest">
+              <button onClick={() => setFilter('all')} className="text-primary text-[0.625rem] font-black uppercase tracking-widest">
                 Ver todas
               </button>
             )}
@@ -195,7 +195,7 @@ const Notifications: React.FC = () => {
               <div className="flex-1 space-y-1 min-w-0">
                 <h4 className="font-display font-bold text-sm text-gray-900 dark:text-white leading-tight pr-5 break-words">{n.title}</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">{n.message}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 pt-1 font-black uppercase tracking-widest">{getRelativeTime(n.created_at)}</p>
+                <p className="text-[0.625rem] text-gray-400 dark:text-gray-500 pt-1 font-black uppercase tracking-widest">{getRelativeTime(n.created_at)}</p>
               </div>
             </div>
           </div>

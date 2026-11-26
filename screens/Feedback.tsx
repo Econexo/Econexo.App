@@ -42,7 +42,7 @@ const Feedback: React.FC = () => {
     }, []);
 
     return (
-        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto pb-28 md:pb-8 overflow-hidden">
+        <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto pb-28 md:pb-8 overflow-clip">
             <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
 
             <div className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-white/40 dark:border-slate-700/40 shadow-sm">
@@ -73,7 +73,7 @@ const Feedback: React.FC = () => {
                                 <button onClick={() => open(r)} className="w-full text-left p-5 flex items-center gap-3">
                                     <div className="min-w-0 flex-1">
                                         <p className="text-base font-display font-black text-gray-900 dark:text-white">{r.period_label}</p>
-                                        <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                                        <p className="text-[0.6875rem] font-bold text-gray-500 dark:text-gray-400">
                                             {r.published_at ? `Publicado el ${fmtDate(r.published_at)} · ` : ''}{countsText(r.items)}
                                         </p>
                                     </div>

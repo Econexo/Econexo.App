@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { TRANSPORTE_TYPES, isEconexoCertificate, isTransportDoc, toTransportLabel } from '../utils/documentTypes';
+import { weighTicketOf } from '../utils/weighTicket';
+import { formatKg } from '../utils/formatKg';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../services/supabase';
@@ -590,7 +592,7 @@ const Documents: React.FC = () => {
   };
 
   return (
-    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
+    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -655,7 +657,7 @@ const Documents: React.FC = () => {
             ) : (
               // Subfolders List
               <div className="grid grid-cols-1 gap-4 pt-2 animate-in slide-in-from-right-4 duration-300">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Carpetas</h3>
+                <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Carpetas</h3>
                 {getCurrentFolders().map(folder => {
                   const count = documents.filter(doc => folder.types.includes(doc.type) && getDocEmisor(doc) === sectionToEmisor(currentSection)).length;
                   return (
@@ -669,7 +671,7 @@ const Documents: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-display font-black text-sm text-gray-900 break-words">{folder.name}</h4>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{count} documentos</p>
+                        <p className="text-[0.625rem] text-gray-500 font-bold uppercase tracking-widest">{count} documentos</p>
                       </div>
                       <span className="material-symbols-outlined text-gray-300 group-hover:translate-x-1 transition-transform group-hover:text-primary shrink-0">chevron_right</span>
                     </button>
@@ -680,7 +682,7 @@ const Documents: React.FC = () => {
           </>
         ) : selectedYear === null ? (
           <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Seleccionar Año</h3>
+            <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Seleccionar Año</h3>
             <div className="grid grid-cols-1 gap-3">
               {getYearsForFolder().length === 0 ? (
                 <div className="p-12 text-center bg-white/40 backdrop-blur-sm rounded-[32px] border border-dashed border-gray-300">
@@ -700,7 +702,7 @@ const Documents: React.FC = () => {
                         <span className="font-black text-lg text-gray-900">{year}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.1em]">Detalle mensual</span>
+                        <span className="text-[0.5625rem] text-gray-400 font-bold uppercase tracking-[0.1em]">Detalle mensual</span>
                         <span className="material-symbols-outlined text-gray-300">chevron_right</span>
                       </div>
                     </button>
@@ -711,7 +713,7 @@ const Documents: React.FC = () => {
                           // We use a small timeout to ensure state is updated or just call a modified version
                           setTimeout(() => handleGenerateReport(year), 100);
                         }}
-                        className="w-full py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
+                        className="w-full py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
                       >
                         <span className="material-symbols-outlined text-lg">summarize</span>
                         Reporte Anual {year}
@@ -724,7 +726,7 @@ const Documents: React.FC = () => {
                           setSelectedYear(year);
                           setShowRangeModal(true);
                         }}
-                        className="w-full mt-2 py-3 bg-white/40 hover:bg-white/60 text-gray-600 border border-gray-300 border-dashed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
+                        className="w-full mt-2 py-3 bg-white/40 hover:bg-white/60 text-gray-600 border border-gray-300 border-dashed rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all backdrop-blur-sm"
                       >
                         <span className="material-symbols-outlined text-lg">date_range</span>
                         Reporte por Rango Personalizado
@@ -738,7 +740,7 @@ const Documents: React.FC = () => {
         ) : selectedMonth === null ? (
           <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Seleccionar Mes</h3>
+              <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-gray-500 px-2 leading-none">Seleccionar Mes</h3>
               <div className="grid grid-cols-3 gap-2">
                 {getMonthsForYear().map(monthIdx => (
                   <button
@@ -747,7 +749,7 @@ const Documents: React.FC = () => {
                     className="flex flex-col items-center justify-center p-4 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/80 hover:border-primary/30 transition-all gap-1 shadow-sm hover:shadow-md"
                   >
                     <span className="text-xs font-black text-gray-900">{monthNames[monthIdx]}</span>
-                    <span className="text-[8px] text-primary font-black uppercase tracking-widest">Ver</span>
+                    <span className="text-[0.5rem] text-primary font-black uppercase tracking-widest">Ver</span>
                   </button>
                 ))}
               </div>
@@ -755,7 +757,7 @@ const Documents: React.FC = () => {
 
             {filteredDocuments.length > 0 && (
               <div className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary px-2 leading-none">Reportes Anuales Disponibles</h3>
+                <h3 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-primary px-2 leading-none">Reportes Anuales Disponibles</h3>
                 <div className="space-y-3">
                   {filteredDocuments.map(doc => (
                     <div key={doc.id} className="bg-white/60 backdrop-blur-2xl p-4 rounded-[24px] border border-white/80  shadow-[0_4px_16px_0_rgba(31,38,135,0.05)] space-y-4">
@@ -764,23 +766,23 @@ const Documents: React.FC = () => {
                           <span className="material-symbols-outlined text-2xl filled">analytics</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-black text-[13px] truncate text-gray-900">
+                          <h4 className="font-black text-[0.8125rem] truncate text-gray-900">
                           {isTransportDoc(doc.type) ? toTransportLabel(doc.title) : doc.title}
                         </h4>
-                          <p className="text-[9px] text-gray-500 mt-1 font-black uppercase tracking-widest">Consolidado Anual</p>
+                          <p className="text-[0.5625rem] text-gray-500 mt-1 font-black uppercase tracking-widest">Consolidado Anual</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleDownload(doc, 'preview')}
-                          className="flex-1 h-10 bg-white/50 hover:bg-white/80 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors text-gray-600 border border-white/60"
+                          className="flex-1 h-10 bg-white/50 hover:bg-white/80 rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors text-gray-600 border border-white/60"
                         >
                           <span className="material-symbols-outlined text-sm">visibility</span>
                           Ver
                         </button>
                         <button
                           onClick={() => handleDownload(doc)}
-                          className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-primary/20"
+                          className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-primary/20"
                         >
                           <span className="material-symbols-outlined text-sm">download</span>
                           Bajar
@@ -837,15 +839,15 @@ const Documents: React.FC = () => {
                 <button
                   key={f}
                   onClick={() => setStatusFilter(f)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.625rem] font-black uppercase tracking-widest border transition-all ${
                     statusFilter === f
                       ? 'bg-primary text-white border-primary shadow-sm'
                       : 'bg-white/60 dark:bg-slate-800/60 text-gray-500 dark:text-gray-400 border-white/60 dark:border-slate-600/50 hover:border-primary/30'
                   }`}
                 >
-                  {f === 'all' && <span className="material-symbols-outlined text-[12px]">filter_list</span>}
-                  {f === 'verified' && <span className="material-symbols-outlined text-[12px]">verified</span>}
-                  {f === 'pending' && <span className="material-symbols-outlined text-[12px]">schedule</span>}
+                  {f === 'all' && <span className="material-symbols-outlined text-[0.75rem]">filter_list</span>}
+                  {f === 'verified' && <span className="material-symbols-outlined text-[0.75rem]">verified</span>}
+                  {f === 'pending' && <span className="material-symbols-outlined text-[0.75rem]">schedule</span>}
                   {f === 'all' ? 'Todos' : f === 'verified' ? 'Verificados' : 'Pendientes'}
                 </button>
               ))}
@@ -878,27 +880,33 @@ const Documents: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-[13px] truncate text-gray-900">
+                        <h4 className="font-black text-[0.8125rem] truncate text-gray-900">
                           {isTransportDoc(doc.type) ? toTransportLabel(doc.title) : doc.title}
                         </h4>
-                        <div className="flex items-center gap-2 text-[9px] text-gray-500 mt-1 font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-2 text-[0.5625rem] text-gray-500 mt-1 font-black uppercase tracking-widest">
                           <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                           <span className="size-1 rounded-full bg-gray-200"></span>
                           <span>{doc.type}</span>
+                          {weighTicketOf(doc) && (
+                            <>
+                              <span className="size-1 rounded-full bg-gray-200"></span>
+                              <span className="text-amber-700">{formatKg(weighTicketOf(doc)!.kg)} kg</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleDownload(doc, 'preview')}
-                        className="flex-1 h-10 bg-white/50 hover:bg-white/80 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors text-gray-600 border border-white/60"
+                        className="flex-1 h-10 bg-white/50 hover:bg-white/80 rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors text-gray-600 border border-white/60"
                       >
                         <span className="material-symbols-outlined text-sm">visibility</span>
                         Ver
                       </button>
                       <button
                         onClick={() => handleDownload(doc)}
-                        className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-primary/20"
+                        className="flex-1 h-10 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-primary/20"
                       >
                         <span className="material-symbols-outlined text-sm">download</span>
                         Bajar
@@ -962,7 +970,7 @@ const Documents: React.FC = () => {
 
                 <div className="space-y-4">
                   <div className="space-y-1 text-left">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Desde</label>
+                    <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 pl-1">Desde</label>
                     <select
                       value={rangeStart}
                       onChange={(e) => setRangeStart(Number(e.target.value))}
@@ -974,7 +982,7 @@ const Documents: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-1 text-left">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Hasta</label>
+                    <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 pl-1">Hasta</label>
                     <select
                       value={rangeEnd}
                       onChange={(e) => setRangeEnd(Number(e.target.value))}
@@ -990,14 +998,14 @@ const Documents: React.FC = () => {
                 <div className="pt-2 space-y-3">
                   <button
                     onClick={handleGenerateCustomRange}
-                    className="w-full h-14 bg-primary text-background-dark rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+                    className="w-full h-14 bg-primary text-background-dark rounded-2xl text-[0.6875rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
                   >
                     <span className="material-symbols-outlined">assignment_add</span>
                     Generar Reporte
                   </button>
                   <button
                     onClick={() => setShowRangeModal(false)}
-                    className="w-full h-10 text-gray-400 text-[10px] font-black uppercase tracking-widest"
+                    className="w-full h-10 text-gray-400 text-[0.625rem] font-black uppercase tracking-widest"
                   >
                     Cancelar
                   </button>
@@ -1025,20 +1033,20 @@ const Documents: React.FC = () => {
                 <div className="pt-2 space-y-3">
                   <button
                     onClick={() => { toast.info('Redirigiendo a Google...'); setShowSettings(false); }}
-                    className="w-full h-14 bg-white/50 hover:bg-white/80 border border-white/60 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors text-gray-700"
+                    className="w-full h-14 bg-white/50 hover:bg-white/80 border border-white/60 rounded-2xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors text-gray-700"
                   >
                     <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" className="size-6" alt="Drive" />
                     Cambiar Cuenta
                   </button>
                   <button
                     onClick={() => { setDriveLinked(false); setShowSettings(false); }}
-                    className="w-full h-14 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                    className="w-full h-14 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-2xl text-[0.625rem] font-black uppercase tracking-widest transition-colors"
                   >
                     Desvincular
                   </button>
                   <button
                     onClick={() => setShowSettings(false)}
-                    className="w-full h-10 text-gray-400 text-[10px] font-black uppercase tracking-widest"
+                    className="w-full h-10 text-gray-400 text-[0.625rem] font-black uppercase tracking-widest"
                   >
                     Cerrar
                   </button>
@@ -1049,7 +1057,7 @@ const Documents: React.FC = () => {
         )}
 
       <Navbar />
-      <div className="absolute top-20 right-4 text-[10px] text-gray-400 font-bold z-0 pointer-events-none">v1.3</div>
+      <div className="absolute top-20 right-4 text-[0.625rem] text-gray-400 font-bold z-0 pointer-events-none">v1.3</div>
     </div >
   );
 };

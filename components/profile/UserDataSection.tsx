@@ -21,10 +21,10 @@ const UserDataSection: React.FC<UserDataSectionProps> = ({
     return (
         <section>
             <div className="flex items-center justify-between mb-2 pl-2">
-                <h4 className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Datos Personales</h4>
+                <h4 className="text-[0.625rem] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Datos Personales</h4>
                 <button
                     onClick={() => isEditing ? onSave() : onToggleEdit()}
-                    className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
+                    className="text-primary text-[0.625rem] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
                 >
                     {isEditing ? 'Guardar' : 'Editar'}
                 </button>
@@ -41,7 +41,7 @@ const UserDataSection: React.FC<UserDataSectionProps> = ({
                         />
                         <div className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-lg px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center justify-between">
                             <span>{userData.email}</span>
-                            <button onClick={onShowEmailModal} className="text-primary text-[10px] font-bold uppercase tracking-widest hover:underline">
+                            <button onClick={onShowEmailModal} className="text-primary text-[0.625rem] font-bold uppercase tracking-widest hover:underline">
                                 Cambiar
                             </button>
                         </div>
@@ -56,15 +56,15 @@ const UserDataSection: React.FC<UserDataSectionProps> = ({
                     <>
                         <div className="flex items-center gap-4">
                             <div className="size-10 shrink-0 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center border border-blue-100"><span className="material-symbols-outlined font-bold">person</span></div>
-                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Nombre completo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.name}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Nombre completo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.name}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="size-10 shrink-0 rounded-xl bg-green-50 text-green-500 flex items-center justify-center border border-green-100"><span className="material-symbols-outlined font-bold">alternate_email</span></div>
-                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Email Corporativo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.email}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Email Corporativo</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.email}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="size-10 shrink-0 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100"><span className="material-symbols-outlined font-bold">badge</span></div>
-                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Cargo / Rol</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.role || 'No especificado'}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Cargo / Rol</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{userData.role || 'No especificado'}</p></div>
                         </div>
                     </>
                 )}

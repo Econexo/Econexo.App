@@ -7,7 +7,7 @@ const Suspended: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#f0f4f0] flex flex-col items-center justify-center p-8">
+        <div className="min-h-dvh bg-[#f0f4f0] flex flex-col items-center justify-center p-8">
             <div className="bg-white rounded-[32px] border border-white/80 shadow-2xl p-10 max-w-sm w-full text-center space-y-6">
                 <div className="size-16 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto">
                     <span className="material-symbols-outlined text-4xl">block</span>

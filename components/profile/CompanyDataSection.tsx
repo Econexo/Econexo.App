@@ -46,10 +46,10 @@ const CompanyDataSection: React.FC<CompanyDataSectionProps> = ({
     return (
         <section>
             <div className="flex items-center justify-between mb-2 pl-2">
-                <h4 className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] transition-colors">Información Legal</h4>
+                <h4 className="text-[0.625rem] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] transition-colors">Información Legal</h4>
                 <button
                     onClick={() => isEditing ? onSave() : onToggleEdit()}
-                    className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
+                    className="text-primary text-[0.625rem] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
                 >
                     {isEditing ? 'Guardar' : 'Editar'}
                 </button>
@@ -98,13 +98,13 @@ const CompanyDataSection: React.FC<CompanyDataSectionProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Tipos de Residuos</label>
+                            <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-500 ml-1">Tipos de Residuos</label>
                             <div className="grid grid-cols-2 gap-2">
                                 {WASTE_OPTIONS.map(opt => (
                                     <button
                                         key={opt.id}
                                         onClick={() => handleToggleWaste(opt.id)}
-                                        className={`p-2 rounded-lg border text-[10px] font-bold uppercase transition-all ${companyData.wasteTypes.includes(opt.id) ? 'bg-primary/20 border-primary text-primary' : 'bg-white/50 border-gray-200 text-gray-500'}`}
+                                        className={`p-2 rounded-lg border text-[0.625rem] font-bold uppercase transition-all ${companyData.wasteTypes.includes(opt.id) ? 'bg-primary/20 border-primary text-primary' : 'bg-white/50 border-gray-200 text-gray-500'}`}
                                     >
                                         {opt.label}
                                     </button>
@@ -113,13 +113,13 @@ const CompanyDataSection: React.FC<CompanyDataSectionProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Certificaciones</label>
+                            <label className="text-[0.625rem] font-black uppercase tracking-widest text-gray-500 ml-1">Certificaciones</label>
                             <div className="flex flex-wrap gap-2">
                                 {CERTIFICATION_OPTIONS.map(cert => (
                                     <button
                                         key={cert}
                                         onClick={() => handleToggleCert(cert)}
-                                        className={`px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase transition-all ${companyData.certifications.includes(cert) ? 'bg-primary/20 border-primary text-primary' : 'bg-white/50 border-gray-200 text-gray-500'}`}
+                                        className={`px-3 py-1.5 rounded-full border text-[0.625rem] font-bold uppercase transition-all ${companyData.certifications.includes(cert) ? 'bg-primary/20 border-primary text-primary' : 'bg-white/50 border-gray-200 text-gray-500'}`}
                                     >
                                         {cert}
                                     </button>
@@ -131,34 +131,34 @@ const CompanyDataSection: React.FC<CompanyDataSectionProps> = ({
                     <>
                         <div className="flex items-center gap-4">
                             <div className="size-10 shrink-0 rounded-xl bg-yellow-50 text-yellow-500 flex items-center justify-center border border-yellow-100"><span className="material-symbols-outlined font-bold">corporate_fare</span></div>
-                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Razón Social</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors truncate">{companyData.name}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Razón Social</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors truncate">{companyData.name}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="size-10 shrink-0 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center border border-purple-100"><span className="material-symbols-outlined font-bold">fingerprint</span></div>
-                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">RUT Empresa</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors truncate">{companyData.rut}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">RUT Empresa</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors truncate">{companyData.rut}</p></div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="size-10 shrink-0 rounded-xl bg-red-50 text-red-500 flex items-center justify-center border border-red-100"><span className="material-symbols-outlined font-bold">location_on</span></div>
-                            <div className="min-w-0 flex-1"><p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Dirección</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors line-clamp-2">{companyData.address || 'No especificada'}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Dirección</p><p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white transition-colors line-clamp-2">{companyData.address || 'No especificada'}</p></div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-white/5">
                             <div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Tamaño</p>
+                                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Tamaño</p>
                                 <p className="text-xs font-bold text-gray-900 dark:text-white">{companyData.size || 'No definido'}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Trabajadores</p>
+                                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Trabajadores</p>
                                 <p className="text-xs font-bold text-gray-900 dark:text-white">{companyData.workersCount || 0}</p>
                             </div>
                         </div>
 
                         {companyData.wasteTypes.length > 0 && (
                             <div className="pt-2">
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-2">Residuos Gestionados</p>
+                                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-2">Residuos Gestionados</p>
                                 <div className="flex flex-wrap gap-2">
                                     {companyData.wasteTypes.map(type => (
-                                        <span key={type} className="px-2 py-1 rounded-md bg-gray-100 dark:bg-white/10 text-[9px] font-black uppercase text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10">
+                                        <span key={type} className="px-2 py-1 rounded-md bg-gray-100 dark:bg-white/10 text-[0.5625rem] font-black uppercase text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10">
                                             {WASTE_OPTIONS.find(o => o.id === type)?.label || type}
                                         </span>
                                     ))}
@@ -168,11 +168,11 @@ const CompanyDataSection: React.FC<CompanyDataSectionProps> = ({
 
                         {companyData.certifications.length > 0 && (
                             <div className="pt-2">
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-2">Certificaciones</p>
+                                <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-2">Certificaciones</p>
                                 <div className="flex flex-wrap gap-2">
                                     {companyData.certifications.map(cert => (
-                                        <span key={cert} className="px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-[9px] font-black uppercase text-green-600 dark:text-green-400 border border-green-100 dark:border-green-500/20 flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[10px]">verified</span>
+                                        <span key={cert} className="px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-[0.5625rem] font-black uppercase text-green-600 dark:text-green-400 border border-green-100 dark:border-green-500/20 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[0.625rem]">verified</span>
                                             {cert}
                                         </span>
                                     ))}

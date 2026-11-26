@@ -211,7 +211,7 @@ const LeyREP: React.FC = () => {
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (isLeyRep === null || loading) {
     return (
-      <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950">
+      <div className="min-h-dvh bg-[#f0f4f0] dark:bg-slate-950">
         <Navbar />
         <main className="p-4 md:p-8 max-w-3xl mx-auto pb-32 animate-pulse">
           <div className="flex items-center gap-3 mb-6">
@@ -243,7 +243,7 @@ const LeyREP: React.FC = () => {
   // ─── Gate: user not declared under Ley REP ────────────────────────────────
   if (!isLeyRep) {
     return (
-      <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950">
+      <div className="min-h-dvh bg-[#f0f4f0] dark:bg-slate-950">
         <Navbar />
         <main className="p-4 md:p-8 max-w-2xl mx-auto pb-32 flex flex-col items-center justify-center min-h-[80vh]">
           <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/60 dark:border-white/10 rounded-3xl p-8 shadow-xl text-center flex flex-col items-center gap-6">
@@ -346,7 +346,7 @@ const LeyREP: React.FC = () => {
   const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
 
   return (
-    <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950">
+    <div className="min-h-dvh bg-[#f0f4f0] dark:bg-slate-950">
       {/* Background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-blob" />

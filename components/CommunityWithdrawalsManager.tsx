@@ -235,11 +235,11 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                     {/* Summary stats */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-green-50 rounded-xl p-3 border border-green-100">
-                            <p className="text-[10px] font-bold text-green-700 uppercase tracking-widest">Total Retiros</p>
+                            <p className="text-[0.625rem] font-bold text-green-700 uppercase tracking-widest">Total Retiros</p>
                             <p className="text-2xl font-black text-green-800">{withdrawals.length}</p>
                         </div>
                         <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-                            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Total Kg Gestionados</p>
+                            <p className="text-[0.625rem] font-bold text-emerald-700 uppercase tracking-widest">Total Kg Gestionados</p>
                             <p className="text-2xl font-black text-emerald-800">
                                 {totalKgAll % 1 === 0 ? totalKgAll : totalKgAll.toFixed(2)} Kg
                             </p>
@@ -252,7 +252,7 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                             onClick={() => setShowForm(true)}
                             className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm"
                         >
-                            <span className="material-symbols-outlined text-[18px]">add</span>
+                            <span className="material-symbols-outlined text-[1.125rem]">add</span>
                             Registrar Nuevo Retiro Comunitario
                         </button>
                     )}
@@ -326,7 +326,7 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                                                     onClick={() => handleRemoveWasteItem(i)}
                                                     className="size-7 flex items-center justify-center rounded-full hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
                                                 >
-                                                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                    <span className="material-symbols-outlined text-[1rem]">delete</span>
                                                 </button>
                                             </div>
                                         ))}
@@ -380,7 +380,7 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                                             onClick={handleAddWasteItem}
                                             className="px-2 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
                                         >
-                                            <span className="material-symbols-outlined text-[14px]">add</span>
+                                            <span className="material-symbols-outlined text-[0.875rem]">add</span>
                                             Agregar
                                         </button>
                                     </div>
@@ -401,9 +401,9 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                                     className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
                                 >
                                     {saving ? (
-                                        <><span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Generando...</>
+                                        <><span className="material-symbols-outlined animate-spin text-[1rem]">progress_activity</span> Generando...</>
                                     ) : (
-                                        <><span className="material-symbols-outlined text-[16px]">picture_as_pdf</span> Generar Certificado</>
+                                        <><span className="material-symbols-outlined text-[1rem]">picture_as_pdf</span> Generar Certificado</>
                                     )}
                                 </button>
                             </div>
@@ -431,21 +431,21 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                                         <div className="flex items-start justify-between p-4">
                                             <div className="flex items-start gap-3">
                                                 <div className="size-9 rounded-full bg-green-50 border border-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                    <span className="material-symbols-outlined text-green-600 text-[18px]">nature_people</span>
+                                                    <span className="material-symbols-outlined text-green-600 text-[1.125rem]">nature_people</span>
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-black text-gray-900">{w.community_name}</p>
                                                     <p className="text-xs text-gray-500">{w.sector}</p>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                                                        <span className="text-[0.625rem] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
                                                             {w.total_kg % 1 === 0 ? w.total_kg : w.total_kg.toFixed(2)} Kg
                                                         </span>
                                                         {w.participants_count > 0 && (
-                                                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                            <span className="text-[0.625rem] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
                                                                 {w.participants_count} participantes
                                                             </span>
                                                         )}
-                                                        <span className="text-[10px] text-gray-400">{fmtDate(w.withdrawal_date)}</span>
+                                                        <span className="text-[0.625rem] text-gray-400">{fmtDate(w.withdrawal_date)}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -455,14 +455,14 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                                                     title="Vista previa"
                                                     className="size-8 flex items-center justify-center rounded-lg hover:bg-blue-50 text-blue-500 transition-colors"
                                                 >
-                                                    <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                                    <span className="material-symbols-outlined text-[1.125rem]">visibility</span>
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(w)}
                                                     title="Eliminar"
                                                     className="size-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
                                                 >
-                                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                                    <span className="material-symbols-outlined text-[1.125rem]">delete</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -470,7 +470,7 @@ const CommunityWithdrawalsManager: React.FC<Props> = ({ onClose }) => {
                                         {w.waste_details.length > 0 && (
                                             <div className="border-t border-gray-50 px-4 py-2 flex flex-wrap gap-1.5 bg-gray-50/50">
                                                 {w.waste_details.map((item, i) => (
-                                                    <span key={i} className="text-[10px] text-gray-600 bg-white border border-gray-200 px-2 py-0.5 rounded-full">
+                                                    <span key={i} className="text-[0.625rem] text-gray-600 bg-white border border-gray-200 px-2 py-0.5 rounded-full">
                                                         {item.waste_type}{item.description ? ` - ${item.description}` : ''}: <strong>{item.quantity} {item.unit}</strong>
                                                     </span>
                                                 ))}

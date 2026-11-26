@@ -46,7 +46,7 @@ const MonthlyGenModal: React.FC<MonthlyGenModalProps> = ({
                 </h3>
                 <div className="space-y-4">
                     <div>
-                        <label className="text-[10px] font-black uppercase text-gray-500">Mes</label>
+                        <label className="text-[0.625rem] font-black uppercase text-gray-500">Mes</label>
                         <select
                             value={selectedMonth}
                             onChange={(e) => onMonthChange(Number(e.target.value))}
@@ -58,7 +58,7 @@ const MonthlyGenModal: React.FC<MonthlyGenModalProps> = ({
                         </select>
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase text-gray-500">Año</label>
+                        <label className="text-[0.625rem] font-black uppercase text-gray-500">Año</label>
                         <input
                             type="number"
                             value={selectedYear}
@@ -67,9 +67,9 @@ const MonthlyGenModal: React.FC<MonthlyGenModalProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase text-gray-500 block mb-2">Destinos Autorizados</label>
+                        <label className="text-[0.625rem] font-black uppercase text-gray-500 block mb-2">Destinos Autorizados</label>
                         {destinations.length === 0 ? (
-                            <p className="text-[11px] text-gray-400 font-bold bg-white/40 border border-white/60 rounded-xl px-3 py-2.5">
+                            <p className="text-[0.6875rem] text-gray-400 font-bold bg-white/40 border border-white/60 rounded-xl px-3 py-2.5">
                                 No hay destinos. Agrégalos en "Destinos CGM" del panel.
                             </p>
                         ) : (
@@ -88,14 +88,14 @@ const MonthlyGenModal: React.FC<MonthlyGenModalProps> = ({
                                             </span>
                                             <span className="min-w-0">
                                                 <span className="block text-xs font-black text-gray-900 break-words">{d.name}{d.rut ? ` · ${d.rut}` : ''}</span>
-                                                {d.resolution && <span className="block text-[10px] text-gray-500 font-bold break-words">{d.resolution}</span>}
+                                                {d.resolution && <span className="block text-[0.625rem] text-gray-500 font-bold break-words">{d.resolution}</span>}
                                             </span>
                                         </button>
                                     );
                                 })}
                             </div>
                         )}
-                        <p className="text-[9px] text-gray-400 font-bold mt-1.5">Marca solo los destinos que correspondan a este certificado.</p>
+                        <p className="text-[0.5625rem] text-gray-400 font-bold mt-1.5">Marca solo los destinos que correspondan a este certificado.</p>
                     </div>
 
                     <button

@@ -78,21 +78,21 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
     return (
         <section>
             <div className="flex items-center justify-between mb-2 pl-2">
-                <h4 className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                <h4 className="text-[0.625rem] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
                     Correos de Aviso
                 </h4>
                 {isEditing ? (
                     <div className="flex items-center gap-2">
                         <button
                             onClick={cancel}
-                            className="text-gray-400 text-[10px] font-black uppercase tracking-widest px-3 py-1"
+                            className="text-gray-400 text-[0.625rem] font-black uppercase tracking-widest px-3 py-1"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={save}
                             disabled={saving}
-                            className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all disabled:opacity-50"
+                            className="text-primary text-[0.625rem] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all disabled:opacity-50"
                         >
                             {saving ? 'Guardando…' : 'Guardar'}
                         </button>
@@ -100,7 +100,7 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
                 ) : (
                     <button
                         onClick={startEditing}
-                        className="text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
+                        className="text-primary text-[0.625rem] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all"
                     >
                         {emails.length ? 'Editar' : 'Agregar'}
                     </button>
@@ -108,7 +108,7 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
             </div>
 
             <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-2xl border border-white/80 dark:border-white/10 p-4 space-y-4 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] transition-all">
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold leading-relaxed">
+                <p className="text-[0.6875rem] text-gray-500 dark:text-gray-400 font-bold leading-relaxed">
                     Agrega hasta {MAX_EXTRA_EMAILS} correos que recibirán copia de certificados, retiros,
                     documentos y recordatorios. <span className="text-gray-400 dark:text-gray-500">No dan acceso a la cuenta.</span>
                 </p>
@@ -119,7 +119,7 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
                         <span className="material-symbols-outlined font-bold">verified_user</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Titular de la cuenta</p>
+                        <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">Titular de la cuenta</p>
                         <p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{ownerEmail}</p>
                     </div>
                 </div>
@@ -152,7 +152,7 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
                         {draft.length < MAX_EXTRA_EMAILS && (
                             <button
                                 onClick={addRow}
-                                className="w-full py-3 rounded-lg border border-dashed border-primary/30 text-primary text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors"
+                                className="w-full py-3 rounded-lg border border-dashed border-primary/30 text-primary text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors"
                             >
                                 <span className="material-symbols-outlined text-base">add</span>
                                 Agregar correo ({draft.length}/{MAX_EXTRA_EMAILS})
@@ -160,7 +160,7 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
                         )}
 
                         {error && (
-                            <p className="text-[11px] font-bold text-red-500 flex items-start gap-1.5">
+                            <p className="text-[0.6875rem] font-bold text-red-500 flex items-start gap-1.5">
                                 <span className="material-symbols-outlined text-sm shrink-0">error</span>
                                 {error}
                             </p>
@@ -168,7 +168,7 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
                     </div>
                 ) : emails.length === 0 ? (
                     <div className="text-center py-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                        <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest">
                             Sin correos adicionales
                         </p>
                     </div>
@@ -180,7 +180,7 @@ const NotificationEmailsSection: React.FC<NotificationEmailsSectionProps> = ({
                                     <span className="material-symbols-outlined font-bold">mark_email_read</span>
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">
+                                    <p className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">
                                         Copia {i + 1}
                                     </p>
                                     <p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white truncate">{email}</p>

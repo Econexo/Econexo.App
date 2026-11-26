@@ -48,14 +48,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     />
                 </div>
                 <h3 className="text-2xl font-display font-black tracking-tight text-gray-900 dark:text-white drop-shadow-sm transition-colors">{userName}</h3>
-                <p className="text-[11px] text-gray-600 font-black uppercase tracking-[0.2em] mt-1 drop-shadow-sm bg-white/50 px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/40">
+                <p className="text-[0.6875rem] text-gray-600 font-black uppercase tracking-[0.2em] mt-1 drop-shadow-sm bg-white/50 px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/40">
                     {userRole}
                 </p>
 
                 {/* Ley REP Status Tag */}
                 <div className={`mt-5 px-5 py-2 rounded-full border flex items-center gap-2 transition-all shadow-lg backdrop-blur-md ${isLeyRep ? 'bg-primary/20 border-primary/30 text-primary shadow-primary/10' : 'bg-blue-500/20 border-blue-500/30 text-blue-500 shadow-blue-500/10'}`}>
-                    <span className="material-symbols-outlined text-[18px] font-bold">{isLeyRep ? 'verified' : 'eco'}</span>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                    <span className="material-symbols-outlined text-[1.125rem] font-bold">{isLeyRep ? 'verified' : 'eco'}</span>
+                    <span className="text-[0.625rem] font-black uppercase tracking-[0.2em]">
                         {isLeyRep ? 'EMPRESA LEY REP' : 'IMPACTO VOLUNTARIO'}
                     </span>
                 </div>

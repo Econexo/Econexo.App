@@ -61,7 +61,7 @@ const Analyze: React.FC = () => {
   };
 
   return (
-    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-hidden">
+    <div className="relative font-display bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 overflow-clip">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-40 h-40 sm:w-[400px] sm:h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-36 h-36 sm:w-[350px] sm:h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -143,10 +143,10 @@ const Analyze: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex gap-2 pt-4 border-t border-white/40 dark:border-slate-600/40">
-                  <button className="flex-1 h-12 bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-white/60 dark:border-slate-600/40 text-gray-600 dark:text-gray-400 transition-colors" onClick={reset}>
+                  <button className="flex-1 h-12 bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-white/60 dark:border-slate-600/40 text-gray-600 dark:text-gray-400 transition-colors" onClick={reset}>
                     Nueva Foto
                   </button>
-                  <button onClick={handleShare} className="flex-1 h-12 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-primary/20 transition-colors">
+                  <button onClick={handleShare} className="flex-1 h-12 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl text-[0.625rem] font-black uppercase tracking-widest flex items-center justify-center gap-2 border border-primary/20 transition-colors">
                     <span className="material-symbols-outlined text-lg">{copied ? 'check' : navigator.share ? 'share' : 'content_copy'}</span>
                     {copied ? 'Copiado' : navigator.share ? 'Compartir' : 'Copiar'}
                   </button>
@@ -159,7 +159,7 @@ const Analyze: React.FC = () => {
         <div className="bg-primary/5 rounded-[24px] p-5 border border-primary/10 backdrop-blur-sm">
           <div className="flex gap-3">
             <span className="material-symbols-outlined text-primary">tips_and_updates</span>
-            <p className="text-[11px] text-gray-600 dark:text-gray-400 font-bold leading-relaxed">
+            <p className="text-[0.6875rem] text-gray-600 dark:text-gray-400 font-bold leading-relaxed">
               Tip: Para mejores resultados, asegúrate de que el objeto esté bien iluminado y sea el centro de la imagen.
             </p>
           </div>

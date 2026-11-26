@@ -404,7 +404,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
   const animatedEnergia = useCountUp(stats.energiaAhorrada);
 
   return (
-    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
+    <div className="relative font-sans bg-[#f0f4f0] dark:bg-background-dark min-h-dvh text-slate-900 dark:text-slate-100 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto pb-28 md:pb-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-clip">
       {/* Decorative Background Blobs */}
       <div className="absolute top-[-5%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute top-[30%] right-[-20%] w-[350px] h-[350px] bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -412,7 +412,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
 
       <header className="sticky top-0 z-20 flex items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-md px-5 py-5 border-b border-white/40 dark:border-slate-700/40 shadow-sm">
         <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm">
-          <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[22px]">arrow_back</span>
+          <span className="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[1.375rem]">arrow_back</span>
         </button>
         <h1 className="text-xl font-display font-black tracking-tight text-gray-900 dark:text-white">
           {isLeyRep ? 'Gestión REP' : 'Impacto Positivo'}
@@ -423,13 +423,13 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
             title="Exportar PDF"
             className="size-10 flex items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-all active:scale-90 border border-primary/20 shadow-sm"
           >
-            <span className="material-symbols-outlined text-primary text-[22px]">picture_as_pdf</span>
+            <span className="material-symbols-outlined text-primary text-[1.375rem]">picture_as_pdf</span>
           </button>
           <button
             onClick={() => setShowHelp(true)}
             className="size-10 flex items-center justify-center rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all group active:scale-90 border border-white/40 dark:border-slate-600/40 shadow-sm"
           >
-            <span className="material-symbols-outlined text-primary group-hover:rotate-12 transition-transform text-[22px]">help</span>
+            <span className="material-symbols-outlined text-primary group-hover:rotate-12 transition-transform text-[1.375rem]">help</span>
           </button>
         </div>
       </header>
@@ -491,14 +491,14 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 {isLeyRep ? 'Guía de Normativa' : 'Guía de Impacto'}
               </h2>
               <button onClick={() => setShowHelp(false)} className="size-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                <span className="material-symbols-outlined text-[20px] text-gray-500">close</span>
+                <span className="material-symbols-outlined text-[1.25rem] text-gray-500">close</span>
               </button>
             </div>
             <div className="space-y-5 overflow-y-auto max-h-[55vh] no-scrollbar pr-1">
               {glossary.map((item, i) => (
                 <div key={i} className="p-5 bg-white/60 rounded-2xl border border-white/50 hover:border-primary/20 transition-colors shadow-sm">
                   <h3 className="font-black text-primary mb-2 text-xs uppercase tracking-[0.2em]">{item.title}</h3>
-                  <p className="text-[13px] text-gray-600 leading-relaxed font-bold">{item.desc}</p>
+                  <p className="text-[0.8125rem] text-gray-600 leading-relaxed font-bold">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -520,7 +520,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
             <div className="absolute inset-0 rounded-full shadow-inner border border-gray-100" style={{ background: `conic-gradient(#326105 ${animatedMeta}%, #f3f4f6 0)` }}></div>
             <div className="absolute inset-6 rounded-full bg-white flex flex-col items-center justify-center shadow-xl border border-gray-100 overflow-hidden">
               <div className="absolute top-0 w-full h-1/2 bg-gradient-to-b from-gray-50 to-transparent"></div>
-              <span className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400 relative z-10">
+              <span className="text-[0.6875rem] font-black uppercase tracking-[0.3em] text-gray-400 relative z-10">
                 {isLeyRep ? 'Meta Legal 2024' : 'Huella de Carbono'}
               </span>
               <div className="flex items-baseline relative z-10 mt-1">
@@ -529,7 +529,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 </span>
                 <span className="text-xl text-gray-400 font-black ml-1">{isLeyRep ? '%' : 'ton'}</span>
               </div>
-              <div className="mt-3 px-4 py-1.5 bg-green-50 text-primary text-[11px] font-black rounded-full border border-green-100 relative z-10 uppercase tracking-tight">
+              <div className="mt-3 px-4 py-1.5 bg-green-50 text-primary text-[0.6875rem] font-black rounded-full border border-green-100 relative z-10 uppercase tracking-tight">
                 {isLeyRep ? 'Cumplimiento REP' : 'Resumen del Año'}
               </div>
             </div>
@@ -550,7 +550,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
               </div>
               <div>
                 <h3 className="text-sm font-display font-black text-gray-900 dark:text-white">Meta Anual {selectedYear}</h3>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">Objetivo de reciclaje</p>
+                <p className="text-[0.625rem] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">Objetivo de reciclaje</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -565,7 +565,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
               )}
               <button
                 onClick={() => { setGoalInput(annualGoalKg?.toString() || ''); setShowGoalModal(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[0.625rem] font-black uppercase tracking-widest border transition-all bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
               >
                 <span className="material-symbols-outlined text-sm">{annualGoalKg !== null ? 'edit' : 'add'}</span>
                 {annualGoalKg !== null ? 'Editar' : 'Establecer'}
@@ -612,22 +612,22 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
         {/* Impact Cards */}
         <section className="space-y-6">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Detalle de Beneficios</h3>
+            <h3 className="text-[0.6875rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Detalle de Beneficios</h3>
             <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2 py-1 rounded border border-gray-200 dark:border-slate-700">
               <button
                 onClick={() => setSelectedYear(y => y - 1)}
                 className="size-4 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
                 aria-label="Año anterior"
               >
-                <span className="material-symbols-outlined text-[14px]">chevron_left</span>
+                <span className="material-symbols-outlined text-[0.875rem]">chevron_left</span>
               </button>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mx-1">PERIODO {selectedYear}</span>
+              <span className="text-[0.625rem] text-gray-500 dark:text-gray-400 font-bold mx-1">PERIODO {selectedYear}</span>
               <button
                 onClick={() => setSelectedYear(y => y + 1)}
                 className="size-4 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
                 aria-label="Año siguiente"
               >
-                <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+                <span className="material-symbols-outlined text-[0.875rem]">chevron_right</span>
               </button>
             </div>
           </div>
@@ -647,17 +647,17 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   <span className="material-symbols-outlined text-2xl font-bold">forest</span>
                 </div>
                 {stats.arbolesRescatados > 0 && (
-                  <div className="flex items-center gap-1.5 text-primary text-[11px] font-black bg-white px-3 py-1.5 rounded-full uppercase tracking-tight border border-primary/20 shadow-sm">
-                    <span className="material-symbols-outlined text-[16px] font-bold">verified</span>
+                  <div className="flex items-center gap-1.5 text-primary text-[0.6875rem] font-black bg-white px-3 py-1.5 rounded-full uppercase tracking-tight border border-primary/20 shadow-sm">
+                    <span className="material-symbols-outlined text-[1rem] font-bold">verified</span>
                     Verificado
                   </div>
                 )}
               </div>
               <div className="space-y-1">
                 <span className="text-7xl font-display font-black text-gray-900 dark:text-white block tracking-tighter leading-none">{animatedArboles}</span>
-                <span className="text-[13px] text-green-600 font-black uppercase tracking-[0.3em] block ml-1">Árboles Rescatados</span>
+                <span className="text-[0.8125rem] text-green-600 font-black uppercase tracking-[0.3em] block ml-1">Árboles Rescatados</span>
               </div>
-              <p className="text-[13px] text-gray-400 dark:text-gray-500 leading-relaxed font-bold tracking-tight">Equivale a la preservación efectiva de biodiversidad local frente a la deforestación industrial.</p>
+              <p className="text-[0.8125rem] text-gray-400 dark:text-gray-500 leading-relaxed font-bold tracking-tight">Equivale a la preservación efectiva de biodiversidad local frente a la deforestación industrial.</p>
               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden border border-gray-100">
                 <div className="h-full bg-primary" style={{ width: `${Math.min(stats.arbolesRescatados, 100)}% ` }}></div>
               </div>
@@ -679,7 +679,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 </div>
                 <div>
                   <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedAgua.toLocaleString('es-CL')}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">Lts Agua</p>
+                  <p className="text-[0.6875rem] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">Lts Agua</p>
                 </div>
               </div>
             </div>
@@ -698,7 +698,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                 </div>
                 <div>
                   <p className="text-4xl font-display font-black text-gray-900 dark:text-white tracking-tighter">{animatedEnergia.toLocaleString('es-CL')}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">kWh Energía</p>
+                  <p className="text-[0.6875rem] text-gray-400 dark:text-gray-500 font-black uppercase mt-1 tracking-widest leading-tight">kWh Energía</p>
                 </div>
               </div>
             </div>
@@ -709,7 +709,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
             const totalDonut = materialBreakdown.reduce((s, d) => s + d.value, 0);
             return (
               <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-2xl rounded-[28px] border border-white/80 dark:border-slate-600/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6 space-y-4">
-                <h4 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Distribución por material</h4>
+                <h4 className="text-[0.6875rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em]">Distribución por material</h4>
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <div className="w-48 h-48 flex-shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -755,7 +755,7 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
 
           {/* Extra Equivalencies */}
           <div className="space-y-3">
-            <h4 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">Más equivalencias</h4>
+            <h4 className="text-[0.6875rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] px-2">Más equivalencias</h4>
             <div className="grid grid-cols-2 gap-4">
               {[
                 { icon: 'directions_car', color: 'bg-orange-50 text-orange-500 border-orange-100', value: stats.kmEvitados.toLocaleString('es-CL'), unit: 'km en auto', label: 'evitados' },
@@ -769,8 +769,8 @@ const Impact: React.FC<ImpactProps> = ({ isLeyRep }) => {
                   </div>
                   <div>
                     <p className="text-2xl font-display font-black text-gray-900 dark:text-white tracking-tighter leading-none">{item.value}</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mt-1">{item.unit}</p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5">{item.label}</p>
+                    <p className="text-[0.625rem] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mt-1">{item.unit}</p>
+                    <p className="text-[0.625rem] text-gray-400 dark:text-gray-500 font-bold mt-0.5">{item.label}</p>
                   </div>
                 </div>
               ))}

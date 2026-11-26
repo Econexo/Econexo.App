@@ -140,7 +140,7 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
       {/* ── Estado del mes ── */}
       <div className={`${card} p-5 flex items-center justify-between gap-3`}>
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Cierre {periodLabel(period)}</p>
+          <p className="text-[0.6875rem] font-black uppercase tracking-wider text-gray-400">Cierre {periodLabel(period)}</p>
           {periodClosures.length === 0 && <p className="text-base font-black text-gray-900 dark:text-white">Sin cerrar</p>}
           {periodClosures.length > 0 && !changedSinceClose && (
             <p className="text-base font-black text-primary">Cerrado el {new Date(closedAt!).toLocaleDateString('es-CL')}</p>
@@ -168,7 +168,7 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
                 className="flex-1 min-w-0 text-left"
               >
                 <p className="text-sm font-black text-gray-900 dark:text-white truncate">
-                  {c.name}{c.isManual && <span className="ml-1 text-[10px] font-bold text-gray-400">(Manual)</span>}
+                  {c.name}{c.isManual && <span className="ml-1 text-[0.625rem] font-bold text-gray-400">(Manual)</span>}
                 </p>
                 <p className="text-xs text-gray-500">
                   {c.rut || 'Sin RUT'} · {formatKg(c.totalKg)} kg · {c.certNumbers.length} CT
@@ -198,7 +198,7 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
                   </li>
                 ))}
                 {c.certNumbers.length > 0 && (
-                  <li className="text-[11px] text-gray-400 pt-1">{c.certNumbers.join(', ')}</li>
+                  <li className="text-[0.6875rem] text-gray-400 pt-1">{c.certNumbers.join(', ')}</li>
                 )}
               </ul>
             )}
@@ -208,7 +208,7 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
 
       {/* ── Resumen por gestor (lo que se va a guardar) ── */}
       <div className={`${card} p-5 space-y-2`}>
-        <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Por gestor</p>
+        <p className="text-[0.6875rem] font-black uppercase tracking-wider text-gray-400">Por gestor</p>
         {[...groups].map(([destId, list]) => (
           <div key={destId} className="flex justify-between text-sm">
             <span className="font-bold text-gray-900 dark:text-white">
@@ -234,7 +234,7 @@ const MonthlyClosure: React.FC<{ docs: ClosureDoc[]; period: string }> = ({ docs
       {/* ── Descargas del cierre guardado ── */}
       {periodClosures.length > 0 && (
         <div className={`${card} p-5 space-y-3`}>
-          <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Descargar cierre guardado</p>
+          <p className="text-[0.6875rem] font-black uppercase tracking-wider text-gray-400">Descargar cierre guardado</p>
           {periodClosures.map(c => (
             <div key={c.id} className="flex items-center justify-between gap-2">
               <span className="text-sm font-bold text-gray-900 dark:text-white truncate">

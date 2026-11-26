@@ -85,16 +85,16 @@ const Navbar: React.FC = () => {
                   } ${item.primary ? 'relative -top-6' : ''}`}
               >
                 <div className={`relative ${item.primary ? 'size-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-white transform active:scale-95 transition-transform' : ''}`}>
-                  <span className={`material-symbols-outlined ${isActive(item.path) ? 'filled' : ''} ${item.primary ? 'text-[28px]' : 'text-[26px]'}`}>
+                  <span className={`material-symbols-outlined ${isActive(item.path) ? 'filled' : ''} ${item.primary ? 'text-[1.75rem]' : 'text-[1.625rem]'}`}>
                     {item.icon}
                   </span>
                   {item.path === '/notifications' && unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 size-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none">
+                    <span className="absolute -top-1 -right-1 size-4 bg-red-500 text-white text-[0.5625rem] font-black rounded-full flex items-center justify-center leading-none">
                       {unreadCount}
                     </span>
                   )}
                 </div>
-                <span className={`text-[10px] font-bold uppercase tracking-wide ${item.primary ? 'mt-1' : ''}`}>
+                <span className={`text-[0.625rem] font-bold uppercase tracking-wide ${item.primary ? 'mt-1' : ''}`}>
                   {item.label}
                 </span>
               </Link>
@@ -112,7 +112,7 @@ const Navbar: React.FC = () => {
           </div>
           <div className="hidden xl:block">
             <p className="font-black text-gray-900 dark:text-white text-sm leading-none">EcoNexo</p>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Panel</p>
+            <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest">Panel</p>
           </div>
         </div>
 
@@ -135,7 +135,7 @@ const Navbar: React.FC = () => {
                   {item.icon}
                 </span>
                 {item.path === '/notifications' && unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 size-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none">
+                  <span className="absolute -top-1.5 -right-1.5 size-4 bg-red-500 text-white text-[0.5625rem] font-black rounded-full flex items-center justify-center leading-none">
                     {unreadCount}
                   </span>
                 )}
@@ -150,8 +150,8 @@ const Navbar: React.FC = () => {
 
         {/* Footer info */}
         <div className="hidden xl:block px-4 pt-4 border-t border-gray-100 dark:border-white/10">
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">EcoNexo SpA</p>
-          <p className="text-[10px] text-gray-300">v1.6.9</p>
+          <p className="text-[0.625rem] text-gray-400 font-bold uppercase tracking-widest">EcoNexo SpA</p>
+          <p className="text-[0.625rem] text-gray-300">v1.6.9</p>
         </div>
       </aside>
     </>

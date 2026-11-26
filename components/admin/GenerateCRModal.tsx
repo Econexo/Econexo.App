@@ -58,7 +58,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                 <div className="space-y-6">
                     {/* Company Data */}
                     <div className="space-y-3">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Datos de la Empresa</h4>
+                        <h4 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-primary">Datos de la Empresa</h4>
                         <input
                             className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900"
                             value={selectedUser.company_name}
@@ -80,7 +80,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
 
                     {/* Withdrawal Date */}
                     <div className="space-y-3">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Fecha del Retiro</h4>
+                        <h4 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-primary">Fecha del Retiro</h4>
                         <input
                             type="date"
                             className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900 shadow-inner"
@@ -92,7 +92,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                     {/* Transportista: de su ficha sale la resolución sanitaria del PDF */}
                     {transportistas.length > 0 && (
                         <div className="space-y-3">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Transportista</h4>
+                            <h4 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-primary">Transportista</h4>
                             <select
                                 className="w-full bg-white/50 border border-white/60 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold text-gray-900"
                                 value={selectedTransportistaId}
@@ -105,7 +105,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                             {(() => {
                                 const chosen = transportistas.find(t => t.id === selectedTransportistaId);
                                 return chosen ? (
-                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                                    <p className="text-[0.5625rem] text-gray-400 font-bold uppercase tracking-wider">
                                         Resolución N° : {chosen.resolution}
                                     </p>
                                 ) : null;
@@ -117,7 +117,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
 
                     {/* Waste Details */}
                     <div className="space-y-3">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Detalle de Residuos</h4>
+                        <h4 className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-primary">Detalle de Residuos</h4>
 
                         {wasteItems.length > 0 && (
                             <div className="bg-white/50 rounded-xl overflow-hidden border border-white/60">
@@ -125,7 +125,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                                     <div key={idx} className="flex justify-between items-center p-3 border-b border-gray-100 last:border-0 text-xs">
                                         <div>
                                             <p className="font-bold text-gray-900">{item.quantity} {item.unit} - {item.waste_type}</p>
-                                            <p className="text-gray-500 text-[10px]">
+                                            <p className="text-gray-500 text-[0.625rem]">
                                                 {DESTINATION_LABELS[(item as any).destination as WasteDestination]
                                                     ?? DESTINATION_LABELS[defaultDestinationFor(item.waste_type)]}
                                                 {item.description ? ` · ${item.description}` : ''}
@@ -159,7 +159,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                                 ))}
                             </select>
                             <div className="space-y-1.5">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Destino</p>
+                                <p className="text-[0.5625rem] font-black uppercase tracking-widest text-gray-400">Destino</p>
                                 <div className="grid grid-cols-3 gap-1.5">
                                     {WASTE_DESTINATIONS.map(d => {
                                         const active = (currentWaste.destination
@@ -170,7 +170,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                                                 type="button"
                                                 title={d.description}
                                                 onClick={() => onCurrentWasteChange({ ...currentWaste, destination: d.value })}
-                                                className={`py-2 px-1 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${active
+                                                className={`py-2 px-1 rounded-lg text-[0.5625rem] font-black uppercase tracking-wide border transition-all ${active
                                                     ? 'text-white border-transparent'
                                                     : 'bg-white/60 text-gray-500 border-gray-200'}`}
                                                 style={active ? { backgroundColor: d.color } : undefined}
@@ -221,7 +221,7 @@ const GenerateCRModal: React.FC<GenerateCRModalProps> = ({
                         </button>
                         <button
                             onClick={onClose}
-                            className="w-full py-3 text-gray-500 hover:text-gray-900 text-[10px] font-black uppercase tracking-widest mt-2 transition-colors"
+                            className="w-full py-3 text-gray-500 hover:text-gray-900 text-[0.625rem] font-black uppercase tracking-widest mt-2 transition-colors"
                         >
                             Cancelar
                         </button>

@@ -31,7 +31,7 @@ const Feedback          = lazy(() => import('./screens/Feedback'));
 // Pure-CSS spinner (no icon font): avoids the raw "progress_activity" ligature
 // text flashing/spinning before Material Symbols loads on first paint.
 const PageLoader = () => (
-  <div className="min-h-screen bg-[#f0f4f0] dark:bg-slate-950 flex items-center justify-center">
+  <div className="min-h-dvh bg-[#f0f4f0] dark:bg-slate-950 flex items-center justify-center">
     <div className="size-10 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
   </div>
 );
@@ -125,7 +125,7 @@ const AppRoutes: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f4f0] dark:bg-background-dark overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-dvh bg-[#f0f4f0] dark:bg-background-dark overflow-x-hidden transition-colors duration-300">
       {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -140,7 +140,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/notifications" element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><Notifications /></div> : <Navigate to="/" />} />
           <Route path="/profile"       element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><Profile isLeyRep={isLeyRepUser} onLeyRepChange={handleToggleLeyRep} isDarkMode={isDarkMode} toggleTheme={toggleTheme} /></div> : <Navigate to="/" />} />
           <Route path="/analyze"       element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><Analyze /></div> : <Navigate to="/" />} />
-          <Route path="/chat"          element={isAuthenticated ? <div className="md:ml-20 xl:ml-64 h-screen"><Chat /></div> : <Navigate to="/" />} />
+          <Route path="/chat"          element={isAuthenticated ? <div className="md:ml-20 xl:ml-64 h-dvh"><Chat /></div> : <Navigate to="/" />} />
           <Route path="/admin"         element={isAuthenticated && isAdmin ? <div className="md:ml-20 xl:ml-64"><Admin /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
           <Route path="/scan"          element={isAuthenticated && isAdmin ? <div className="md:ml-20 xl:ml-64"><Scan /></div> : <Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
           <Route path="/rewards"            element={isAuthenticated ? <div className="md:ml-20 xl:ml-64"><Rewards /></div> : <Navigate to="/" />} />
